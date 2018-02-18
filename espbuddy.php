@@ -375,39 +375,40 @@ function Command_ping($id,$count=0){
 // ---------------------------------------------------------------------------------------
 function Command_help(){
 	global $argv;
-	$bin= $argv[0];
+	$bin= basename($argv[0]);
 	Command_usage();
 	echo <<<EOF
 
-* COMMAND upload : 
+* upload (command) : 
 	USAGE   : $bin upload [OPTIONS] [UPLOAD_OPTIONS]
 	Desc    : Upload to the board using OTA as default
 	Example : $bin upload
 
-* COMMAND compil : 
+* compil (command) : 
 	USAGE   : $bin compil [OPTIONS] 
 	Desc    : Build the firmware
 	Example : $bin compil
 
-* COMMAND version : 
+* version (command) : 
 	USAGE   : $bin version  [OPTIONS]
 	Desc    : Get the board installed version
 	Example : $bin version
 
-* COMMAND ping : 
+* ping (command) : 
 	USAGE   : $bin ping [OPTIONS]
 	Desc    : Ping board
-	example : $bin ping
+	Example : $bin ping
 
-* COMMAND repo_version : 
+* repo_version (command) : 
 	USAGE   : $bin repo_version REPO
 	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna or espeasy)
 	Example : $bin repo_version espurna
 
-* COMMAND repo_pull : 
+* repo_pull (command) : 
 	USAGE   : $bin repo_pull REPO
 	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna or espeasy)
 	Example : $bin repo_pull espurna
+
 
 * OPTIONS :
 	-f             : don't confirm choosen host (when no --host provided)
@@ -418,11 +419,12 @@ function Command_help(){
 * UPLOAD_OPTIONS :
 	-c  : Compil before Uploading
 	-w  : Wire Mode (Serial port) instead of Default OTA
-	-e  : In WIre Mode: Erase flash first
+	-e  : In Wire Mode, erase flash first
 	-s  : Skip Intermediate Upload (if set)
 	-d  : Dry Run. Show commands but don't apply them
 	-v  : Verbose
-	
+
+
 EOF;
 }
 /*
@@ -434,8 +436,8 @@ EOF;
 function Command_usage(){
 	global $argv;
 	$allowed_commands=array(
-		'upload'		=> "Compil and Upload current repo version to Device(s)",
-		'compil'		=> "Built current repo version",
+		'upload'		=> "Build and/or Upload current repo version to Device(s)",
+		'compil'		=> "Build current repo version",
 		'version'		=> "Show Device(s) Version",
 		'ping'			=> "Ping Device(s)",
 		'repo_version'	=> "Show Repo's Current version", 

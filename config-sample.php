@@ -41,7 +41,13 @@ $cfg['serial_ports']['fdti1']		="/dev/tty.usbserial-A50285BI";
 /* Here is where you set your own settings */
 
 // Repositories ###################################################################################################################
-// Define each repositories you wish to use
+/*
+Define each repositories you wish to use, where:
+- 'path_repo' 	: the path to the repository
+- 'path_code' 	: the path to the repository folder where the compiler should start
+- 'path_version': repository file that contains the version number
+- 'reg_version' : a regex to extract the version number , in the form : array( REGEX, CAPTURED_PARENTHESIS_NUMBER)
+*/
 
 $cfg['repos']['espurna']['path_repo']								="/Users/moi/dev/espurna/";
 $cfg['repos']['espurna']['path_code']								=$cfg['repos']['espurna']['path_repo']."code/";
@@ -54,15 +60,20 @@ $cfg['repos']['espeasy']['path_version']							=$cfg['repos']['espeasy']['path_r
 $cfg['repos']['espeasy']['reg_version']								=array('|#define\s+BUILD\s+([^\s\n\r]+)|s',1);
 
 
-// Environments ###################################################################################################################
-
-$cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_delay']		=16;
-$cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_firmware']	=$cfg['paths']['firmware_espeasy_1m_uploader'];
-
 
 // Configurations ###################################################################################################################
+/*
+Define all configurations needed by your hosts, where:
+- 'repo'		: the repository to use from the list above
+- 'environment'	: the environment to pass to platformio when compiling
+- 'exports'		: various export to perform before compiling
+			BTW exports can inlude special variables that get replaced by their values extracted from the host definition.
+				- {{host_name}}	is replaced by the host (first) part of the FQDN
+				- {{host_ip}}	is replaced by the host IP address
+				- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
+*/
 
-// espurna configs ------------------------------
+// espurna Configurations ------------------------------
 $cfg['configs']['espurna_mh20']['repo']								="espurna";
 $cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
@@ -76,7 +87,7 @@ $cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801"
 $cfg['configs']['espurna_h801']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword";
 
 
-// espeasy configs ------------------------------
+// espeasy Configurations ------------------------------
 date_default_timezone_set('Europe/Paris');$my_build="Soif/".date("dM-H:i");
 $my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
@@ -93,47 +104,44 @@ $cfg['configs']['espeasy_4096_testing']								=$cfg['configs']['espeasy_4096'];
 $cfg['configs']['espeasy_4096_testing']['environment']				="dev_ESP8266_4096";
 
 
+
+// Environments ###################################################################################################################
+/*
+	additionnals parameters  per repo/environment, typically 2steps definitions...
+	This should move elsewhere in future release
+*/
+
+$cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_delay']		=16;
+$cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_firmware']	=$cfg['paths']['firmware_espeasy_1m_uploader'];
+
+
+
 // Hosts ###################################################################################################################
+/* each host must at least define :
+- 'hostname' or 'ip' (non defined ip or hostname is automatically filled by a dns request
+- 'config' : the configuration to load (from above 'configs')
 
-$cfg['hosts']['led1']['hostname']	="led1.lo.lo";
-$cfg['hosts']['led1']['config']		="espurna_mh20";
+Optionally you can add:
+- 'serial_port' : the serial port (from the one defined above) to use when in wire mode
+- 'serial_rate' : another serial baud rate to use when in wire mode
+*/
+// ---------------------------------------------------
+$cfg['hosts']['led1']['hostname']		="led1.local";
+$cfg['hosts']['led1']['config']			="espurna_mh20";
 
-$cfg['hosts']['led2']['hostname']	="led2.lo.lo";
-$cfg['hosts']['led2']['config']		="espurna_mh20";
+$cfg['hosts']['led2']['hostname']		="led2.local";
+$cfg['hosts']['led2']['config']			="espurna_h801";
 
-$cfg['hosts']['led3']['hostname']	="led3.lo.lo";
-$cfg['hosts']['led3']['config']		="espurna_mh20";
+$cfg['hosts']['led3']['ip']				="192.168.1.203";
+$cfg['hosts']['led3']['config']			="espeasy_1024";
+$cfg['hosts']['led3']['serial_port']	="fdti1";
 
-# ---------------------------------------------------
-$cfg['hosts']['led11']['hostname']	="led11.lo.lo";
-$cfg['hosts']['led11']['config']	="espurna_h801";
+$cfg['hosts']['relay1']['hostname']		="relay1.local";
+$cfg['hosts']['relay1']['config']		="espeasy_4096";
 
-$cfg['hosts']['led12']['hostname']	="led12.lo.lo";
-$cfg['hosts']['led12']['config']	="espeasy_1024";
+$cfg['hosts']['nodemcu']['ip']			="192.168.1.240";
+$cfg['hosts']['nodemcu']['config']		="espeasy_4096_testing";
+$cfg['hosts']['nodemcu']['serial_port']	="nodemcu";
 
-$cfg['hosts']['led13']['hostname']	="led13.lo.lo";
-$cfg['hosts']['led13']['config']	="espurna_h801";
-
-# ---------------------------------------------------
-$cfg['hosts']['relay11']['hostname']="relay11.lo.lo";
-$cfg['hosts']['relay11']['config']	="espeasy_1024";
-
-$cfg['hosts']['relay12']['hostname']="relay12.lo.lo";
-$cfg['hosts']['relay12']['config']	="espeasy_1024";
-
-# ---------------------------------------------------
-$cfg['hosts']['odor1']['hostname']	="odor1.lo.lo";
-$cfg['hosts']['odor1']['config']	="espeasy_4096";
-
-# ---------------------------------------------------
-$cfg['hosts']['nodemcu1']['hostname']	="nodemcu1.lo.lo";
-$cfg['hosts']['nodemcu1']['config']		="espeasy_4096";
-$cfg['hosts']['nodemcu1']['serial_port']="nodemcu";
-
-$cfg['hosts']['nodemcu2']['hostname']	="nodemcu2.lo.lo";
-$cfg['hosts']['nodemcu2']['config']		="espeasy_4096_testing";
-$cfg['hosts']['nodemcu2']['serial_port']="nodemcu";
-
-# ---------------------------------------------------
 
 ?>

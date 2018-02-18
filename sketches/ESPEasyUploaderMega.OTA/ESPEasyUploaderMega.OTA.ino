@@ -26,6 +26,13 @@ extern "C" {
 #include "user_interface.h"
 }
 
+
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include <ESP8266mDNS.h>
+bool ArduinoOTAtriggered=false;
+
+
 // WebServer
 ESP8266WebServer WebServer(80);
 
@@ -80,6 +87,10 @@ void setup()
     Serial.println("SPIFFS?");
     delay(1);
   }
+
+
+  ArduinoOTAInit();
+
 }
 
 
@@ -93,6 +104,58 @@ void loop()
 
   WebServer.handleClient();
   yield();
+  ArduinoOTA.handle();
+
+  //once OTA is triggered, only handle that and dont do other stuff. (otherwise it fails)
+  while (ArduinoOTAtriggered)
+  {
+    yield();
+    ArduinoOTA.handle();
+  }
+
+}
+
+void ArduinoOTAInit()
+{
+  // Default port is 8266
+ 	ArduinoOTA.setPort(8266);
+//	ArduinoOTA.setHostname(Settings.Name);
+
+
+  ArduinoOTA.onStart([]() {
+      Serial.println(F("OTA  : Start upload"));
+      SPIFFS.end(); //important, otherwise it fails
+  });
+
+  ArduinoOTA.onEnd([]() {
+      Serial.println(F("\nOTA  : End"));
+      //"dangerous": if you reset during flash you have to reflash via serial
+      //so dont touch device until restart is complete
+      Serial.println(F("\nOTA  : DO NOT RESET OR POWER OFF UNTIL BOOT+FLASH IS COMPLETE."));
+      delay(100);
+      ESP.reset();
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("OTA  : Progress %u%%\r", (progress / (total / 100)));
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+      Serial.print(F("\nOTA  : Error (will reboot): "));
+      if (error == OTA_AUTH_ERROR) Serial.println(F("Auth Failed"));
+      else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
+      else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
+      else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Receive Failed"));
+      else if (error == OTA_END_ERROR) Serial.println(F("End Failed"));
+
+      delay(100);
+      ESP.reset();
+  });
+
+  ArduinoOTA.begin();
+
+  Serial.println(F("OTA  : Arduino OTA enabled on port 8266"));
+
 }
 
 
@@ -147,7 +210,7 @@ void handle_root() {
   if (strcasecmp_P(sCommand.c_str(), PSTR("reboot")) != 0)
   {
     String reply = "";
-    reply += "<h1>ESP Easy Uploader</h1>";
+    reply += "<h1>ESP Easy Uploader With Arduino OTA</h1>";
 
     IPAddress ip = WiFi.localIP();
 

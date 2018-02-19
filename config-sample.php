@@ -45,22 +45,11 @@ $cfg['serial_ports']['fdti1']		="/dev/tty.usbserial-A50285BI";
 
 // Repositories ###################################################################################################################
 /*
-Define each repositories you wish to use, where:
-- 'path_repo' 	: the path to the repository
-- 'path_code' 	: the path to the repository folder where the compiler should start
-- 'path_version': repository file that contains the version number
-- 'reg_version' : a regex to extract the version number , in the form : array( REGEX, CAPTURED_PARENTHESIS_NUMBER)
+Define the paths to your local copy (as 'path_repo') of each repositories you wish to use :
 */
 
-$cfg['repos']['espurna']['path_repo']								="/Users/soif/dev/espurna/";
-$cfg['repos']['espurna']['path_code']								=$cfg['repos']['espurna']['path_repo']."code/";
-$cfg['repos']['espurna']['path_version']							=$cfg['repos']['espurna']['path_repo']."code/espurna/config/version.h";
-$cfg['repos']['espurna']['reg_version']								=array('#APP_VERSION\s+"([^"]+)"#s',1);
-
-$cfg['repos']['espeasy']['path_repo']								="/Users/soif/mount/dev_apache/src/ESPEasy/";
-$cfg['repos']['espeasy']['path_code']								=$cfg['repos']['espeasy']['path_repo'];
-$cfg['repos']['espeasy']['path_version']							=$cfg['repos']['espeasy']['path_repo']."src/ESPEasy.ino";
-$cfg['repos']['espeasy']['reg_version']								=array('|#define\s+BUILD\s+([^\s\n\r]+)|s',1);
+$cfg['repos']['espurna']['path_repo']				="/Users/soif/dev/espurna/";
+$cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPEasy/";
 
 
 

@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License along with thi
 class EspBuddy {
 
 	public $class_version		= '1.20';	// EspBuddy Version
-	
+
 	private $cfg				= array();
+
 
 	private $args				= array();
 	private $bin				= '';
@@ -44,11 +45,13 @@ class EspBuddy {
 	private $c_env	=array();	//	current environment
 	private $c_serial=array();	//	current serial port and rate
 
+	private $orepo	;			//	repo_object
+
 	// ---------------------------------------------------------------------------------------
 	function __construct__(){
 
 	}
-	
+
 	// ---------------------------------------------------------------------------------------
 	public function LoadConf($config_file){
 		if(!file_exists($config_file)){
@@ -123,6 +126,7 @@ class EspBuddy {
 				echo "\n";
 				break;
 		}
+		echo "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -137,12 +141,11 @@ class EspBuddy {
 		foreach($hosts as $this_id => $host){
 			$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
 			echo "\033[35m############ $name : \033[0m";
-			if($c==1){echo "\n";}
+			//if($c==1){echo "\n";}
 			$fn="Command_$command";
-			echo $this->$fn($this_id);
-			echo "\n";
-			if($c==1){echo "\n";}
+			$this->$fn($this_id);
 		}
+		//if($c==1){echo "\n";}
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -256,9 +259,30 @@ class EspBuddy {
 			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
 			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
 			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
-
+		
+		if($this->c_conf['repo']){
+			$this->_RequireRepo($this->c_conf['repo']);
+		}
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _RequireRepo($name){
+		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
+		$class_path	= dirname(__FILE__)."/espb_repo_{$name}.php";
+		$class_name	= "EspBuddy_Repo_$name";
+		if(!$this->cfg['repos'][$name]){
+			$this->_dieError ("Unknown repository '$name' ");
+		}
+		if(!$repo_path){
+			$this->_dieError ("You must define the path to your '$name' repo,  in \$cfg['repos']['$name']['path_repo'] ");
+		}
+		if(!file_exists($class_path)){
+			$this->_dieError ("Cant find a '$name' class at : $class_path");
+		}
+
+		require_once($class_path);
+		$this->orepo= new $class_name($repo_path);
+	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
@@ -281,7 +305,27 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
+			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$echo_name="NEWEST";	
 		}
+		elseif($this->flag_prevfirm){
+			$firmware="{$this->c_host['path_dir_backup']}firmware_previous.bin";
+			$echo_name="PREVIOUS";			
+		}
+		else{
+			//$path_build=$this->orepo->GetPathBuild();
+			//$firmware_pio="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$echo_name="LATEST";			
+		}
+		
+		if(!file_exists($firmware)){
+			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
+		}
+
+		echo "\n";
+		$date=date("d M Y - H:i::s", filemtime($firmware));
+		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date )  : $firmware","");
 
 		// wire mode ------------------
 		if($this->flag_serial){
@@ -289,15 +333,15 @@ class EspBuddy {
 				$this->DoSerial($id,'erase_flash');
 				$this->_WaitReboot(5);
 			}
-			$this->DoSerial($id,'write_flash');
+			$this->DoSerial($id,'write_flash', $firmware);
 		}
 
 		// OTA mode ------------------
 		else{
 			// two steps  upload ?
 			if($this->c_env['2steps_firmware'] and ! $this->flag_skipinter ){
-
 				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_env['2steps_firmware']}";
+				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
 			if(!$this->flag_drymode){
@@ -307,27 +351,16 @@ class EspBuddy {
 					}	
 				}
 				if($this->c_env['2steps_delay']){
+					echo "\n";
 					$this->_WaitReboot($this->c_env['2steps_delay']);
 				}
 			}
 
 			// Final Upload
-			if($this->flag_prevfirm){
-				$firmware="{$this->c_host['path_dir_backup']}firmware_previous.bin";
-				$echo_name="PREVIOUS";			
-			}
-			else{
-				//$firmware_pio="{$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-				$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
-				$echo_name="LATEST";			
-			}
-			if(!file_exists($firmware)){
-				$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
-			}
-			$date=date("d M Y - H:i::s", filemtime($firmware));
-			
+
 			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f  $firmware";
-			$this->_EchoStepStart("Uploading $echo_name Firmware (Compiled on $date ) :", $command);
+			echo "\n";
+			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
 			if(!$this->flag_drymode){
 				passthru($command, $r);
@@ -342,7 +375,9 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
 		$this->_CurrentCfg($id);
-		$commands_compil[]="cd {$this->c_repo['path_code']} ";
+		$path_build=$this->orepo->GetPathBuild();
+
+		$commands_compil[]="cd {$path_build} ";
 		if(is_array($this->c_conf['exports'])){
 			foreach( $this->c_conf['exports'] as $k => $v ){
 				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
@@ -351,11 +386,12 @@ class EspBuddy {
 		$start_compil =time();
 		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
 		$command=implode(" ; \n   ", $commands_compil);
+		echo "\n";
 		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']}", $command);
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
-			$firmware_created="{$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
 			if(!$r and file_exists($firmware_created)){
 				touch($firmware_created,$start_compil);
 			}
@@ -363,8 +399,9 @@ class EspBuddy {
 		if(!$r){
 			
 			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}firmware.bin {$this->c_host['path_dir_backup']}firmware_previous.bin";	
-			$command_backup[] = "cp -p {$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}";	
+			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}";	
 			$command=implode(" ; \n   ", $command_backup);
+			echo "\n";
 			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
 			if(! $this->flag_drymode){
 				passthru($command, $r2);
@@ -378,6 +415,7 @@ class EspBuddy {
 	function Command_monitor($id){
 		$this->_CurrentCfg($id);
 		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
+		echo "\n";
 		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_serial['port']} at {$this->c_serial['rate']} baud",$command);
 		if(!$this->flag_drymode){
 			passthru($command, $r);
@@ -389,8 +427,9 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function DoSerial($id,$action='write_flash'){
+	private function DoSerial($id,$action='write_flash',$firmware_file=''){
 		$this->_CurrentCfg($id);
+		$path_build=$this->orepo->GetPathBuild();
 
 		if(!$this->c_serial['port']){
 			return $this->_dieError ("No Serial Port choosen");
@@ -404,7 +443,7 @@ class EspBuddy {
 
 		switch ($action) {
 			case 'write_flash':
-				$command .="0x0 {$this->c_repo['path_code']}.pioenvs/{$thic->c_conf['environment']}/firmware.bin ";
+				$command .="0x0 {$firmware_file} ";
 				break;
 			case 'erase_flash':
 				break;
@@ -414,6 +453,7 @@ class EspBuddy {
 				return $this->_dieError ("Invalid Action");
 				break;
 		}
+		echo "\n";
 		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_serial['port']}$echo_rate)",$command);
 	
 		if(!$this->flag_drymode){
@@ -428,45 +468,19 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_CurrentCfg($id);
-		$repo=	$this->c_conf['repo'];;
-
-		switch ($repo) {
-			case 'espurna':
-				echo("'version' for repo $repo is not yet Implemented");			
-				break;
-
-			case 'espeasy':
-				$ip=$this->c_host['ip'];
-				$url="http://$ip/json";
-				$json=@file_get_contents($url);
-				if($json and $arr=json_decode($json,true) and is_array($arr)){
-					echo $arr['System']['Build']."\n";
-				}
-				break;
-		
-			default:
-				$this->_dieError ("Unknown repository '$repo'", 'repos');
-				# code...
-				break;
-		}
+		echo $this->orepo->GetRemoteVersion($this->c_host['ip']) . "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
 		$repo_key=$this->command2;
 		$repo=$this->cfg['repos'][$repo_key];
-		if(!$repo){
-			$this->_dieError("Unknown repository '$repo_key'", 'repos');
-		}
-		if($type == "version"){
 
-			if($repo['reg_version'] and $repo['path_version']){
-				$reg	=$repo['reg_version'][0];
-				$reg_n	=$repo['reg_version'][1];
-				preg_match($reg,file_get_contents($repo['path_version']),$matches);
-				echo("*** Current Repository Version is	: {$matches[$reg_n]}");
-			}
-			echo "\n";
+		$this->_RequireRepo($repo_key);
+		
+		if($type == "version"){			
+			$version = $this->orepo->GetVersion() or $version= "Not found";
+			echo "*** Local '$repo_key' Repository Version is	: $version \n";
 		}
 		if($type == "pull"){
 			$this->Command_repo('version');
@@ -481,6 +495,7 @@ class EspBuddy {
 			$this->Command_repo('version');
 			echo "\n";
 		}
+		echo "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -808,7 +823,7 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _EchoStepStart($mess, $command, $do_end=1,$char="*"){
+	private function _EchoStepStart($mess, $command="", $do_end=1,$char="*"){
 		if($this->flag_verbose){
 			$verbose=true;
 		}

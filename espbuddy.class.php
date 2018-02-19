@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	private $version			= '1.0';	// EspBuddy Version
+	private $version			= '1.1';	// EspBuddy Version
 	
 	private $cfg				= array();
 

@@ -32,6 +32,7 @@ class EspBuddy {
 	private $flag_serial		= false;
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
+	private $flag_prevfirm		= false;
 
 	private $arg_port			= '';
 	private $arg_rate			= 0;
@@ -55,7 +56,14 @@ class EspBuddy {
 		}
 		require($config_file);
 		$this->cfg=$cfg;
-			
+		
+		if(!$this->cfg['paths']['dir_backup']){
+			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");			
+		}
+
+		if(! file_exists($this->cfg['paths']['dir_backup'])){
+			mkdir($this->cfg['paths']['dir_backup']);			
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -222,8 +230,10 @@ class EspBuddy {
 	private function _CurrentCfg($id){
 		$this->_FillHostnameOrIp($id);
 
-		$this->c_host	=	$this->cfg['hosts'][$id];
+		$this->c_host					=	$this->cfg['hosts'][$id];
 		$this->arg_conf and $this->c_host['config']=$this->arg_conf;
+
+		$this->c_host['path_dir_backup']=	$this->_CreateBackupDir($this->c_host);
 		
 		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
@@ -248,6 +258,19 @@ class EspBuddy {
 			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
 
 	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _CreateBackupDir($host){
+		$dir	= $this->cfg['paths']['dir_backup'];
+		$name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		$path="$dir$name/";
+		if(!file_exists($path)){
+			mkdir($path);
+		}
+		return $path;
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_upload($id){
@@ -289,8 +312,22 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin ";
-			$this->_EchoStepStart("Uploading Final Firmware", $command);
+			if($this->flag_prevfirm){
+				$firmware="{$this->c_host['path_dir_backup']}firmware_previous.bin";
+				$echo_name="PREVIOUS";			
+			}
+			else{
+				//$firmware_pio="{$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+				$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+				$echo_name="LATEST";			
+			}
+			if(!file_exists($firmware)){
+				$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
+			}
+			$date=date("d M Y - H:i::s", filemtime($firmware));
+			
+			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f  $firmware";
+			$this->_EchoStepStart("Uploading $echo_name Firmware (Compiled on $date ) :", $command);
 
 			if(!$this->flag_drymode){
 				passthru($command, $r);
@@ -305,21 +342,36 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
 		$this->_CurrentCfg($id);
-
 		$commands_compil[]="cd {$this->c_repo['path_code']} ";
 		if(is_array($this->c_conf['exports'])){
 			foreach( $this->c_conf['exports'] as $k => $v ){
 				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
 			}
 		}
+		$start_compil =time();
 		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
-		$command=implode('; ', $commands_compil);
+		$command=implode(" ; \n   ", $commands_compil);
 		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']}", $command);
 		if(! $this->flag_drymode){
 			passthru($command, $r);
-			return !$r;
+			//keep STARTING compil time
+			$firmware_created="{$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			if(!$r and file_exists($firmware_created)){
+				touch($firmware_created,$start_compil);
+			}
 		}
-		return true;
+		if(!$r){
+			
+			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}firmware.bin {$this->c_host['path_dir_backup']}firmware_previous.bin";	
+			$command_backup[] = "cp -p {$this->c_repo['path_code']}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}";	
+			$command=implode(" ; \n   ", $command_backup);
+			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
+			if(! $this->flag_drymode){
+				passthru($command, $r2);
+			}
+			return !$r2;
+		}
+		return !$r;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -569,6 +621,7 @@ class EspBuddy {
 
 * UPLOAD_OPTIONS :
 	-b  : Build before Uploading
+	-p  : Upload previous firmware backuped, instead of the latest built 
 	-s  : Skip Intermediate Upload (if set)
 	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
 	-e  : In Wire Mode, erase flash first, then upload
@@ -670,6 +723,7 @@ EOF;
 		$this->flag_verbose		= (boolean) $this->args['flags']['v'];
 
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
+		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
 		$this->flag_serial		= (boolean) $this->args['flags']['w'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];

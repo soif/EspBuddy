@@ -20,6 +20,9 @@ $cfg['paths']['bin_esptool']					=$tmp_current_dir.	"/bin/esptool.py";
 //intermediate firmware for ESPeasy OTA upload of boards wih 1M
 $cfg['paths']['firmware_espeasy_1m_uploader']	=$tmp_current_dir.	"/firmwares/ESPEasyUploaderMega.OTA.1m128.bin";
 
+// Backup Directory where uploaded firmwares are stored (WITH a trailing slash),
+$cfg['paths']['dir_backup']						="/tmp/EspBuddy/";
+
 
 // Serial ##########################################################################################################################
 

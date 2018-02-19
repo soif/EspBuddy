@@ -49,12 +49,12 @@ Define each repositories you wish to use, where:
 - 'reg_version' : a regex to extract the version number , in the form : array( REGEX, CAPTURED_PARENTHESIS_NUMBER)
 */
 
-$cfg['repos']['espurna']['path_repo']								="/Users/moi/dev/espurna/";
+$cfg['repos']['espurna']['path_repo']								="/Users/soif/dev/espurna/";
 $cfg['repos']['espurna']['path_code']								=$cfg['repos']['espurna']['path_repo']."code/";
 $cfg['repos']['espurna']['path_version']							=$cfg['repos']['espurna']['path_repo']."code/espurna/config/version.h";
 $cfg['repos']['espurna']['reg_version']								=array('#APP_VERSION\s+"([^"]+)"#s',1);
 
-$cfg['repos']['espeasy']['path_repo']								="/Users/moi/mount/dev_apache/src/ESPEasy/";
+$cfg['repos']['espeasy']['path_repo']								="/Users/soif/mount/dev_apache/src/ESPEasy/";
 $cfg['repos']['espeasy']['path_code']								=$cfg['repos']['espeasy']['path_repo'];
 $cfg['repos']['espeasy']['path_version']							=$cfg['repos']['espeasy']['path_repo']."src/ESPEasy.ino";
 $cfg['repos']['espeasy']['reg_version']								=array('|#define\s+BUILD\s+([^\s\n\r]+)|s',1);
@@ -88,7 +88,7 @@ $cfg['configs']['espurna_h801']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword
 
 
 // espeasy Configurations ------------------------------
-date_default_timezone_set('Europe/Paris');$my_build="Soif/".date("dM-H:i");
+date_default_timezone_set('Europe/Paris');$my_build="Soif-".date("dM-H.i");
 $my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
 $cfg['configs']['espeasy_1024']['repo']								="espeasy";

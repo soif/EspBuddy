@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 $config_file=dirname(__FILE__).'/config.php';
 
-require_once(dirname(__FILE__).'/espbuddy.class.php');
+require_once(dirname(__FILE__).'/lib/espbuddy.class.php');
 $espbuddy = new EspBuddy();
 $espbuddy->LoadConf($config_file);
 $espbuddy->CommandLine();

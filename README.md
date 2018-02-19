@@ -40,18 +40,18 @@ Works with :
 **espbuddy.php ACTION [TARGET] [OPTIONS]**
 
 Valid Actions are: 
-  - upload          : Build and/or Upload current repo version to Device(s)
-  - build           : Build current repo version
-  - backup          : Backup remote devices settings
-  - monitor         : Monitor the serial port
-  - version         : Show Device(s) Version
-  - ping            : Ping Device(s)
-  - repo_version    : Show Repo's Current version
-  - repo_pull       : Git Pull Repo's master version
-  - list_hosts      : List all available hosts
-  - list_configs    : List all available configurations
-  - list_repos      : List all available repositories
-  - help            : Show full help
+  - **upload**          : Build and/or Upload current repo version to Device(s)
+  - **build**           : Build current repo version
+  - **backup**          : Backup remote devices settings
+  - **monitor**         : Monitor the serial port
+  - **version**         : Show Device(s) Version
+  - **ping**            : Ping Device(s)
+  - **repo_version**    : Show Repo's Current version
+  - **repo_pull**       : Git Pull Repo's master version
+  - **list_hosts**      : List all available hosts
+  - **list_configs**    : List all available configurations
+  - **list_repos**      : List all available repositories
+  - **help**            : Show full help
 
 
 Examples:

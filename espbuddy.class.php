@@ -107,7 +107,7 @@ class EspBuddy {
 		}
 		$hosts=$this->ListHosts($id);
 		$c=count($hosts);
-		echo "Processing $c host(s)$in_drymode : \n";
+		echo "Processing $c host(s)$in_drymode : \n\n";
 
 		foreach($hosts as $this_id => $host){
 			$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
@@ -116,6 +116,7 @@ class EspBuddy {
 			$fn="Command_$command";
 			echo $this->$fn($this_id);
 			echo "\n";
+			if($c==1){echo "\n";}
 		}
 	}
 
@@ -384,7 +385,7 @@ class EspBuddy {
 				$reg	=$repo['reg_version'][0];
 				$reg_n	=$repo['reg_version'][1];
 				preg_match($reg,file_get_contents($repo['path_version']),$matches);
-				$this->_EchoStepStart("Current Version is: {$matches[$reg_n]}",'');
+				echo("*** Current Repository Version is	: {$matches[$reg_n]}");
 			}
 			echo "\n";
 		}
@@ -392,9 +393,11 @@ class EspBuddy {
 			$this->Command_repo('version');
 			
 			$command="cd {$repo['path_repo']} ; git pull ";
-			$this->_EchoStepStart("Loading $repo_key git Commits : ",$command);
+			echo("*** Loading '$repo_key' git commits	: ");
 			if(!$this->flag_drymode){
-				passthru($command, $r);
+				if(passthru($command, $r)){
+					echo "\n";
+				}
 			}
 			$this->Command_repo('version');
 			echo "\n";

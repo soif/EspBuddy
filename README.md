@@ -15,9 +15,9 @@ It also gather various tools command to be used in batch mode.
  - Optional compilation using platformio
  - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname_
  - Fetch Remote devices versions
- - Ping Remote Host
  - Parse Repositories installed versions
  - Git Pull Repositories
+ - Ping Remote Host
  
 ## Supported (tested) Firmwares
 Works with :

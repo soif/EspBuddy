@@ -9,7 +9,7 @@
 $tmp_current_dir=dirname(__FILE__);	//shortcut to the current dir (Not needed in the main application)
 
 //path to the platformio binanry
-$cfg['paths']['bin_pio']						="/usr/local/bin/platformio";
+$cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 
 //path to esp_ota.py (script provided with the esp8266 arduino v2.3 environment, in packages/esp8266/hardware/esp8266/2.3.0/tools/)
 $cfg['paths']['bin_esp_ota']					=$tmp_current_dir.	"/bin/espota.py";
@@ -19,6 +19,9 @@ $cfg['paths']['bin_esptool']					=$tmp_current_dir.	"/bin/esptool.py";
 
 //intermediate firmware for ESPeasy OTA upload of boards wih 1M
 $cfg['paths']['firmware_espeasy_1m_uploader']	=$tmp_current_dir.	"/firmwares/ESPEasyUploaderMega.OTA.1m128.bin";
+
+// Backup Directory where uploaded firmwares are stored (WITH a trailing slash),
+$cfg['paths']['dir_backup']						="/tmp/EspBuddy/";
 
 
 // Serial ##########################################################################################################################

@@ -62,11 +62,11 @@ class EspBuddy {
 				$this->ProcessCommand($this->command, $this->ChooseTarget());
 				break;
 
-			case 'serial':
+			case 'build':
 				$this->ProcessCommand($this->command, $this->ChooseTarget());
 				break;
 
-			case 'build':
+			case 'monitor':
 				$this->ProcessCommand($this->command, $this->ChooseTarget());
 				break;
 
@@ -254,7 +254,7 @@ class EspBuddy {
 						return $this->_dieError ("First Upload FAILED!!");
 					}	
 				}
-				if($env['2steps_delay']){
+				if($this->c_env['2steps_delay']){
 					$this->_WaitReboot($this->c_env['2steps_delay']);
 				}
 			}
@@ -289,6 +289,20 @@ class EspBuddy {
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			return !$r;
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	function Command_monitor($id){
+		$this->_CurrentCfg($id);
+		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
+		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_serial['port']} at {$this->c_serial['rate']} baud",$command);
+		if(!$this->flag_drymode){
+			passthru($command, $r);
+			if($r){
+				return $this->_dieError ("Serial monitor FAILED!!");
+			}	
 		}
 		return true;
 	}
@@ -415,6 +429,7 @@ class EspBuddy {
 		$allowed_commands=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
 			'build'			=> "Build current repo version",
+			'monitor'		=> "Monitor the serial port",
 			'version'		=> "Show Device(s) Version",
 			'ping'			=> "Ping Device(s)",
 			'repo_version'	=> "Show Repo's Current version", 
@@ -434,7 +449,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_help(){
 		$bin= $this->bin;
-		Command_usage();
+		$this->Command_usage();
 		echo <<<EOF
 
 * upload (command) : 
@@ -446,6 +461,11 @@ class EspBuddy {
 	USAGE   : $bin [OPTIONS]  build [HOST]
 	Desc    : Build the firmware
 	Example : $bin build
+
+* monitor (command) : 
+	USAGE   : $bin [OPTIONS]  monitor [HOST]
+	Desc    : Monitor the serial port
+	Example : $bin monitor
 
 * version (command) : 
 	USAGE   : $bin [OPTIONS] version
@@ -481,6 +501,7 @@ class EspBuddy {
 
 	--port=xxx     : serial port to use (overrride main or per host serial ports)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial ports)
+
 
 EOF;
 	}

@@ -508,7 +508,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_AssignCurrentHostConfig($id);
-		echo $this->orepo->GetRemoteVersion($this->c_host) . "\n";
+		echo "{$this->c_conf['repo']}\t".$this->orepo->GetRemoteVersion($this->c_host) . "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------

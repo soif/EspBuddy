@@ -3,7 +3,7 @@
 // ################################################################################################################################
 // #################################### GLOBALS ###################################################################################
 // ################################################################################################################################
-/* Most default setting should be fine, but feel free to change it if you wish */
+/* Most default settings should be fine, but feel free to change it if you wish */
 
 // Paths ##########################################################################################################################
 $tmp_current_dir=dirname(__FILE__);	//shortcut to the current dir (Not needed in the main application)
@@ -24,7 +24,7 @@ $cfg['paths']['firmware_espeasy_1m_uploader']	=$tmp_current_dir.	"/firmwares/ESP
 $cfg['paths']['dir_backup']						="/tmp/EspBuddy/";
 
 
-// Serial ##########################################################################################################################
+// Serial #########################################################################################################################
 
 // Default Serial rate when not set on the command line (optionnal)
 $cfg['serial_rates']['default']		=74880;	//74880, 115200
@@ -37,10 +37,15 @@ $cfg['serial_ports']['nodemcu']		="/dev/tty.SLAB_USBtoUART";
 $cfg['serial_ports']['fdti1']		="/dev/tty.usbserial-A50285BI";
 
 
+// Misc ##########################################################################################################################
 
-// ######################################################################################################################################
-// #################################### USER SETTINGS ###################################################################################
-// ######################################################################################################################################
+$cfg['misc']['time_zone']			='Europe/Paris';	//Time zone for dates, see http://php.net/manual/en/timezones.php
+
+
+
+// ################################################################################################################################
+// #################################### USER SETTINGS #############################################################################
+// ################################################################################################################################
 /* Here is where you set your own settings */
 
 // Repositories ###################################################################################################################
@@ -53,7 +58,7 @@ $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPE
 
 
 
-// Configurations ###################################################################################################################
+// Configurations #################################################################################################################
 /*
 Define all configurations needed by your hosts, where:
 - 'repo'		: the repository to use from the list above
@@ -85,7 +90,7 @@ $cfg['configs']['espurna_h801']['pass']								="MyEspurnaPassword";
 
 
 // espeasy Configurations ------------------------------
-date_default_timezone_set('Europe/Paris');$my_build="Soif-".date("dM-H.i");
+date_default_timezone_set($cfg['misc']['time_zone']);$my_build="Soif-".date("dM-H.i");
 $my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
 $cfg['configs']['espeasy_1024']['repo']								="espeasy";
@@ -114,7 +119,7 @@ $cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_firmware
 
 
 
-// Hosts ###################################################################################################################
+// Hosts ###################################################################################################################################
 /* each host must at least define :
 - 'hostname' or 'ip' (non defined ip or hostname is automatically filled by a dns request
 - 'config' : the configuration to load (from above 'configs')

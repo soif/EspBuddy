@@ -67,6 +67,9 @@ class EspBuddy {
 		require($config_file);
 		$this->cfg=$cfg;
 		
+		date_default_timezone_set($this->cfg['misc']['time_zone']);
+
+		// dir backup ------------------------
 		if(!$this->cfg['paths']['dir_backup']){
 			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");			
 		}

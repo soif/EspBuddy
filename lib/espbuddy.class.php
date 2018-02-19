@@ -140,7 +140,7 @@ class EspBuddy {
 
 		foreach($hosts as $this_id => $host){
 			$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
-			echo "\033[35m############ $name : \033[0m";
+			echo "\033[35m##### $name ##### : \033[0m";
 			//if($c==1){echo "\n";}
 			$fn="Command_$command";
 			$this->$fn($this_id);
@@ -516,9 +516,9 @@ class EspBuddy {
 			if		(preg_match('# 0.0% loss#', 	$result))	{$result .="\t\t OK";}	
 			elseif	(preg_match('# 100.0% loss#',	$result))	{$result .="\t\t Offline";}	
 			else												{$result .="\t\t -";}	
-			return $result;
+			echo "$result\n";
 		}
-		return $command;
+		return "$command\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -720,8 +720,9 @@ EOF;
 		global $cfg;
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
-	
-		return "{$this->cfg['hosts'][$id]['hostname']}	({$this->cfg['hosts'][$id]['ip']})";
+		
+		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;	
+		return $name;
 	}
 
 	// -------------------------------------------------------------

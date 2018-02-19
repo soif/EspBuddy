@@ -1,9 +1,11 @@
 # Esp Buddy 
 
-This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial. 
-It also gather various tools command to be used in batch mode.
+Tired of typing very long commands to upload your custom firmwares? 
+Bored to manually uplooad your EspEasy in two step for 1MB devices? 
+Want to batch upload new firmwares to all your devices via OTA in one command? 
 
-_This is typically a **WORK IN PROGRESS :-) !!!**_
+This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial in one short command. 
+It also gather various tools command to be used in batch mode.
 
 
 ## Features
@@ -23,6 +25,11 @@ Works with :
 - [**Espura**](https://github.com/xoseperez/espurna)
 - should virtually works with any ESP8266 firmware
 
+## Requirements
+- Linux or OSX platform
+- php5 or more
+- platformio
+
 ## Installation
 - Rename _config-sample.php_ to _config.php_.
 - Fill some hosts and configurations in config.php
@@ -34,9 +41,9 @@ Works with :
 Examples:
 - `espbuddy.php help` show help
 - `espbuddy.php upload` choose from the list of host the one to upload to
-- `espbuddy.php upload --host=led1 -c` upload to host 'led1', while compiling the firmware first 
-- `espbuddy.php upload --host=all -c` upload to all defined hosts , while compiling the firmware first 
-- `espbuddy.php upload --host=led1 -w` upload using serial to host 'led1'
-- `espbuddy.php version --host=all` show versions of all defined hosts
-- `espbuddy.php ping --host=all` ping of all defined hosts
+- `espbuddy.php upload led1` upload to host 'led1'
+- `espbuddy.php upload all -b` upload to all defined hosts , while building the firmware first 
+- `espbuddy.php upload led1 -w` upload using serial to host 'led1'
+- `espbuddy.php version all` show versions of all defined hosts
+- `espbuddy.php ping all` ping of all defined hosts
 

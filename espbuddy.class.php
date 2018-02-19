@@ -22,6 +22,7 @@ class EspBuddy {
 	private $bin				= '';
 	private $command			= '';
 	private $command2			= '';
+
 	private $flag_noconfirm		= false;
 	private $flag_drymode		= false;
 	private $flag_verbose		= false;
@@ -29,8 +30,10 @@ class EspBuddy {
 	private $flag_serial		= false;
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
+
 	private $arg_port			= '';
 	private $arg_rate			= 0;
+	private $arg_conf			= '';
 
 	private $c_host	=array();	//	current host
 	private $c_conf	=array();	//	current config
@@ -94,6 +97,10 @@ class EspBuddy {
 				$this->Command_list('hosts');
 				break;
 
+			case 'list_repos':
+				$this->Command_list('repos');
+				break;
+
 			case 'help':
 				$this->Command_help();
 				break;
@@ -147,7 +154,7 @@ class EspBuddy {
 				$choosen='a';
 			}
 			elseif(!$this->cfg['hosts'][$host]){
-				$this->_dieError('Invalid Host');
+				$this->_dieError('Invalid Host','hosts');
 			}
 			else{
 				$id=$host;
@@ -171,17 +178,18 @@ class EspBuddy {
 			$id			=$choices[$choosen];
 		}
 
-		echo "\n-----------------------------------\n";
-		echo "You have choosen : ";
 		if($choosen == 'a'){
+			echo "\n-----------------------------------\n";
+			echo "You have choosen : ";
 			echo " -> ALL HOSTS \n";
 			$id=0;
 		}
 		else{
-			echo "\n";
-			$this->_FillHostnameOrIp($id);
-			$host		=$this->cfg['hosts'][$id];
 			$this->_CurrentCfg($id);
+			echo "\n";
+			echo "\n-----------------------------------\n";
+			echo "You have choosen : ";
+			$host	=$this->c_host;
 			echo " + Host key   : $id \n";
 			echo " + Host Name  : {$host['hostname']}\n";
 			echo " + Host IP    : {$host['ip']}\n";
@@ -210,13 +218,17 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function _CurrentCfg($id){
+		$this->_FillHostnameOrIp($id);
+
 		$this->c_host	=	$this->cfg['hosts'][$id];
+		$this->arg_conf and $this->c_host['config']=$this->arg_conf;
+		
 		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		$this->c_env	=	$this->c_repo['environments'][$this->c_conf['environment']];
 		
 		if(!is_array($this->c_conf)){
-			return $this->_dieError ("Unknown Configuration ({$this->c_host['config']})!");
+			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
 
 		$this->c_serial['port']		=	$this->arg_port	or
@@ -232,6 +244,7 @@ class EspBuddy {
 			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
 			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
 			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
+
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -241,7 +254,7 @@ class EspBuddy {
 		//compilation ---------------
 		if($this->flag_build){
 			if(! $this->Command_build($id)){
-				$this->_dieError ("Compilation FAILED!");
+				$this->_dieError ("Compilation Failed");
 			}
 		}
 
@@ -265,7 +278,7 @@ class EspBuddy {
 			if(!$this->flag_drymode){
 					passthru($command, $r);
 					if($r){
-						return $this->_dieError ("First Upload FAILED!!");
+						return $this->_dieError ("First Upload Failed");
 					}	
 				}
 				if($this->c_env['2steps_delay']){
@@ -280,7 +293,7 @@ class EspBuddy {
 			if(!$this->flag_drymode){
 				passthru($command, $r);
 				if($r){
-					return $this->_dieError ("Upload FAILED!!");
+					return $this->_dieError ("Upload Failed");
 				}
 			}
 			return true;	
@@ -315,7 +328,7 @@ class EspBuddy {
 		if(!$this->flag_drymode){
 			passthru($command, $r);
 			if($r){
-				return $this->_dieError ("Serial monitor FAILED!!");
+				return $this->_dieError ("Serial monitor Failed");
 			}	
 		}
 		return true;
@@ -326,7 +339,7 @@ class EspBuddy {
 		$this->_CurrentCfg($id);
 
 		if(!$this->c_serial['port']){
-			return $this->_dieError ("No Serial Port choosen!");
+			return $this->_dieError ("No Serial Port choosen");
 		}
 
 		$this->c_serial['rate']	 and 
@@ -344,7 +357,7 @@ class EspBuddy {
 			case 'read_mac':
 				break;
 			default:
-				return $this->_dieError ("Invalid Action!");
+				return $this->_dieError ("Invalid Action");
 				break;
 		}
 		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_serial['port']}$echo_rate)",$command);
@@ -352,7 +365,7 @@ class EspBuddy {
 		if(!$this->flag_drymode){
 			passthru($command, $r);
 			if($r){
-				return $this->_dieError ("Serial Upload FAILED!!");
+				return $this->_dieError ("Serial Upload Failed");
 			}	
 		}
 		return true;
@@ -365,7 +378,6 @@ class EspBuddy {
 
 		switch ($repo) {
 			case 'espurna':
-				//$this->_dieError( __FUNCTION__ . " for $repo is not YET Implemented");			
 				echo("'version' for repo $repo is not yet Implemented");			
 				break;
 
@@ -379,7 +391,7 @@ class EspBuddy {
 				break;
 		
 			default:
-				$this->_dieError ("Unknown repo ($repo)!");
+				$this->_dieError ("Unknown repository '$repo'", 'repos');
 				# code...
 				break;
 		}
@@ -390,7 +402,7 @@ class EspBuddy {
 		$repo_key=$this->command2;
 		$repo=$this->cfg['repos'][$repo_key];
 		if(!$repo){
-			$this->_dieError("Unknown Repo '$repo_key'. Possible repos are : ".implode(', ',array_keys($this->cfg['repos'])) );
+			$this->_dieError("Unknown repository '$repo_key'", 'repos');
 		}
 		if($type == "version"){
 
@@ -459,8 +471,16 @@ class EspBuddy {
 				}
 				break;
 	
+			case 'repos':
+				echo "Available Repositories are: \n";
+				foreach($this->cfg['repos'] as $repo => $arr){
+					$name=str_pad($repo,15);
+					echo "  - $name		: {$arr['path_repo']}\n";
+				}
+				break;
+	
 			default:
-				$this->_dieError ("Unknown List type ($type)!");
+				$this->_dieError ("Unknown List type '$type'");
 				# code...
 				break;
 		}
@@ -477,8 +497,9 @@ class EspBuddy {
 			'ping'			=> "Ping Device(s)",
 			'repo_version'	=> "Show Repo's Current version", 
 			'repo_pull'		=> "Git Pull Repo's master version",
-			'list_configs'	=> "List all available configurations",
 			'list_hosts'	=> "List all available hosts",
+			'list_configs'	=> "List all available configurations",
+			'list_repos'	=> "List all available repositories",
 			'help'			=> "Show full help"
 			);
 
@@ -525,13 +546,18 @@ class EspBuddy {
 	USAGE   : $bin repo_pull REPO
 	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna or espeasy)
 
+* list_hosts (command) : 
+	USAGE   : $bin list_hosts
+	Desc    : List all hosts defined in config.php
+
 * list_configs (command) : 
 	USAGE   : $bin list_configs
 	Desc    : List all available configurations defined in config.php
 
-* list_hosts (command) : 
-	USAGE   : $bin list_hosts
-	Desc    : List all hosts defined in config.php
+* list_repos (command) : 
+	USAGE   : $bin list_repos
+	Desc    : List all available repositories defined in config.php
+
 
 
 * OPTIONS :
@@ -631,7 +657,7 @@ EOF;
 	// -------------------------------------------------------------
 	private function _ParseCommandLine(){
 		global $argv;
-		$this->args=$this->_ParseArguments($argv);
+		$this->args		= $this->_ParseArguments($argv);
 		$this->bin 		= basename($this->args['commands'][0]);
 		$this->command	= $this->args['commands'][1];
 		$this->command2	= $this->args['commands'][2];
@@ -648,6 +674,7 @@ EOF;
 
 		$this->arg_port			= $this->args['vars']['port'];
 		$this->arg_rate			= $this->args['vars']['rate'];
+		$this->arg_conf			= $this->args['vars']['conf'];
 
 		$this->host				= $this->args['commands'][2];
 		
@@ -749,9 +776,18 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _dieError($mess){
+	private function _dieError($mess,$list=''){
 		echo "\n";
-		die("\033[31mERROR: $mess\033[0m\n\n");
+		echo "\033[31mFATAL ERROR: $mess !!!";
+		echo "\033[0m\n";
+		if($list){
+			echo "\n";
+			$this->command_list($list);
+		}
+		else{
+			echo "\n";
+		}
+		die();
 	}
 
 }

@@ -601,7 +601,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_usage(){
-		$allowed_commands=array(
+		$allowed_actions=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
 			'build'			=> "Build current repo version",
 			'backup'		=> "Backup remote devices settings",
@@ -616,10 +616,10 @@ class EspBuddy {
 			'help'			=> "Show full help"
 			);
 
-		echo "USAGE: {$this->bin} [OPTIONS] COMMAND [ARGUMENTS] \n";
+		echo "USAGE: {$this->bin} [options] action [TARGET] \n";
 		echo "\n";
-		echo "* Valid Commands are: \n";
-		foreach($allowed_commands as $k => $v){
+		echo "* Valid Actions are: \n";
+		foreach($allowed_actions as $k => $v){
 			echo "  - ".str_pad($k,15)." : $v\n";
 		}
 		echo "\n";
@@ -631,47 +631,47 @@ class EspBuddy {
 		$this->Command_usage();
 		echo <<<EOF
 
-* upload (command) : 
-	USAGE   : $bin [OPTIONS+UPLOAD_OPTIONS] upload [HOST]
+* upload (Action) : 
+	USAGE   : $bin [options][upload_options] upload [TARGET]
 	Desc    : Upload to the board using OTA as default
 
-* build (command) : 
-	USAGE   : $bin [OPTIONS]  build [HOST]
+* build (Action) : 
+	USAGE   : $bin [options]  build [TARGET]
 	Desc    : Build the firmware
 
-* backup (command) : 
-	USAGE   : $bin [OPTIONS+AUTH_OPTIONS]  backup [HOST]
+* backup (Action) : 
+	USAGE   : $bin [options][auth_options]  backup [TARGET]
 	Desc    : Download and archive settings from the remote board
 
-* monitor (command) : 
-	USAGE   : $bin [OPTIONS]  monitor [HOST]
+* monitor (Action) : 
+	USAGE   : $bin [options]  monitor [TARGET]
 	Desc    : Monitor the serial port
 
-* version (command) : 
-	USAGE   : $bin [OPTIONS] version
+* version (Action) : 
+	USAGE   : $bin [options] version
 	Desc    : Get the board installed version
 
-* ping (command) : 
-	USAGE   : $bin [OPTIONS] ping
+* ping (Action) : 
+	USAGE   : $bin [options] ping
 	Desc    : Ping board
 
-* repo_version (command) : 
+* repo_version (Action) : 
 	USAGE   : $bin repo_version REPO
 	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna or espeasy)
 
-* repo_pull (command) : 
+* repo_pull (Action) : 
 	USAGE   : $bin repo_pull REPO
 	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna or espeasy)
 
-* list_hosts (command) : 
+* list_hosts (Action) : 
 	USAGE   : $bin list_hosts
 	Desc    : List all hosts defined in config.php
 
-* list_configs (command) : 
+* list_configs (Action) : 
 	USAGE   : $bin list_configs
 	Desc    : List all available configurations defined in config.php
 
-* list_repos (command) : 
+* list_repos (Action) : 
 	USAGE   : $bin list_repos
 	Desc    : List all available repositories defined in config.php
 

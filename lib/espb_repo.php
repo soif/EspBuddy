@@ -54,7 +54,7 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	protected function _DownloadFile($url, $file_name, $dest_path){
+	protected function _DownloadFile($url, $file_name, $dest_path, $auth_login='', $auth_pass=''){
 		$tmp_file	= $dest_path.'temp_file';
 		$dest_file	= $dest_path. $file_name;
 
@@ -70,6 +70,10 @@ class EspBuddy_Repo {
 		//curl_setopt($ch, CURLOPT_URL, $url);
 		//curl_setopt($ch, CURLOPT_VERBOSE, 1);
 		//curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		if($auth_login and $auth_pass){
+			curl_setopt($ch, CURLOPT_USERPWD, "$auth_login:$auth_pass");
+			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		}
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Dont verify SSL
 		curl_setopt($ch, CURLOPT_FILE, $fp);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -94,6 +98,27 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	protected function _FetchPage($url, $auth_login='', $auth_pass=''){
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		if($auth_login and $auth_pass){
+			curl_setopt($ch, CURLOPT_USERPWD, "$auth_login:$auth_pass");
+			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		}
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Dont verify SSL
+		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		$result	= curl_exec($ch);
+		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		
+		if(curl_errno($ch) or $status !=200 ){
+			$result='';
+		}
+		curl_close($ch);
+		return $result;
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function GetVersion(){
 		if(! $this->version){
 			$this->_ParseVersion();
@@ -107,12 +132,12 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($ip){
+	public function GetRemoteVersion($host_arr){
 		return "Not Implemented";
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function BackupRemoteSettings($ip, $dest_path){
+	public function BackupRemoteSettings($host_arr, $dest_path){
 		echo "Not Implemented\n";
 		return false;
 	}

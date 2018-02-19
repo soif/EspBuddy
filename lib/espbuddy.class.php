@@ -38,6 +38,8 @@ class EspBuddy {
 	private $arg_port			= '';
 	private $arg_rate			= 0;
 	private $arg_conf			= '';
+	private $arg_login			= '';
+	private $arg_pass			= '';
 
 	private $c_host	=array();	//	current host
 	private $c_conf	=array();	//	current config
@@ -65,7 +67,10 @@ class EspBuddy {
 		}
 
 		if(! file_exists($this->cfg['paths']['dir_backup'])){
-			mkdir($this->cfg['paths']['dir_backup']);			
+			mkdir($this->cfg['paths']['dir_backup']);
+			if(!is_dir($this->cfg['paths']['dir_backup'])){
+				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");			
+			}
 		}
 	}
 
@@ -250,6 +255,18 @@ class EspBuddy {
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
 
+		// user / pass for this host
+		$tmp		= $this->arg_login		or
+			$tmp	= $this->c_host['login']	or
+			$tmp	= $this->c_conf['login']	;
+		$this->c_host['login']	=$tmp;
+
+		$tmp		= $this->arg_pass		or
+			$tmp	= $this->c_host['pass']	or
+			$tmp	= $this->c_conf['pass']	;
+		$this->c_host['pass']	=$tmp;
+
+		// serial port to use
 		$this->c_serial['port']		=	$this->arg_port	or
 			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_host['serial_port']]	or
 			$this->c_serial['port']	=	$this->c_host['serial_port']								or
@@ -423,7 +440,7 @@ class EspBuddy {
 		$dest_dir	=$this->c_host['path_dir_backup']."settings/";
 		@mkdir($tmp_dir, 0777, true);
 		if(is_dir($tmp_dir)){
-			$count= $this->orepo->BackupRemoteSettings($this->c_host['ip'], $tmp_dir);
+			$count= $this->orepo->BackupRemoteSettings($this->c_host, $tmp_dir);
 			if($count){
 				echo "Downloaded $count files \n";
 				//remove prev
@@ -496,7 +513,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_CurrentCfg($id);
-		echo $this->orepo->GetRemoteVersion($this->c_host['ip']) . "\n";
+		echo $this->orepo->GetRemoteVersion($this->c_host) . "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -625,7 +642,7 @@ class EspBuddy {
 	Desc    : Build the firmware
 
 * backup (command) : 
-	USAGE   : $bin [OPTIONS]  backup [HOST]
+	USAGE   : $bin [OPTIONS+AUTH_OPTIONS]  backup [HOST]
 	Desc    : Download and archive settings from the remote board
 
 * monitor (command) : 
@@ -678,6 +695,9 @@ class EspBuddy {
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
 	--conf=xxx     : config to use (overrride per host config)
 
+* AUTH_OPTIONS :
+	--login=xxx    : login name (overrride host or per config login)
+	--pass=xxx     : password (overrride host or per config password)
 
 EOF;
 	}
@@ -780,6 +800,8 @@ EOF;
 		$this->arg_port			= $this->args['vars']['port'];
 		$this->arg_rate			= $this->args['vars']['rate'];
 		$this->arg_conf			= $this->args['vars']['conf'];
+		$this->arg_login		= $this->args['vars']['login'];
+		$this->arg_pass			= $this->args['vars']['pass'];
 
 		$this->host				= $this->args['commands'][2];
 		

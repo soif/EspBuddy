@@ -58,11 +58,14 @@ $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPE
 Define all configurations needed by your hosts, where:
 - 'repo'		: the repository to use from the list above
 - 'environment'	: the environment to pass to platformio when compiling
-- 'exports'		: various export to perform before compiling
+- 'exports'		: (optionnals) various export to perform before compiling
 			BTW exports can inlude special variables that get replaced by their values extracted from the host definition.
 				- {{host_name}}	is replaced by the host (first) part of the FQDN
 				- {{host_ip}}	is replaced by the host IP address
 				- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
+- 'login'		: (optionnal) a global default login name to use for this config
+- 'pass'		: (optionnal) a global default password to use for this config
+
 */
 
 // espurna Configurations ------------------------------
@@ -71,12 +74,14 @@ $cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_mh20']['exports']['ESPURNA_BOARD']			="MAGICHOME_LED_CONTROLLER_20";
 $cfg['configs']['espurna_mh20']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword";
+$cfg['configs']['espurna_mh20']['pass']								="MyEspurnaPassword";
 
 $cfg['configs']['espurna_h801']['repo']								="espurna";
 $cfg['configs']['espurna_h801']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_h801']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801";
 $cfg['configs']['espurna_h801']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword";
+$cfg['configs']['espurna_h801']['pass']								="MyEspurnaPassword";
 
 
 // espeasy Configurations ------------------------------
@@ -90,6 +95,7 @@ $cfg['configs']['espeasy_1024']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy
 $cfg['configs']['espeasy_4096']['repo']								="espeasy";
 $cfg['configs']['espeasy_4096']['environment']						="normal_ESP8266_4096";
 $cfg['configs']['espeasy_4096']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
+//$cfg['configs']['espurna_h801']['pass']							="MyEspeasyPassword";
 //$cfg['configs']['espeasy_4096']['serial_port']					="nodemcu";
 
 $cfg['configs']['espeasy_4096_testing']								=$cfg['configs']['espeasy_4096'];
@@ -116,6 +122,9 @@ $cfg['repos']['espeasy']['environments']['normal_ESP8266_1024']['2steps_firmware
 Optionally you can add:
 - 'serial_port' : the serial port (from the one defined above) to use when in wire mode
 - 'serial_rate' : another serial baud rate to use when in wire mode
+- 'login' 		: the login name used to authenticate to the web (for backup and version)
+- 'pass' 		: the password used to authenticate to the web (for backup and version)
+
 */
 // ---------------------------------------------------
 $cfg['hosts']['led1']['hostname']		="led1.local";
@@ -130,6 +139,7 @@ $cfg['hosts']['led3']['serial_port']	="fdti1";
 
 $cfg['hosts']['relay1']['hostname']		="relay1.local";
 $cfg['hosts']['relay1']['config']		="espeasy_4096";
+$cfg['hosts']['relay1']['pass']			="MyEspeasyPassword";
 
 $cfg['hosts']['nodemcu']['ip']			="192.168.1.240";
 $cfg['hosts']['nodemcu']['config']		="espeasy_4096_testing";

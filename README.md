@@ -1,9 +1,11 @@
 # Esp Buddy 
 
-This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial. 
-It also gather various tools command to be used in batch mode.
+Tired of typing very long commands to upload your custom firmwares? 
+Bored to manually uplooad your EspEasy in two step for 1MB devices? 
+Want to batch upload new firmwares to all your devices via OTA in one command? 
 
-_This is typically a **WORK IN PROGRESS :-) !!!**_
+This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial in one short command. 
+It also gather various tools command to be used in batch mode.
 
 
 ## Features
@@ -22,6 +24,11 @@ Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espura**](https://github.com/xoseperez/espurna)
 - should virtually works with any ESP8266 firmware
+
+## Requirements
+- Linux or OSX platform
+- php5 or more
+- platformio
 
 ## Installation
 - Rename _config-sample.php_ to _config.php_.

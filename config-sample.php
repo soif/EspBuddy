@@ -92,12 +92,12 @@ date_default_timezone_set('Europe/Paris');$my_build="Soif/".date("dM-H:i");
 $my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
 $cfg['configs']['espeasy_1024']['repo']								="espeasy";
-$cfg['configs']['espeasy_1024']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
 $cfg['configs']['espeasy_1024']['environment']						="normal_ESP8266_1024";
+$cfg['configs']['espeasy_1024']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
 
 $cfg['configs']['espeasy_4096']['repo']								="espeasy";
-$cfg['configs']['espeasy_4096']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
 $cfg['configs']['espeasy_4096']['environment']						="normal_ESP8266_4096";
+$cfg['configs']['espeasy_4096']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
 //$cfg['configs']['espeasy_4096']['serial_port']					="nodemcu";
 
 $cfg['configs']['espeasy_4096_testing']								=$cfg['configs']['espeasy_4096'];

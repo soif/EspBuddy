@@ -18,14 +18,15 @@ class EspBuddy {
 
 	public $class_version		= '1.20';	// EspBuddy Version
 
-	private $cfg				= array();
+	private $cfg				= array();	// hold the configuration
 
+	// command lines arguments
+	private $args				= array();	// command line arguments
+	private $bin				= '';		// binary name of the invoked command
+	private $action				= '';		// command line action
+	private $target				= '';		// command line target
 
-	private $args				= array();
-	private $bin				= '';
-	private $command			= '';
-	private $command2			= '';
-
+	// command lines flags
 	private $flag_noconfirm		= false;
 	private $flag_drymode		= false;
 	private $flag_verbose		= false;
@@ -35,12 +36,14 @@ class EspBuddy {
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 
+	// command lines variables
 	private $arg_port			= '';
 	private $arg_rate			= 0;
 	private $arg_conf			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
 
+	//selected configuration for the current host
 	private $c_host	=array();	//	current host
 	private $c_conf	=array();	//	current config
 	private $c_repo	=array();	//	current repository
@@ -48,6 +51,8 @@ class EspBuddy {
 	private $c_serial=array();	//	current serial port and rate
 
 	private $orepo	;			//	repo_object
+
+
 
 	// ---------------------------------------------------------------------------------------
 	function __construct__(){
@@ -78,51 +83,41 @@ class EspBuddy {
 	public function CommandLine(){
 		$this->_ParseCommandLine();
 
-		switch ($this->command) {
+		switch ($this->action) {
 			case 'upload':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'build':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'monitor':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'backup':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'version':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'ping':
-				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 
 			case 'repo_version':
 				$this->Command_repo('version');
 				break;
-
 			case 'repo_pull':
 				$this->Command_repo('pull');
 				break;
-
 			case 'list_configs':
 				$this->Command_list('configs');
 				break;
-
 			case 'list_hosts':
 				$this->Command_list('hosts');
 				break;
-
 			case 'list_repos':
 				$this->Command_list('repos');
 				break;
-
 			case 'help':
 				$this->Command_help();
 				break;
@@ -139,12 +134,13 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function ProcessCommand($command, $id){
+	public function BatchProcessCommand($command, $id){
 		if($this->flag_drymode){
 			$in_drymode=" in DRY MODE";
 		}
-		$hosts=$this->ListHosts($id);
+		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
+
 		echo "Processing $c host(s)$in_drymode : \n\n";
 
 		foreach($hosts as $this_id => $host){
@@ -158,7 +154,7 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function ListHosts($id){
+	private function _ListHosts($id){
 		if($id == '0'){
 			$ret=$this->cfg['hosts'];
 		}
@@ -170,7 +166,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function ChooseTarget(){
-		if($host=$this->command2){
+		if($host=$this->target){
 			$force_selected=true; 
 			if($host=='all'){
 				$choosen='a';
@@ -207,7 +203,7 @@ class EspBuddy {
 			$id=0;
 		}
 		else{
-			$this->_CurrentCfg($id);
+			$this->_AssignCurrentHostConfig($id);
 			echo "\n";
 			echo "\n-----------------------------------\n";
 			echo "You have choosen : ";
@@ -239,7 +235,7 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _CurrentCfg($id){
+	private function _AssignCurrentHostConfig($id){
 		$this->_FillHostnameOrIp($id);
 
 		$this->c_host					=	$this->cfg['hosts'][$id];
@@ -255,7 +251,7 @@ class EspBuddy {
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
 
-		// user / pass for this host
+		// login / pass for this host ----------
 		$tmp		= $this->arg_login		or
 			$tmp	= $this->c_host['login']	or
 			$tmp	= $this->c_conf['login']	;
@@ -266,7 +262,7 @@ class EspBuddy {
 			$tmp	= $this->c_conf['pass']	;
 		$this->c_host['pass']	=$tmp;
 
-		// serial port to use
+		// serial port to use ---------------
 		$this->c_serial['port']		=	$this->arg_port	or
 			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_host['serial_port']]	or
 			$this->c_serial['port']	=	$this->c_host['serial_port']								or
@@ -319,7 +315,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_upload($id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 
 		//compilation ---------------
 		if($this->flag_build){
@@ -378,7 +374,6 @@ class EspBuddy {
 			}
 
 			// Final Upload
-
 			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f  $firmware";
 			echo "\n";
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
@@ -395,7 +390,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
 
 		$commands_compil[]="cd {$path_build} ";
@@ -434,7 +429,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		$tmp_dir	=$this->c_host['path_dir_backup']."settings_tmp/";
 		$prev_dir	=$this->c_host['path_dir_backup']."settings_previous/";
 		$dest_dir	=$this->c_host['path_dir_backup']."settings/";
@@ -458,7 +453,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
 		echo "\n";
 		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_serial['port']} at {$this->c_serial['rate']} baud",$command);
@@ -473,7 +468,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function DoSerial($id,$action='write_flash',$firmware_file=''){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
 
 		if(!$this->c_serial['port']){
@@ -512,13 +507,13 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		echo $this->orepo->GetRemoteVersion($this->c_host) . "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
-		$repo_key=$this->command2;
+		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
 
 		$this->_RequireRepo($repo_key);
@@ -545,7 +540,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_ping($id,$count=0){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 		if(!$count){
 			$count	=4;
 			$opt	="-o ";
@@ -704,7 +699,7 @@ EOF;
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
-		$this->_CurrentCfg($id);
+		$this->_AssignCurrentHostConfig($id);
 
 		$ip		=	$this->c_host['ip'];
 		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);	
@@ -783,8 +778,8 @@ EOF;
 		global $argv;
 		$this->args		= $this->_ParseArguments($argv);
 		$this->bin 		= basename($this->args['commands'][0]);
-		$this->command	= $this->args['commands'][1];
-		$this->command2	= $this->args['commands'][2];
+		$this->action	= $this->args['commands'][1];
+		$this->target	= $this->args['commands'][2];
 
 		//global flags
 		$this->flag_noconfirm	= (boolean) $this->args['flags']['f'];
@@ -918,20 +913,5 @@ EOF;
 	}
 
 }
-
-
-
-/*
-// ---------------------------------------------------------------------------------------
-function Command_serial($id,$action='write_flash'){
-	global $argv;
-	if(!$action=$argv[2]){
-		_dieError("No action specified!");
-	}
-	DoSerial($id, $action);
-}
-
-*/
-
 
 ?>

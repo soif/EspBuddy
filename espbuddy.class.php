@@ -86,6 +86,14 @@ class EspBuddy {
 				$this->Command_repo('pull');
 				break;
 
+			case 'list_configs':
+				$this->Command_list('configs');
+				break;
+
+			case 'list_hosts':
+				$this->Command_list('hosts');
+				break;
+
 			case 'help':
 				$this->Command_help();
 				break;
@@ -173,10 +181,11 @@ class EspBuddy {
 			echo "\n";
 			$this->_FillHostnameOrIp($id);
 			$host		=$this->cfg['hosts'][$id];
+			$this->_CurrentCfg($id);
 			echo " + Host key   : $id \n";
 			echo " + Host Name  : {$host['hostname']}\n";
 			echo " + Host IP    : {$host['ip']}\n";
-			echo " + Config     : {$host['config']}\n";
+			echo " + Config     : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
 				echo " + Parameters : \n";
@@ -432,6 +441,33 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function Command_list($type){
+		switch ($type) {
+			case 'configs':
+				echo "Available Configurations are: \n";
+				foreach($this->cfg['configs'] as $conf => $arr){
+					$name=str_pad($conf,25);
+					echo "  - $name : Repo = {$arr['repo']},	Env = {$arr['environment']}\n";
+				}
+				break;
+
+			case 'hosts':
+				echo "Available Hosts are: \n";
+				foreach($this->cfg['hosts'] as $id => $arr){
+					$name=str_pad($id,15);
+					echo "  - $name		: " . $this->_FillHostnameOrIp($id)."\n";
+				}
+				break;
+	
+			default:
+				$this->_dieError ("Unknown List type ($type)!");
+				# code...
+				break;
+		}
+		echo "\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_usage(){
 		$allowed_commands=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
@@ -441,6 +477,8 @@ class EspBuddy {
 			'ping'			=> "Ping Device(s)",
 			'repo_version'	=> "Show Repo's Current version", 
 			'repo_pull'		=> "Git Pull Repo's master version",
+			'list_configs'	=> "List all available configurations",
+			'list_hosts'	=> "List all available hosts",
 			'help'			=> "Show full help"
 			);
 
@@ -462,37 +500,38 @@ class EspBuddy {
 * upload (command) : 
 	USAGE   : $bin [OPTIONS+UPLOAD_OPTIONS] upload [HOST]
 	Desc    : Upload to the board using OTA as default
-	Example : $bin upload
 
 * build (command) : 
 	USAGE   : $bin [OPTIONS]  build [HOST]
 	Desc    : Build the firmware
-	Example : $bin build
 
 * monitor (command) : 
 	USAGE   : $bin [OPTIONS]  monitor [HOST]
 	Desc    : Monitor the serial port
-	Example : $bin monitor
 
 * version (command) : 
 	USAGE   : $bin [OPTIONS] version
 	Desc    : Get the board installed version
-	Example : $bin version
 
 * ping (command) : 
 	USAGE   : $bin [OPTIONS] ping
 	Desc    : Ping board
-	Example : $bin ping
 
 * repo_version (command) : 
 	USAGE   : $bin repo_version REPO
 	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna or espeasy)
-	Example : $bin repo_version espurna
 
 * repo_pull (command) : 
 	USAGE   : $bin repo_pull REPO
 	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna or espeasy)
-	Example : $bin repo_pull espurna
+
+* list_configs (command) : 
+	USAGE   : $bin list_configs
+	Desc    : List all available configurations defined in config.php
+
+* list_hosts (command) : 
+	USAGE   : $bin list_hosts
+	Desc    : List all hosts defined in config.php
 
 
 * OPTIONS :
@@ -506,8 +545,9 @@ class EspBuddy {
 	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
 	-e  : In Wire Mode, erase flash first, then upload
 
-	--port=xxx     : serial port to use (overrride main or per host serial ports)
-	--rate=xxx     : serial port speed to use (overrride main or per host serial ports)
+	--port=xxx     : serial port to use (overrride main or per host serial port)
+	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
+	--conf=xxx     : config to use (overrride per host config)
 
 
 EOF;
@@ -585,7 +625,7 @@ EOF;
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
 	
-		return "{$this->cfg['hosts'][$id]['hostname']} ({$this->cfg['hosts'][$id]['ip']})";
+		return "{$this->cfg['hosts'][$id]['hostname']}	({$this->cfg['hosts'][$id]['ip']})";
 	}
 
 	// -------------------------------------------------------------

@@ -34,9 +34,9 @@ Works with :
 Examples:
 - `espbuddy.php help` show help
 - `espbuddy.php upload` choose from the list of host the one to upload to
-- `espbuddy.php upload --host=led1 -c` upload to host 'led1', while compiling the firmware first 
-- `espbuddy.php upload --host=all -c` upload to all defined hosts , while compiling the firmware first 
-- `espbuddy.php upload --host=led1 -w` upload using serial to host 'led1'
-- `espbuddy.php version --host=all` show versions of all defined hosts
-- `espbuddy.php ping --host=all` ping of all defined hosts
+- `espbuddy.php upload led1` upload to host 'led1'
+- `espbuddy.php upload all -c` upload to all defined hosts , while compiling the firmware first 
+- `espbuddy.php upload led1 -w` upload using serial to host 'led1'
+- `espbuddy.php version all` show versions of all defined hosts
+- `espbuddy.php ping all` ping of all defined hosts
 

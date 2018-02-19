@@ -54,6 +54,46 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	protected function _DownloadFile($url, $file_name, $dest_path){
+		$tmp_file	= $dest_path.'temp_file';
+		$dest_file	= $dest_path. $file_name;
+
+		$fp = fopen($tmp_file, 'w+');
+		if($fp === false){
+			$error=true;
+			@fclose($fp);
+			@unlink($tmp_file);
+			return false;
+		}
+
+		$ch = curl_init($url);
+		//curl_setopt($ch, CURLOPT_URL, $url);
+		//curl_setopt($ch, CURLOPT_VERBOSE, 1);
+		//curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Dont verify SSL
+		curl_setopt($ch, CURLOPT_FILE, $fp);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_exec($ch);
+		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		if(curl_errno($ch) or $status !=200 ){
+			$error=true;
+		}
+		curl_close($ch);
+		@fclose($fp);
+
+		if(! $error){
+			@unlink($dest_file);	//just incase a previous file remains
+			if(@rename($tmp_file, $dest_file)){
+				return true;
+			}
+		}
+		@unlink($tmp_file);
+		return false;
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function GetVersion(){
 		if(! $this->version){
 			$this->_ParseVersion();
@@ -71,6 +111,11 @@ class EspBuddy_Repo {
 		return "Not Implemented";
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function BackupRemoteSettings($ip, $dest_path){
+		echo "Not Implemented\n";
+		return false;
+	}
 
 }
 ?>

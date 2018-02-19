@@ -41,5 +41,21 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		return $out;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function BackupRemoteSettings($ip, $dest_path){
+		$files=array('config.dat','security.dat','notification.dat','rules1.txt','rules2.txt','rules3.txt','rules4.txt',);
+		$url="http://$ip";
+
+		$continue	=true;
+		foreach($files as $i => $file){
+			if(! $this->_DownloadFile("$url/$file",	$file,	$dest_path)){
+				break;
+			}
+		} 
+
+		if($i >= 3 ){
+			return $i;
+		}
+	}
 }
 ?>

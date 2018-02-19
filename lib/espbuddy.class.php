@@ -86,6 +86,10 @@ class EspBuddy {
 				$this->ProcessCommand($this->command, $this->ChooseTarget());
 				break;
 
+			case 'backup':
+				$this->ProcessCommand($this->command, $this->ChooseTarget());
+				break;
+
 			case 'version':
 				$this->ProcessCommand($this->command, $this->ChooseTarget());
 				break;
@@ -412,6 +416,30 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	function Command_backup($id){
+		$this->_CurrentCfg($id);
+		$tmp_dir	=$this->c_host['path_dir_backup']."settings_tmp/";
+		$prev_dir	=$this->c_host['path_dir_backup']."settings_previous/";
+		$dest_dir	=$this->c_host['path_dir_backup']."settings/";
+		@mkdir($tmp_dir, 0777, true);
+		if(is_dir($tmp_dir)){
+			$count= $this->orepo->BackupRemoteSettings($this->c_host['ip'], $tmp_dir);
+			if($count){
+				echo "Downloaded $count files \n";
+				//remove prev
+				@array_map( "unlink", glob( $prev_dir."*" ) );
+				@rmdir($prev_dir);
+				//mv last to prev
+				@rename($dest_dir, $prev_dir);
+				//mv tmp to dest
+				@rename($tmp_dir, $dest_dir);
+				
+				return true;
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
 		$this->_CurrentCfg($id);
 		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
@@ -561,6 +589,7 @@ class EspBuddy {
 		$allowed_commands=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
 			'build'			=> "Build current repo version",
+			'backup'		=> "Backup remote devices settings",
 			'monitor'		=> "Monitor the serial port",
 			'version'		=> "Show Device(s) Version",
 			'ping'			=> "Ping Device(s)",
@@ -594,6 +623,10 @@ class EspBuddy {
 * build (command) : 
 	USAGE   : $bin [OPTIONS]  build [HOST]
 	Desc    : Build the firmware
+
+* backup (command) : 
+	USAGE   : $bin [OPTIONS]  backup [HOST]
+	Desc    : Download and archive settings from the remote board
 
 * monitor (command) : 
 	USAGE   : $bin [OPTIONS]  monitor [HOST]

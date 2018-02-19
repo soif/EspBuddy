@@ -30,11 +30,23 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 		parent::__construct($path_to_repo);
 	}
 
-/*
+
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($ip){
-		return "Not Implemented";
+	public function GetRemoteVersion($host_arr){
+		$url="http://{$host_arr['ip']}/config";
+		$json=$this->_FetchPage($url,'admin',$host_arr['pass']);
+
+		$out="";
+		if($json and $arr=json_decode($json,true) and is_array($arr)){
+			$out=trim($arr['version']);
+		}
+		return $out;
 	}
-*/
+
+	// ---------------------------------------------------------------------------------------
+	public function BackupRemoteSettings($host_arr, $dest_path){
+		return (int) $this->_DownloadFile("http://{$host_arr['ip']}/config", 'config.json', $dest_path, 'admin', $host_arr['pass']);
+	}
+
 }
 ?>

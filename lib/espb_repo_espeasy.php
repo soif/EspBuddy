@@ -31,8 +31,10 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($ip){
-		$url="http://$ip/json";
+	public function GetRemoteVersion($host_arr){
+		//$this->_PreAuthenticate($host_cfg);
+
+		$url="http://{$host_arr['ip']}/json";
 		$json=@file_get_contents($url);
 		$out="";
 		if($json and $arr=json_decode($json,true) and is_array($arr)){
@@ -41,5 +43,30 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		return $out;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function BackupRemoteSettings($host_arr, $dest_path){
+		$this->_PreAuthenticate($host_arr);
+
+		$files=array('config.dat','security.dat','notification.dat','rules1.txt','rules2.txt','rules3.txt','rules4.txt',);
+		$url="http://{$host_arr['ip']}";				
+		foreach($files as $i => $file){
+			if(! $this->_DownloadFile("$url/$file",	$file,	$dest_path)){
+				break;
+			}
+		} 
+
+		if($i >= 3 ){
+			return $i;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _PreAuthenticate($host_arr){
+		// pre authenticate
+		if($host_arr['pass']){
+			file_get_contents("http://{$host_arr['ip']}/login?password={$host_arr['pass']}");
+		}
+	}
+	
 }
 ?>

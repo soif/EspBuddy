@@ -177,8 +177,12 @@ class EspBuddy {
 			echo " + Host Name  : {$host['hostname']}\n";
 			echo " + Host IP    : {$host['ip']}\n";
 			echo " + Config     : {$host['config']}\n";
-			echo " + Parameters : \n";
-			$this->_Prettyfy($this->cfg['configs'][$host['config']]);
+			if($this->flag_verbose){
+				echo "\033[37m";
+				echo " + Parameters : \n";
+				$this->_Prettyfy($this->cfg['configs'][$host['config']]);
+				echo "\033[0m";
+			}
 		}
 
 		// confirm -------

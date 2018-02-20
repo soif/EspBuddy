@@ -41,20 +41,43 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _Init($path_to_repo){
-		$this->path_base	= $path_to_repo;
-		$this->path_build	= $this->path_base . $this->dir_build;
-		$this->path_version	= $this->path_base . $this->version_file;
-		$this->_ParseVersion();
+	public function GetVersion(){
+		if(! $this->version){
+			$this->_ParseVersion();
+		}
+		return $this->version;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _ParseVersion(){		
-		if( $file=$this->path_version and $reg=$this->version_regex and $reg_n=$this->version_regnum ){
-			preg_match($reg, file_get_contents($file),$matches);
-			$this->version=trim($matches[$reg_n]);
-		}
+	public function GetPathBuild(){
+		return $this->path_build;
 	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetFirstStepFirmware(){
+		return $this->firststep_firmware;
+	}
+	// ---------------------------------------------------------------------------------------
+	public function GetFirstStepDelay(){
+		return $this->firststep_delay;
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteGetVersion($host_arr){
+		return "Not Implemented";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteBackupSettings($host_arr, $dest_path){
+		echo "Not Implemented\n";
+		return false;
+	}
+
+
+
+
+	// ##### Protected ########################################################################
 
 	// ---------------------------------------------------------------------------------------
 	protected function _DownloadFile($url, $file_name, $dest_path, $auth_login='', $auth_pass=''){
@@ -121,38 +144,26 @@ class EspBuddy_Repo {
 		return $result;
 	}
 
+
+
+	// ##### Privates #########################################################################
+
 	// ---------------------------------------------------------------------------------------
-	public function GetVersion(){
-		if(! $this->version){
-			$this->_ParseVersion();
+	private function _Init($path_to_repo){
+		$this->path_base	= $path_to_repo;
+		$this->path_build	= $this->path_base . $this->dir_build;
+		$this->path_version	= $this->path_base . $this->version_file;
+		$this->_ParseVersion();
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ParseVersion(){		
+		if( $file=$this->path_version and $reg=$this->version_regex and $reg_n=$this->version_regnum ){
+			preg_match($reg, file_get_contents($file),$matches);
+			$this->version=trim($matches[$reg_n]);
 		}
-		return $this->version;
 	}
 
-	// ---------------------------------------------------------------------------------------
-	public function GetPathBuild(){
-		return $this->path_build;
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function GetFirstStepFirmware(){
-		return $this->firststep_firmware;
-	}
-	// ---------------------------------------------------------------------------------------
-	public function GetFirstStepDelay(){
-		return $this->firststep_delay;
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function RemoteGetVersion($host_arr){
-		return "Not Implemented";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function RemoteBackupSettings($host_arr, $dest_path){
-		echo "Not Implemented\n";
-		return false;
-	}
 
 }
 ?>

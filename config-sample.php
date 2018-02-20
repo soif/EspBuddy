@@ -115,17 +115,17 @@ $cfg['configs']['espeasy_4096_testing']['environment']				="dev_ESP8266_4096";
 
 
 // Hosts ###################################################################################################################################
-/* each host must at least define :
-- 'hostname' or 'ip' (non defined ip or hostname is automatically filled by a dns request
+/* each host must at least be defined by :
+- 'hostname' or 'ip' (non defined ip or hostname are automatically filled by a dns request)
 - 'config' : the configuration to load (from above 'configs')
 
 Optionally you can add:
 - 'serial_port' : the serial port (from the one defined above) to use when in wire mode
 - 'serial_rate' : another serial baud rate to use when in wire mode
-- 'login' 		: the login name used to authenticate to the web (for backup and version)
-- 'pass' 		: the password used to authenticate to the web (for backup and version)
-
+- 'login' 		: the login name used to authenticate to the web (for 'backup' and 'version' actions)
+- 'pass' 		: the password used to authenticate to the web (for 'backup' and 'version' actions)
 */
+
 // ---------------------------------------------------
 $cfg['hosts']['led1']['hostname']		="led1.local";
 $cfg['hosts']['led1']['config']			="espurna_mh20";

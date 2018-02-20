@@ -43,7 +43,7 @@ Works with :
 Valid Actions are: 
   - **upload**          : Build and/or Upload current repo version to Device(s)
   - **build**           : Build current repo version
-  - **backup**          : Backup remote devices' settings
+  - **backup**          : Backup remote devices' settings
   - **monitor**         : Monitor the serial port
   - **version**         : Show Device(s) Version
   - **ping**            : Ping Device(s)

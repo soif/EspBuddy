@@ -24,6 +24,8 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	protected $version_regex 	= '|APP_VERSION\s+"([^"]+)"|s'; 		// regex used to extract the version in the version_file
 	protected $version_regnum = 1; 										// captured parenthesis number where the version is extracted using the regex
 
+//	protected $firststep_firmware 	= 'firmwares/xxx.bin';	// first (intermediate) firmware to upload
+//	protected $firststep_delay 		= 16;					// time two wait befaore launching the second step
 
 	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){

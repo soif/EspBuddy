@@ -19,6 +19,7 @@ class EspBuddy {
 	public $class_version		= '1.40';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
+	private $espb_path			= '';	// Location of the EspBuddy root directory
 
 	// command lines arguments
 	private $args				= array();	// command line arguments
@@ -47,7 +48,6 @@ class EspBuddy {
 	private $c_host	=array();	//	current host
 	private $c_conf	=array();	//	current config
 	private $c_repo	=array();	//	current repository
-	private $c_env	=array();	//	current environment
 	private $c_serial=array();	//	current serial port and rate
 
 	private $orepo	;			//	repo_object
@@ -55,8 +55,8 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
-	function __construct__(){
-
+	function __construct(){
+		$this->espb_path=dirname(dirname(__FILE__)).'/';
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -248,7 +248,6 @@ class EspBuddy {
 		
 		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
-		$this->c_env	=	$this->c_repo['environments'][$this->c_conf['environment']];
 		
 		if(!is_array($this->c_conf)){
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
@@ -282,6 +281,10 @@ class EspBuddy {
 		
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
+			if($this->c_conf['2steps']){
+				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
+				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
+			}
 		}
 	}
 
@@ -359,8 +362,8 @@ class EspBuddy {
 		// OTA mode ------------------
 		else{
 			// two steps  upload ?
-			if($this->c_env['2steps_firmware'] and ! $this->flag_skipinter ){
-				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_env['2steps_firmware']}";
+			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
+				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_conf['firststep_firmware']}";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
@@ -370,9 +373,10 @@ class EspBuddy {
 						return $this->_dieError ("First Upload Failed");
 					}	
 				}
-				if($this->c_env['2steps_delay']){
+				//wait ?
+				if($this->c_conf['firststep_delay']){
 					echo "\n";
-					$this->_WaitReboot($this->c_env['2steps_delay']);
+					$this->_WaitReboot($this->c_conf['firststep_delay']);
 				}
 			}
 

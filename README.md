@@ -1,8 +1,8 @@
 # Esp Buddy 
 
-Tired of typing very long commands to upload your custom firmwares? 
-Bored to manually uplooad your EspEasy in two step for 1MB devices? 
-Want to batch upload new firmwares to all your devices via OTA in one command? 
+- _Tired of typing very long commands to upload your custom firmwares?_ 
+- _Bored to manually uplooad your EspEasy in two step for 1MB devices?_ 
+- _Want to batch upload new firmwares to all your devices  via OTA or backup all settings in one command?_ 
 
 This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial in one short command. 
 It also gather various tools command to be used in batch mode.
@@ -15,6 +15,7 @@ It also gather various tools command to be used in batch mode.
  - Optional compilation using platformio
  - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname_
  - Fetch Remote devices versions
+ - Backup devices settings
  - Parse Repositories installed versions
  - Git Pull Repositories
  - Ping Remote Host
@@ -23,10 +24,10 @@ It also gather various tools command to be used in batch mode.
 Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espura**](https://github.com/xoseperez/espurna)
-- should virtually works with any ESP8266 firmware
+- should virtually works with any ESP8266 firmware, just add a small espb_repo_xxx class to describe it.
 
 ## Requirements
-- Linux or OSX platform
+- Linux or OSX Operating System
 - php5 or more
 - platformio
 
@@ -36,14 +37,30 @@ Works with :
 
 ## Usage
 
-**espbuddy.php COMMAND [OPTIONS]**
+**espbuddy.php ACTION [TARGET] [OPTIONS]**
+
+Valid Actions are: 
+  - **upload**          : Build and/or Upload current repo version to Device(s)
+  - **build**           : Build current repo version
+  - **backup**          : Backup remote devices settings
+  - **monitor**         : Monitor the serial port
+  - **version**         : Show Device(s) Version
+  - **ping**            : Ping Device(s)
+  - **repo_version**    : Show Repo's Current version
+  - **repo_pull**       : Git Pull Repo's master version
+  - **list_hosts**      : List all available hosts
+  - **list_configs**    : List all available configurations
+  - **list_repos**      : List all available repositories
+  - **help**            : Show full help
+
 
 Examples:
-- `espbuddy.php help` show help
-- `espbuddy.php upload` choose from the list of host the one to upload to
-- `espbuddy.php upload led1` upload to host 'led1'
-- `espbuddy.php upload all -b` upload to all defined hosts , while building the firmware first 
-- `espbuddy.php upload led1 -w` upload using serial to host 'led1'
-- `espbuddy.php version all` show versions of all defined hosts
-- `espbuddy.php ping all` ping of all defined hosts
+- `espbuddy.php upload` choose from the list of targets the one to upload to
+- `espbuddy.php upload relay1` upload to target 'relay1'
+- `espbuddy.php upload all -b` upload to all defined targets , while building the firmware first 
+- `espbuddy.php upload relay1 -w` upload using serial to target 'relay1'
+- `espbuddy.php backup all` backup settings all defined targets
+- `espbuddy.php monitor relay1 --rate=9600` serial monitor target 'led1' at 9600 bauds
+- `espbuddy.php version all` show versions of all defined targets
+- `espbuddy.php ping all` ping of all defined targets
 

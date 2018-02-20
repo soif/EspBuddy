@@ -676,11 +676,11 @@ class EspBuddy {
 
 * repo_version (Action) : 
 	USAGE   : $bin repo_version REPO
-	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna or espeasy)
+	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
 
 * repo_pull (Action) : 
 	USAGE   : $bin repo_pull REPO
-	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna or espeasy)
+	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
 
 * list_hosts (Action) : 
 	USAGE   : $bin list_hosts

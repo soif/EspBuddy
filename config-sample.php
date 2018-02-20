@@ -58,6 +58,7 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 // Define the paths to your local copy (as 'path_repo') of each repositories you wish to use :
 $cfg['repos']['espurna']['path_repo']				="/Users/soif/dev/espurna/";
 $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPEasy/";
+$cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasmota/";
 
 
 
@@ -110,6 +111,14 @@ $cfg['configs']['espeasy_4096']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy
 
 $cfg['configs']['espeasy_4096_testing']								=$cfg['configs']['espeasy_4096'];
 $cfg['configs']['espeasy_4096_testing']['environment']				="dev_ESP8266_4096";
+
+
+// tasmota configs ------------------------------
+$cfg['configs']['tasmota_en']['repo']								="tasmota";
+$cfg['configs']['tasmota_en']['environment']						="sonoff";
+
+$cfg['configs']['tasmota_fr']['repo']								="tasmota";
+$cfg['configs']['tasmota_fr']['environment']						="sonoff-FR";
 
 
 

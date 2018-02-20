@@ -30,7 +30,7 @@ class EspBuddy_Repo {
 	// internal properties
 	private $path_base		= "";	// path to the repository directory
 	private $path_build		= "";	// path to the directory where the compiler must start 
-	private $version		= "";	// extracted version
+	protected $version		= "";	// extracted version
 	private $git_version	= "";	// latest commit
 	private $git_date		= "";	// latest commit date
 
@@ -85,12 +85,17 @@ class EspBuddy_Repo {
 	// ##### Protected ########################################################################
 
 	// ---------------------------------------------------------------------------------------
-	protected function _TriggerUrl($url){
-		file_get_contents($url, null, stream_context_create([
-			'http' => [
-				'timeout' => 0.5,
-			]
-			]));
+	protected function _TriggerUrl($url,$login="",$pass=""){
+		$http			=array();
+		$http['method']	='GET';
+		$http['timeout']=0.5;
+
+		if($login and $pass){
+			$auth = base64_encode("$login:$pass");
+			$http['header'] = array("Authorization: Basic $auth");
+		}
+		$opts = array('http' => $http);
+		return @file_get_contents($url, null, stream_context_create($opts));
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -177,7 +182,6 @@ class EspBuddy_Repo {
 			$this->version=trim($matches[$reg_n]);
 		}
 	}
-
 
 }
 ?>

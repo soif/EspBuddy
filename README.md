@@ -1,7 +1,7 @@
 # Esp Buddy 
 
 - _Tired of typing very long commands to upload your custom firmwares?_ 
-- _Bored to manually uplooad your EspEasy in two step for 1MB devices?_ 
+- _Bored to manually uplooad your EspEasy firmwares in two steps for 1MB devices?_ 
 - _Want to batch upload new firmwares to all your devices  via OTA or backup all settings in one command?_ 
 
 This script allows to easely upload firmwares to remote (ESP8266 based) devices using Wifi (Over The Air) or Serial in one short command. 
@@ -13,9 +13,10 @@ It also gather various tools command to be used in batch mode.
  - OTA upload on 1M devices using an intermediate firmware (automatic two steps)
  - Use configuration presets for devices
  - Optional compilation using platformio
- - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname_
+ - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
  - Fetch Remote devices versions
- - Backup devices settings
+ - Archive current firmware + previous firmware per target
+ - Backup current devices settings + previous settings per target
  - Parse Repositories installed versions
  - Git Pull Repositories
  - Ping Remote Host
@@ -24,7 +25,7 @@ It also gather various tools command to be used in batch mode.
 Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espura**](https://github.com/xoseperez/espurna)
-- should virtually works with any ESP8266 firmware, just add a small espb_repo_xxx class to describe it.
+- should virtually work with any ESP8266 firmware, just add a small espb_repo_xxx class to describe it.
 
 ## Requirements
 - Linux or OSX Operating System

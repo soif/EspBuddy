@@ -37,8 +37,9 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetVersion(){
 		$v=parent::GetVersion();
-		if(preg_match('|0x(.{2})(.{2})(.{4})|',$v,$arr)){
-			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]);
+		if(preg_match('|0x(.{2})(.{2})(.{2})(.{2})|',$v,$arr)){
+			$l=intval($arr[3]) and $letter=chr(96+$l);
+			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]).$letter;
 		}
 		return $this->version;
 	}

@@ -13,7 +13,7 @@ It also gather various tools command to be used in batch mode.
  - OTA upload on 1M devices using an intermediate firmware (automatic two steps)
  - Use configuration presets for devices
  - Optional compilation using platformio
- - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname_
+ - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
  - Fetch Remote devices versions
  - Backup devices settings
  - Parse Repositories installed versions

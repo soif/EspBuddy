@@ -22,7 +22,10 @@ class EspBuddy_Repo {
 	protected $dir_build 		= ""; // (Trailing Slash) directory where the compiler must start
 	protected $version_file 	= ""; // file to parse to get the version
 	protected $version_regex 	= ""; // regex used to extract the version in the version_file
-	protected $version_regnum = ""; // captured parenthesis number where the version is extracted using the regex
+	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
+
+	protected $firststep_firmware 	= ''; // when uploading in 2steps mode, first upload this intermediate firmware
+	protected $firststep_delay 		= 16; // when uploading in 2steps mode, wait this time (sec) to let the esp reboot before launching the second step
 
 	// internal properties
 	private $path_base		= "";	// path to the repository directory
@@ -129,6 +132,15 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetPathBuild(){
 		return $this->path_build;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetFirstStepFirmware(){
+		return $this->firststep_firmware;
+	}
+	// ---------------------------------------------------------------------------------------
+	public function GetFirstStepDelay(){
+		return $this->firststep_delay;
 	}
 
 	// ---------------------------------------------------------------------------------------

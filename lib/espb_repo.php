@@ -74,10 +74,24 @@ class EspBuddy_Repo {
 		return false;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function RemoteReboot($host_arr){
+		echo "Not Implemented\n";
+		return false;
+	}
 
 
 
 	// ##### Protected ########################################################################
+
+	// ---------------------------------------------------------------------------------------
+	protected function _TriggerUrl($url){
+		file_get_contents($url, null, stream_context_create([
+			'http' => [
+				'timeout' => 0.5,
+			]
+			]));
+	}
 
 	// ---------------------------------------------------------------------------------------
 	protected function _DownloadFile($url, $file_name, $dest_path, $auth_login='', $auth_pass=''){

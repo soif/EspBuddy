@@ -102,6 +102,9 @@ class EspBuddy {
 			case 'version':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
+			case 'reboot':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
@@ -519,6 +522,13 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function Command_reboot($id){
+		$this->_AssignCurrentHostConfig($id);
+		echo "{$this->c_conf['repo']}\t";
+		$this->orepo->RemoteReboot($this->c_host);
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
@@ -611,6 +621,7 @@ class EspBuddy {
 			'backup'		=> "Backup remote devices settings",
 			'monitor'		=> "Monitor the serial port",
 			'version'		=> "Show Device(s) Version",
+			'reboot'		=> "Reboot Device(s)",
 			'ping'			=> "Ping Device(s)",
 			'repo_version'	=> "Show Repo's Current version", 
 			'repo_pull'		=> "Git Pull Repo's master version",
@@ -654,6 +665,10 @@ class EspBuddy {
 * version (Action) : 
 	USAGE   : $bin [options] version
 	Desc    : Get the board installed version
+
+* reboot (Action) : 
+	USAGE   : $bin [options] reboot
+	Desc    : Reboot board
 
 * ping (Action) : 
 	USAGE   : $bin [options] ping

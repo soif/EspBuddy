@@ -49,5 +49,11 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 		return (int) $this->_DownloadFile("http://{$host_arr['ip']}/config", 'config.json', $dest_path, 'admin', $host_arr['pass']);
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function RemoteReboot($host_arr){
+		echo "No Reboot URL in Espurna!\n";
+		return false;
+	}
+
 }
 ?>

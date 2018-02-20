@@ -489,7 +489,7 @@ class EspBuddy {
 			$arg_rate=" -b {$this->c_serial['rate']}" and
 			$echo_rate=", Rate: {$this->c_serial['rate']} bauds";
 
-		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_serial['port']}{$this->c_serial['rate']} $action ";
+		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_serial['port']}{$arg_rate} $action ";
 
 		switch ($action) {
 			case 'write_flash':

@@ -144,12 +144,12 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($host_arr){
+	public function RemoteGetVersion($host_arr){
 		return "Not Implemented";
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function BackupRemoteSettings($host_arr, $dest_path){
+	public function RemoteBackupSettings($host_arr, $dest_path){
 		echo "Not Implemented\n";
 		return false;
 	}

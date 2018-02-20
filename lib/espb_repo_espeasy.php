@@ -33,7 +33,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($host_arr){
+	public function RemoteGetVersion($host_arr){
 		//$this->_PreAuthenticate($host_cfg);
 
 		$url="http://{$host_arr['ip']}/json";
@@ -46,7 +46,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function BackupRemoteSettings($host_arr, $dest_path){
+	public function RemoteBackupSettings($host_arr, $dest_path){
 		$this->_PreAuthenticate($host_arr);
 
 		$files=array('config.dat','security.dat','notification.dat','rules1.txt','rules2.txt','rules3.txt','rules4.txt',);
@@ -61,6 +61,8 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 			return $i;
 		}
 	}
+
+	// ####### Privates ##########################################################################
 
 	// ---------------------------------------------------------------------------------------
 	private function _PreAuthenticate($host_arr){

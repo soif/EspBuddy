@@ -442,7 +442,7 @@ class EspBuddy {
 		$dest_dir	=$this->c_host['path_dir_backup']."settings/";
 		@mkdir($tmp_dir, 0777, true);
 		if(is_dir($tmp_dir)){
-			$count= $this->orepo->BackupRemoteSettings($this->c_host, $tmp_dir);
+			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
 			if($count){
 				echo "Downloaded $count files \n";
 				//remove prev
@@ -515,7 +515,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_AssignCurrentHostConfig($id);
-		echo "{$this->c_conf['repo']}\t".$this->orepo->GetRemoteVersion($this->c_host) . "\n";
+		echo "{$this->c_conf['repo']}\t".$this->orepo->RemoteGetVersion($this->c_host) . "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------

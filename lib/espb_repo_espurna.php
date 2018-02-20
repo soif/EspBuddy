@@ -32,9 +32,8 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 		parent::__construct($path_to_repo);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
-	public function GetRemoteVersion($host_arr){
+	public function RemoteGetVersion($host_arr){
 		$url="http://{$host_arr['ip']}/config";
 		$json=$this->_FetchPage($url,'admin',$host_arr['pass']);
 
@@ -46,7 +45,7 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function BackupRemoteSettings($host_arr, $dest_path){
+	public function RemoteBackupSettings($host_arr, $dest_path){
 		return (int) $this->_DownloadFile("http://{$host_arr['ip']}/config", 'config.json', $dest_path, 'admin', $host_arr['pass']);
 	}
 

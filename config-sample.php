@@ -6,13 +6,7 @@
 /* Most default settings should be fine, but feel free to change it if you wish */
 
 // Paths ##########################################################################################################################
-
-// Backup Directory where uploaded firmwares are stored (WITH a trailing slash),
-$cfg['paths']['dir_backup']						="/tmp/EspBuddy/";
-
-
-//shortcut to the current dir (only used as a shorcut in this file)
-$tmp_current_dir=dirname(__FILE__);	
+$tmp_current_dir=dirname(__FILE__);	//shortcut to the current dir (only used as a shorcut in this file)
 
 //path to the platformio binary
 $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
@@ -53,6 +47,11 @@ $cfg['misc']['time_zone']			='Europe/Paris';	//Time zone for dates, see http://p
 // ################################################################################################################################
 
 /* Here is where you set your own settings */
+
+
+// Backup Directory where uploaded firmwares and download settings are stored 
+$cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
+
 
 
 // Repositories ###################################################################################################################

@@ -66,9 +66,11 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	public function RemoteReboot($host_arr){
 		echo "Rebooting...";
 		$this->_PreAuthenticate($host_arr);
-		$this->_TriggerUrl("http://{$host_arr['ip']}/?cmd=reboot");
-		echo " OK\n";
-		return true;
+		if($this->_TriggerUrl("http://{$host_arr['ip']}/?cmd=reboot")){
+			echo " OK\n";
+			return true;
+		}
+		echo " Failed\n";			
 	}
 
 

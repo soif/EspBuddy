@@ -25,7 +25,7 @@ It also gathers various tool commands to be used in batch mode.
 Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espurna**](https://github.com/xoseperez/espurna)
-- [**Tasmota**](https://github.com/arendst/Sonoff-Tasmota/) _No OTA Uploads at this time!_
+- [**Tasmota**](https://github.com/arendst/Sonoff-Tasmota/) _OTA with [my branch](https://github.com/soif/Sonoff-Tasmota/tree/feature/ota) waiting [to be merged](https://github.com/arendst/Sonoff-Tasmota/pull/1998)_
 - should virtually work with any ESP8266 firmware, just add a small espb_repo_xxx class to describe it.
 
 ## Requirements

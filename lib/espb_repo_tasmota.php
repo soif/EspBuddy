@@ -24,8 +24,8 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	protected $version_regex 	= '|#define\s+VERSION\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
-	//protected $firststep_firmware 	= 'firmwares/xxx.bin';	// first (intermediate) firmware to upload
-	//protected $firststep_delay 		= 16;								 				// time two wait before launching the second step
+	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
+	protected $firststep_delay 		= 16;								 				// time two wait before launching the second step
 	
 	private $default_login		='admin';
 
@@ -37,8 +37,9 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetVersion(){
 		$v=parent::GetVersion();
-		if(preg_match('|0x(.{2})(.{2})(.{4})|',$v,$arr)){
-			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]);
+		if(preg_match('|0x(.{2})(.{2})(.{2})(.{2})|',$v,$arr)){
+			$l=intval($arr[3]) and $letter=chr(96+$l);
+			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]).$letter;
 		}
 		return $this->version;
 	}

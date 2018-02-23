@@ -1,1 +1,9 @@
+## OS Specific Files ############
+.DS_Store
+.fuse_hidden*
+
+## Platformio ######################
+.pioenvs
+
+## Project ######################
 config.php

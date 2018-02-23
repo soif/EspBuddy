@@ -31,7 +31,7 @@ Works with :
 ## Requirements
 - Linux or OSX Operating System
 - php5 or newer
-- platformio
+- PlatformIO __needed only for compiling__
 
 ## Installation
 - Rename _config-sample.php_ to _config.php_.

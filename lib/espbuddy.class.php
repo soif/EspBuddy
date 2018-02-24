@@ -197,31 +197,29 @@ class EspBuddy {
 			$str_choices .="$index {$name}";
 			if($n <= count($this->cfg['hosts'])){$str_choices .=",";}
 		}
+		
 		if(!$force_selected){
 			echo "Choose Target Host : \n ";	
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
+			echo "\n-----------------------------------\n";
 		}
 
 		if($choosen == 'a'){
-			echo "\n-----------------------------------\n";
-			echo "You have choosen : ";
-			echo " -> ALL HOSTS \n";
+			echo "Selected Host : ALL HOSTS \n";
 			$id=0;
 		}
 		else{
 			$this->_AssignCurrentHostConfig($id);
-			echo "\n";
-			echo "\n-----------------------------------\n";
-			echo "You have choosen : ";
+			//echo "\n";
+			echo "Selected Host      : $id\n";
 			$host	=$this->c_host;
-			echo " + Host key   : $id \n";
-			echo " + Host Name  : {$host['hostname']}\n";
-			echo " + Host IP    : {$host['ip']}\n";
-			echo " + Config     : {$this->c_host['config']}\n";
+			echo "       + Host Name : {$host['hostname']}\n";
+			echo "       + Host IP   : {$host['ip']}\n";
+			echo "\nSelected Config    : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
-				echo " + Parameters : \n";
+				echo "       Parameters : \n";
 				$this->_Prettyfy($this->cfg['configs'][$host['config']]);
 				echo "\033[0m";
 			}
@@ -873,11 +871,11 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0){
-	    $tabs = "    ";
+	    $tabs = "     ";
 	    for($i=0;$i<$level; $i++){
-	        $tabs .= "    ";
+	        $tabs .= "     ";
 	    }
-	    $tabs .= " - ";
+	    $tabs .= "  - ";
 	    foreach($arr as $key=>$val){
 	        if( is_array($val) ) {
 	            print ($tabs . $key . " : " . "\n");

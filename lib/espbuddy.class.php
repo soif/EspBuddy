@@ -464,6 +464,10 @@ class EspBuddy {
 				
 				return true;
 			}
+			else{
+				$this->orepo->EchoLastError();
+				echo "\n";
+			}
 		}
 	}
 

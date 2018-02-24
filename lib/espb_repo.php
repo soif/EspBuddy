@@ -24,15 +24,84 @@ class EspBuddy_Repo {
 	protected $version_regex 	= ""; // regex used to extract the version in the version_file
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
 
-	protected $firststep_firmware 	= ''; // when uploading in 2steps mode, first upload this intermediate firmware
-	protected $firststep_delay 		= 16; // when uploading in 2steps mode, wait this time (sec) to let the esp reboot before launching the second step
+	protected $firststep_firmware = ''; // when uploading in 2steps mode, first upload this intermediate firmware
+	protected $firststep_delay	= 16; // when uploading in 2steps mode, wait this time (sec) to let the esp reboot before launching the second step
+
+	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
+	protected $last_http_status = '';	// last HTTP status
 
 	// internal properties
-	private $path_base		= "";	// path to the repository directory
-	private $path_build		= "";	// path to the directory where the compiler must start 
-	protected $version		= "";	// extracted version
-	private $git_version	= "";	// latest commit
-	private $git_date		= "";	// latest commit date
+	protected $version			= "";	// extracted version
+	private $path_base			= "";	// path to the repository directory
+	private $path_build			= "";	// path to the directory where the compiler must start 
+
+//	private $git_version		= "";	// latest commit
+//	private $git_date			= "";	// latest commit date
+
+
+	private $http_codes = array(
+		100 => 'Continue',
+		101 => 'Switching Protocols',
+		102 => 'Processing',
+		200 => 'OK',
+		201 => 'Created',
+		202 => 'Accepted',
+		203 => 'Non-Authoritative Information',
+		204 => 'No Content',
+		205 => 'Reset Content',
+		206 => 'Partial Content',
+		207 => 'Multi-Status',
+		208 => 'Already Reported',
+		226 => 'IM Used',
+		300 => 'Multiple Choices',
+		301 => 'Moved Permanently',
+		302 => 'Moved Temporarily',
+		303 => 'See Other',
+		304 => 'Not Modified',
+		305 => 'Use Proxy',
+		307 => 'Temporary Redirect',
+		308 => 'Permanent Redirect',
+		400 => 'Bad Request',
+		401 => 'Unauthorized',
+		402 => 'Payment Required',
+		403 => 'Forbidden',
+		404 => 'Not Found',
+		405 => 'Method Not Allowed',
+		406 => 'Not Acceptable',
+		407 => 'Proxy Authentication Required',
+		408 => 'Request Time-out',
+		409 => 'Conflict',
+		410 => 'Gone',
+		411 => 'Length Required',
+		412 => 'Precondition Failed',
+		413 => 'Request Entity Too Large',
+		414 => 'Request-URI Too Large',
+		415 => 'Unsupported Media Type',
+		416 => 'Requested Range Not Satisfiable',
+		417 => 'Expectation Failed',
+		421 => 'Misdirected Request',
+		422 => 'Unprocessable Entity',
+		423 => 'Locked',
+		424 => 'Failed Dependency',
+		426 => 'Upgrade Required',
+		428 => 'Precondition Required',
+		429 => 'Too Many Requests',
+		431 => 'Request Header Fields Too Large',
+		451 => 'Unavailable For Legal Reasons',
+		500 => 'Internal Server Error',
+		501 => 'Not Implemented',
+		502 => 'Bad Gateway',
+		503 => 'Service Unavailable',
+		504 => 'Gateway Time-out',
+		505 => 'HTTP Version not supported',
+		506 => 'Variant Also Negotiates',
+		507 => 'Insufficient Storage',
+		508 => 'Loop Detected',
+		510 => 'Not Extended',
+		511 => 'Network Authentication Required',
+		901 => "Can't create file for downloading (Permission issue?)",
+	);
+
 
 
 	// ---------------------------------------------------------------------------------------
@@ -47,6 +116,21 @@ class EspBuddy_Repo {
 		}
 		return $this->version;
 	}
+
+	// ---------------------------------------------------------------------------------------
+	public function EchoLastError(){
+		if($this->last_http_code >=400 ){
+			echo "\033[31m HTTP Error {$this->last_http_code} => {$this->last_http_status} \033[0m";
+			return true;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function SettLastStatus($code){
+		$this->last_http_code 	=$code;
+		$this->last_http_status =$this->http_codes[$code];
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function GetPathBuild(){
@@ -103,11 +187,14 @@ class EspBuddy_Repo {
 		$tmp_file	= $dest_path.'temp_file';
 		$dest_file	= $dest_path. $file_name;
 
+		$this->SettLastStatus(0);
+
 		$fp = fopen($tmp_file, 'w+');
 		if($fp === false){
 			$error=true;
 			@fclose($fp);
 			@unlink($tmp_file);
+			$this->SettLastStatus(901);
 			return false;
 		}
 
@@ -126,8 +213,10 @@ class EspBuddy_Repo {
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
 		if(curl_errno($ch) or $status !=200 ){
 			$error=true;
+			$this->SettLastStatus($status);
 		}
 		curl_close($ch);
 		@fclose($fp);
@@ -144,6 +233,8 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	protected function _FetchPage($url, $auth_login='', $auth_pass=''){
+		$this->SettLastStatus(0);
+
 		$ch = curl_init($url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		if($auth_login and $auth_pass){
@@ -158,6 +249,7 @@ class EspBuddy_Repo {
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		
 		if(curl_errno($ch) or $status !=200 ){
 			$result='';
+			$this->SettLastStatus($status);
 		}
 		curl_close($ch);
 		return $result;

@@ -45,10 +45,11 @@ class EspBuddy {
 	private $arg_pass			= '';
 
 	//selected configuration for the current host
-	private $c_host	=array();	//	current host
-	private $c_conf	=array();	//	current config
-	private $c_repo	=array();	//	current repository
-	private $c_serial=array();	//	current serial port and rate
+	private $c_host		=array();	//	current host
+	private $c_conf		=array();	//	current config
+	private $c_repo		=array();	//	current repository
+	private $c_serial	=array();	//	current serial port and rate
+	private $c_firm_name='firmware';	//	current firmware_name
 
 	private $orepo	;			//	repo_object
 
@@ -281,7 +282,12 @@ class EspBuddy {
 			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
 			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
 			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
-		
+
+		//firmware
+		//$this->c_firm_name="firmware";
+		$this->c_firm_name="firmware_{$this->c_host['config']}";
+
+		// repo
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
@@ -308,6 +314,8 @@ class EspBuddy {
 
 		require_once($class_path);
 		$this->orepo= new $class_name($repo_path);
+
+		//$this->c_firm_name="firmware_$name";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -331,17 +339,17 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_firm_name}.bin";	
 			$echo_name="NEWEST";	
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}firmware_previous.bin";
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_firm_name}_previous.bin";
 			$echo_name="PREVIOUS";			
 		}
 		else{
 			//$path_build=$this->orepo->GetPathBuild();
 			//$firmware_pio="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_firm_name}.bin";	
 			$echo_name="LATEST";			
 		}
 		
@@ -424,8 +432,8 @@ class EspBuddy {
 		}
 		if(!$r){
 			
-			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}firmware.bin {$this->c_host['path_dir_backup']}firmware_previous.bin";	
-			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}";	
+			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}{$this->c_firm_name}.bin {$this->c_host['path_dir_backup']}{$this->c_firm_name}_previous.bin";	
+			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}{$this->c_firm_name}.bin";	
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
 			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);

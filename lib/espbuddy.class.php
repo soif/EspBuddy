@@ -38,8 +38,8 @@ class EspBuddy {
 	private $flag_prevfirm		= false;
 
 	// command lines variables
-	private $arg_port			= '';
-	private $arg_rate			= 0;
+	private $arg_serial_port	= '';
+	private $arg_serial_rate	= 0;
 	private $arg_conf			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
@@ -52,11 +52,37 @@ class EspBuddy {
 
 	private $orepo	;			//	repo_object
 
+	// preferences -------------
+	private $prefs	=array(
+		'time_zone'		=>	'Europe/Paris',	// Time Zone
+		'serial_port'	=>	'',				// default serial Port (empty = autoselect)
+		'serial_rate'	=>	'boot',			// default serial rate
+		'firm_name'		=>	'firmware',		// firmware name prefix
+		'name_sep'		=>	'-',			// field separator in firmware name
+	);
+	
+	
+	private $known_serial_ports	= array(
+		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
+		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
+//		'espusb'	=>	'/dev/tty.wchusbserialfa140',	// generic ESP-01 USB programmer
+		'Xftdi'		=>	'/dev/tty.usbserial-',			// FTDI on OSX
 
+		'Ltdi'		=>	'/dev/tty.USB',					// FTDI on Linux
+	);
+	private $known_serial_rates	= array(
+		'slow'		=>	'57600',
+		'boot'		=>	'74880',
+		'fast'		=>	'115200',
+	);
+
+
+	private $os		="";			// what is the OS we are running
 
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
 		$this->espb_path=dirname(dirname(__FILE__)).'/';
+		$this->_SetRunningOS();		
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -66,9 +92,10 @@ class EspBuddy {
 		}
 		require($config_file);
 		$this->cfg=$cfg;
-		
-		date_default_timezone_set($this->cfg['misc']['time_zone']);
 
+		// preferences
+		$this->_LoadPreferences($this->cfg['prefs']);
+		
 		// dir backup ------------------------
 		if(!$this->cfg['paths']['dir_backup']){
 			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");			
@@ -80,6 +107,29 @@ class EspBuddy {
 				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");			
 			}
 		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _LoadPreferences($prefs){
+		foreach($this->prefs as $k => $v){
+			if(isset($prefs[$k])){
+				$this->prefs[$k] = $prefs[$k];
+			}
+		}
+		
+		date_default_timezone_set($this->prefs['time_zone']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SetRunningOS(){
+		$os		="lin";
+		$os_id	= strtolower(substr(php_uname(), 0, 3));
+		
+		if		($os_id=='win'){$os=='win';}	// windows
+		elseif	($os_id=='dar'){$os=='lin';}	// darwin = OSX
+		elseif	($os_id=='lin'){$os=='lin';}	// linux
+		$this->os = $os;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -215,6 +265,7 @@ class EspBuddy {
 			$host	=$this->c_host;
 			echo "       + Host Name : {$host['hostname']}\n";
 			echo "       + Host IP   : {$host['ip']}\n";
+			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 			echo "\nSelected Config    : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
@@ -265,20 +316,12 @@ class EspBuddy {
 			$tmp	= $this->c_conf['pass']	;
 		$this->c_host['pass']	=$tmp;
 
-		// serial port to use ---------------
-		$this->c_serial['port']		=	$this->arg_port	or
-			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_host['serial_port']]	or
-			$this->c_serial['port']	=	$this->c_host['serial_port']								or
-			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_conf['serial_port']]	or
-			$this->c_serial['port']	=	$this->c_conf['serial_port']								or
-			$this->c_serial['port']	=	$this->cfg['serial_ports']['default']	;
-
-		$this->c_serial['rate']		=	$this->arg_rate	or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_host['serial_rate']]	or
-			$this->c_serial['rate']	=	$this->c_host['serial_rate']								or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
-			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
+		// serial port and rate to use ---------------
+		$this->c_host['serial_rate']		=	$this->_ChooseValueToUse('serial_rate', $this->known_serial_rates, $this->known_serial_rates['boot']);	
+		if($connected_serials=$this->_findConnectedSerialPorts()){
+			$first_serial_found =reset($connected_serials);			
+		}
+		$this->c_host['serial_port']		=	$this->_ChooseValueToUse('serial_port', $this->known_serial_ports, $first_serial_found);	
 
 		//file and dir names --------------------
 		$this->c_host['firmware_name']="firmware_{$this->c_host['config']}";
@@ -292,6 +335,54 @@ class EspBuddy {
 				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
 			}
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ChooseValueToUse($name, $list, $default=''){
+		$tmp		= '';
+		$arg_name	= "arg_$name";
+		$argument	= $this->$arg_name;
+		$tmp		=	$list[	$argument]				or
+			$tmp	=			$argument				or
+			$tmp	=	$list[	$this->c_host[$name]]	or
+			$tmp	=			$this->c_host[$name]	or
+			$tmp	=	$list[	$this->c_conf[$name]]	or
+			$tmp	=			$this->c_conf[$name]	or
+			$tmp	=	$list[	$this->prefs[$name]	]	or
+			$tmp	=			$this->prefs[$name]		or
+			$tmp	=	$default ;
+		return $tmp;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _findConnectedSerialPorts(){
+		$found=array();
+		foreach ($this->known_serial_ports as $k => $port){
+			// linux, osx
+			if($this->os=='lin' or $this->os=='osx' ){
+				if($matched= glob("{$port}*") ){
+					foreach($matched as $i => $matched_port){
+						if($matched > 1){
+							$k_name=$k."". ($i+1);
+						}
+						else{
+							$k_name=$k;
+						}
+						if(!in_array($matched_port, $found) ){
+							$found[$k_name]=$matched_port;
+						}
+					}
+				}
+			}
+			elseif($this->os=='win'){
+				//to do
+			}
+		}
+		
+		if(count($found)){
+			return $found;
+		}
+		return false;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -311,7 +402,6 @@ class EspBuddy {
 
 		require_once($class_path);
 		$this->orepo= new $class_name($repo_path);
-
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -472,9 +562,9 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
 		$this->_AssignCurrentHostConfig($id);
-		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
+		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_host['serial_port']} --baud {$this->c_host['serial_rate']} --raw  --echo ";
 		echo "\n";
-		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_serial['port']} at {$this->c_serial['rate']} baud",$command);
+		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_host['serial_port']} at {$this->c_host['serial_rate']} baud",$command);
 		if(!$this->flag_drymode){
 			passthru($command, $r);
 			if($r){
@@ -489,15 +579,15 @@ class EspBuddy {
 		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
 
-		if(!$this->c_serial['port']){
+		if(!$this->c_host['serial_port']){
 			return $this->_dieError ("No Serial Port choosen");
 		}
 
-		$this->c_serial['rate']	 and 
-			$arg_rate=" -b {$this->c_serial['rate']}" and
-			$echo_rate=", Rate: {$this->c_serial['rate']} bauds";
+		$this->c_host['serial_rate']	 and 
+			$arg_rate=" -b {$this->c_host['serial_rate']}" and
+			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
 
-		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_serial['port']}{$arg_rate} $action ";
+		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
 
 		switch ($action) {
 			case 'write_flash':
@@ -512,7 +602,7 @@ class EspBuddy {
 				break;
 		}
 		echo "\n";
-		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_serial['port']}$echo_rate)",$command);
+		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
 	
 		if(!$this->flag_drymode){
 			passthru($command, $r);
@@ -822,8 +912,8 @@ EOF;
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 
-		$this->arg_port			= $this->args['vars']['port'];
-		$this->arg_rate			= $this->args['vars']['rate'];
+		$this->arg_serial_port	= $this->args['vars']['port'];
+		$this->arg_serial_rate	= $this->args['vars']['rate'];
 		$this->arg_conf			= $this->args['vars']['conf'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];

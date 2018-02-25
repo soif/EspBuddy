@@ -40,7 +40,7 @@ class EspBuddy {
 	// command lines variables
 	private $arg_serial_port	= '';
 	private $arg_serial_rate	= 0;
-	private $arg_conf			= '';
+	private $arg_config			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
 
@@ -54,23 +54,25 @@ class EspBuddy {
 
 	// preferences -------------
 	private $prefs	=array(
-		'time_zone'		=>	'Europe/Paris',	// Time Zone
+		'config'		=>	'',				// default config to use
 		'serial_port'	=>	'',				// default serial Port (empty = autoselect)
 		'serial_rate'	=>	'boot',			// default serial rate
+		'time_zone'		=>	'Europe/Paris',	// Time Zone
 		'firm_name'		=>	'firmware',		// firmware name prefix
+		'settings_name'	=>	'settings',		// firmware name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
 	);
 	
 	
-	private $known_serial_ports	= array(
+	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
 		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
 //		'espusb'	=>	'/dev/tty.wchusbserialfa140',	// generic ESP-01 USB programmer
 		'Xftdi'		=>	'/dev/tty.usbserial-',			// FTDI on OSX
 
-		'Ltdi'		=>	'/dev/tty.USB',					// FTDI on Linux
+		'Lftdi'		=>	'/dev/tty.USB',					// FTDI on Linux
 	);
-	private $known_serial_rates	= array(
+	private $serial_rates	= array(
 		'slow'		=>	'57600',
 		'boot'		=>	'74880',
 		'fast'		=>	'115200',
@@ -291,43 +293,31 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function _AssignCurrentHostConfig($id){
+		// current host -------------
 		$this->_FillHostnameOrIp($id);
 
-		$this->c_host					=	$this->cfg['hosts'][$id];
-		$this->arg_conf and $this->c_host['config']=$this->arg_conf;
+		$this->c_host					= $this->cfg['hosts'][$id];
+		$this->c_host['config']			= $this->_ChooseValueToUse('config');	
+		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
+		$this->c_host['login']			= $this->_ChooseValueToUse('login');	
+		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');	
+		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$this->prefs['name_sep']}{$this->c_host['config']}";
+		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$this->prefs['name_sep']}{$this->c_conf['repo']}";
 
-		$this->c_host['path_dir_backup']=	$this->_CreateBackupDir($this->c_host);
+		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);	
+		if($connected_serials=$this->_findConnectedSerialPorts()){
+			$first_serial_found =reset($connected_serials);			
+		}
+		$this->c_host['serial_port']	= $this->_ChooseValueToUse('serial_port', $this->serial_ports, $first_serial_found);	
 		
-		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
-		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
-		
+		// current config ------------
+		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];		
 		if(!is_array($this->c_conf)){
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
 
-		// login / pass for this host ----------
-		$tmp		= $this->arg_login		or
-			$tmp	= $this->c_host['login']	or
-			$tmp	= $this->c_conf['login']	;
-		$this->c_host['login']	=$tmp;
-
-		$tmp		= $this->arg_pass		or
-			$tmp	= $this->c_host['pass']	or
-			$tmp	= $this->c_conf['pass']	;
-		$this->c_host['pass']	=$tmp;
-
-		// serial port and rate to use ---------------
-		$this->c_host['serial_rate']		=	$this->_ChooseValueToUse('serial_rate', $this->known_serial_rates, $this->known_serial_rates['boot']);	
-		if($connected_serials=$this->_findConnectedSerialPorts()){
-			$first_serial_found =reset($connected_serials);			
-		}
-		$this->c_host['serial_port']		=	$this->_ChooseValueToUse('serial_port', $this->known_serial_ports, $first_serial_found);	
-
-		//file and dir names --------------------
-		$this->c_host['firmware_name']="firmware_{$this->c_host['config']}";
-		$this->c_host['settings_name']="settings_{$this->c_conf['repo']}";
-
-		// repo
+		// current repo ---------------
+		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
@@ -338,26 +328,27 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _ChooseValueToUse($name, $list, $default=''){
+	private function _ChooseValueToUse($name, $list='', $default=''){
 		$tmp		= '';
 		$arg_name	= "arg_$name";
-		$argument	= $this->$arg_name;
-		$tmp		=	$list[	$argument]				or
-			$tmp	=			$argument				or
-			$tmp	=	$list[	$this->c_host[$name]]	or
-			$tmp	=			$this->c_host[$name]	or
-			$tmp	=	$list[	$this->c_conf[$name]]	or
-			$tmp	=			$this->c_conf[$name]	or
-			$tmp	=	$list[	$this->prefs[$name]	]	or
-			$tmp	=			$this->prefs[$name]		or
-			$tmp	=	$default ;
+		$arg_value	= $this->$arg_name;
+		
+		($list and	$tmp = $list[	$arg_value]				)	or
+					$tmp =			$arg_value					or
+		 ($list and	$tmp = $list[	$this->c_host[$name]]	)	or
+					$tmp =			$this->c_host[$name]		or
+		 ($list and $tmp = $list[	$this->c_conf[$name]]	)	or
+					$tmp =			$this->c_conf[$name]		or
+		 ($list and $tmp = $list[	$this->prefs[$name]]	)	or
+					$tmp =			$this->prefs[$name]			or
+					$tmp = $default ;
 		return $tmp;
 	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _findConnectedSerialPorts(){
 		$found=array();
-		foreach ($this->known_serial_ports as $k => $port){
+		foreach ($this->serial_ports as $k => $port){
 			// linux, osx
 			if($this->os=='lin' or $this->os=='osx' ){
 				if($matched= glob("{$port}*") ){
@@ -914,7 +905,7 @@ EOF;
 
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
-		$this->arg_conf			= $this->args['vars']['conf'];
+		$this->arg_config			= $this->args['vars']['conf'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 

@@ -61,6 +61,7 @@ class EspBuddy {
 		'firm_name'		=>	'firmware',		// firmware name prefix
 		'settings_name'	=>	'settings',		// firmware name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
+//		'keep_previous'	=>	1,				// number of previous firmware version to keep
 	);
 	
 	

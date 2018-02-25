@@ -1,6 +1,6 @@
 # Contributing to EspBuddy
 
-Whether you are a developer or a regular user, your contributions are most welcome! 
+Whether you are a [developer](#developers) or a [regular user](#regular-users), your contributions are most welcome! 
 
 ## Developers
 Please fork the repo and submit Pull Requests :beer:

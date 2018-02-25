@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.60';	// EspBuddy Version
+	public $class_version		= '1.61b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -45,10 +45,10 @@ class EspBuddy {
 	private $arg_pass			= '';
 
 	//selected configuration for the current host
-	private $c_host	=array();	//	current host
-	private $c_conf	=array();	//	current config
-	private $c_repo	=array();	//	current repository
-	private $c_serial=array();	//	current serial port and rate
+	private $c_host		=array();	//	current host
+	private $c_conf		=array();	//	current config
+	private $c_repo		=array();	//	current repository
+	private $c_serial	=array();	//	current serial port and rate
 
 	private $orepo	;			//	repo_object
 
@@ -196,31 +196,29 @@ class EspBuddy {
 			$str_choices .="$index {$name}";
 			if($n <= count($this->cfg['hosts'])){$str_choices .=",";}
 		}
+		
 		if(!$force_selected){
 			echo "Choose Target Host : \n ";	
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
+			echo "\n-----------------------------------\n";
 		}
 
 		if($choosen == 'a'){
-			echo "\n-----------------------------------\n";
-			echo "You have choosen : ";
-			echo " -> ALL HOSTS \n";
+			echo "Selected Host : ALL HOSTS \n";
 			$id=0;
 		}
 		else{
 			$this->_AssignCurrentHostConfig($id);
-			echo "\n";
-			echo "\n-----------------------------------\n";
-			echo "You have choosen : ";
+			//echo "\n";
+			echo "Selected Host      : $id\n";
 			$host	=$this->c_host;
-			echo " + Host key   : $id \n";
-			echo " + Host Name  : {$host['hostname']}\n";
-			echo " + Host IP    : {$host['ip']}\n";
-			echo " + Config     : {$this->c_host['config']}\n";
+			echo "       + Host Name : {$host['hostname']}\n";
+			echo "       + Host IP   : {$host['ip']}\n";
+			echo "\nSelected Config    : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
-				echo " + Parameters : \n";
+				echo "       Parameters : \n";
 				$this->_Prettyfy($this->cfg['configs'][$host['config']]);
 				echo "\033[0m";
 			}
@@ -281,7 +279,12 @@ class EspBuddy {
 			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
 			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
 			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
-		
+
+		//file and dir names --------------------
+		$this->c_host['firmware_name']="firmware_{$this->c_host['config']}";
+		$this->c_host['settings_name']="settings_{$this->c_conf['repo']}";
+
+		// repo
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
@@ -308,6 +311,7 @@ class EspBuddy {
 
 		require_once($class_path);
 		$this->orepo= new $class_name($repo_path);
+
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -331,17 +335,17 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
 			$echo_name="NEWEST";	
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}firmware_previous.bin";
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";
 			$echo_name="PREVIOUS";			
 		}
 		else{
 			//$path_build=$this->orepo->GetPathBuild();
 			//$firmware_pio="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$firmware="{$this->c_host['path_dir_backup']}firmware.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
 			$echo_name="LATEST";			
 		}
 		
@@ -424,8 +428,8 @@ class EspBuddy {
 		}
 		if(!$r){
 			
-			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}firmware.bin {$this->c_host['path_dir_backup']}firmware_previous.bin";	
-			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}";	
+			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";	
+			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
 			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
@@ -441,8 +445,8 @@ class EspBuddy {
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
 		$tmp_dir	=$this->c_host['path_dir_backup']."settings_tmp/";
-		$prev_dir	=$this->c_host['path_dir_backup']."settings_previous/";
-		$dest_dir	=$this->c_host['path_dir_backup']."settings/";
+		$prev_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}_previous/";
+		$dest_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}/";
 		@mkdir($tmp_dir, 0777, true);
 		if(is_dir($tmp_dir)){
 			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
@@ -457,6 +461,10 @@ class EspBuddy {
 				@rename($tmp_dir, $dest_dir);
 				
 				return true;
+			}
+			else{
+				$this->orepo->EchoLastError();
+				echo "\n";
 			}
 		}
 	}
@@ -865,11 +873,11 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0){
-	    $tabs = "    ";
+	    $tabs = "     ";
 	    for($i=0;$i<$level; $i++){
-	        $tabs .= "    ";
+	        $tabs .= "     ";
 	    }
-	    $tabs .= " - ";
+	    $tabs .= "  - ";
 	    foreach($arr as $key=>$val){
 	        if( is_array($val) ) {
 	            print ($tabs . $key . " : " . "\n");

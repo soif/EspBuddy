@@ -1,8 +1,8 @@
-# Esp Buddy 
+# Esp Buddy
 
-- _Tired of typing very long commands to upload your custom firmwares?_ 
-- _Bored to manually uplooad your firmwares in two steps for 1MB devices?_ 
-- _Want to batch upload new firmwares to all your devices via OTA or backup all settings in one command?_ 
+- _Tired of typing very long commands to upload your custom firmwares?_
+- _Bored to manually uplooad your firmwares in two steps for 1MB devices?_
+- _Want to batch upload new firmwares to all your devices via OTA or backup all settings in one command?_
 
 This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air) or Serial, in one short command.
 It also gathers various tool commands to be used in batch mode.
@@ -20,8 +20,8 @@ It also gathers various tool commands to be used in batch mode.
  - Parse Repositories' installed versions
  - Git Pull Repositories
  - Ping Remote Host
- 
-## Supported (tested) Firmwares
+
+## Supported Firmwares
 Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espurna**](https://github.com/xoseperez/espurna)
@@ -41,7 +41,7 @@ Works with :
 
 **espbuddy.php ACTION [TARGET] [OPTIONS]**
 
-Valid Actions are: 
+Valid Actions are:
   - **upload**          : Build and/or Upload current repo version to Device(s)
   - **build**           : Build current repo version
   - **backup**          : Backup remote devices' settings
@@ -59,7 +59,7 @@ Valid Actions are:
 Examples:
 - `espbuddy.php upload` select the one to upload to from the list of targets
 - `espbuddy.php upload relay1` upload to target 'relay1'
-- `espbuddy.php upload all -b` upload to all defined targets, while building the firmware first 
+- `espbuddy.php upload all -b` upload to all defined targets, while building the firmware first
 - `espbuddy.php upload relay1 -w` upload using serial to target 'relay1'
 - `espbuddy.php backup all` backup settings all defined targets
 - `espbuddy.php monitor relay1 --rate=9600` serial monitor target 'led1' at 9600 bauds

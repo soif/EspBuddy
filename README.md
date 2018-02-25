@@ -65,3 +65,9 @@ Examples:
 - `espbuddy.php monitor relay1 --rate=9600` serial monitor target 'led1' at 9600 bauds
 - `espbuddy.php version all` show versions of all defined targets
 - `espbuddy.php ping all` ping the all defined targets
+
+## Contribute!
+
+Whether you are a developer or a regular user, [your help is most welcome](CONTRIBUTING.md)!
+
+

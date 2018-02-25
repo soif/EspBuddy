@@ -6,8 +6,8 @@ Whether you are a [developer](#developers) or a [regular user](#regular-users), 
 Please fork the repo and submit Pull Requests :beer:
 
 #### What to Pull ?
-- You can fix Open **bug** Issues
-- You could implement **features** Issues
+- You can fix Open [**bug** issues](../../issues?q=is:issue+is:open+label:bug)
+- You could implement [**enhancement** issues](../../issues?q=is:issue+is:open+label:enhancement)
 - You could implement support for new repos
 - Anything else you think usefull
 - Please always **push to the develop branch**, and be sure it merges
@@ -31,5 +31,6 @@ Any little link counts!
 
 #### Contribute to the Documentation
 - Fix as much as you can in this document, in the README
-- Create/modify page in the EspBuddy Wiki
+- Create/modify page in the EspBuddy Wiki, as listed in the [**Help Wanted** issues](../../issues?q=is:issue+is:open+label:"help+wanted")
+- Answer to other [users questions](../../issues?q=is:issue+is:open)
 

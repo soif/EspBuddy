@@ -21,10 +21,13 @@ Please fork the repo and submit Pull Requests :beer:
 
 #### Spread the World
 The more users, the more developers will join, the more features and bugs fixed
+- **Star the project** _(by clicking the :star: at the top of this page)_
 - Post on forums where there are users/developers that might like EspBuddy,
 - Make a blog article
 - Tweet about it, post on Facebook
 - Etc...
+
+Any little link counts!
 
 #### Contribute to the Documentation
 - Fix as much as you can in this document, in the README

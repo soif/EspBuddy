@@ -21,10 +21,13 @@ $cfg['paths']['bin_esptool']					=$tmp_current_dir.	"/bin/esptool.py";
 // Global Preferences #############################################################################################################
 /* Most default settings should be fine, but feel free to change it if you wish */
 
-//$cfg['prefs']['time_zone']			='Europe/Paris';	// Time zone for dates, see http://php.net/manual/en/timezones.php
+//$cfg['prefs']['config']				='';				// Default config to use
 //$cfg['prefs']['serial_port']			='';				// Default serial Port (empty = autoselect)
-//$cfg['prefs']['serial_rate']			='';				// Default serial Rate (default to boot speed: 74880)
-//$cfg['prefs']['firm_name']			='firmware';		// Firmware name prefix
+//$cfg['prefs']['serial_rate']			='boot';			// Default serial Rate (default to 'boot' speed: 74880)
+//$cfg['prefs']['time_zone']			='Europe/Paris';	// Time zone for dates, see http://php.net/manual/en/timezones.php
+//$cfg['prefs']['show_version']			='2';				// Show version in firmware name (0=no, 1=file version, 2=full git version)
+//$cfg['prefs']['firm_name']			='Firmware';		// Firmware name prefix
+//$cfg['prefs']['settings_name']		='Settings';		// Firmware settings name prefix
 //$cfg['prefs']['name_sep']				='-';				// Field separator in firmware name
 
 

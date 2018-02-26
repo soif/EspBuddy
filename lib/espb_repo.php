@@ -119,7 +119,7 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	private function _gitCommand($git_command){
-		$command="cd {$this->path_base} ; $git_command ";
+		$command="cd \"{$this->path_base}\" ; $git_command ";
 		$r=shell_exec($command);
 		return trim($r);
 	}

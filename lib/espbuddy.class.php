@@ -58,8 +58,9 @@ class EspBuddy {
 		'serial_port'	=>	'',				// default serial Port (empty = autoselect)
 		'serial_rate'	=>	'boot',			// default serial rate
 		'time_zone'		=>	'Europe/Paris',	// Time Zone
-		'firm_name'		=>	'firmware',		// firmware name prefix
-		'settings_name'	=>	'settings',		// firmware name prefix
+		'show_version'	=>	2,				// show version in firmware name (0=no, 1=file version, 2=full git version)
+		'firm_name'		=>	'Firmware',		// firmware name prefix
+		'settings_name'	=>	'Settings',		// firmware settings name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
 //		'keep_previous'	=>	1,				// number of previous firmware version to keep
 	);
@@ -130,7 +131,7 @@ class EspBuddy {
 		$os_id	= strtolower(substr(php_uname(), 0, 3));
 		
 		if		($os_id=='win'){$os=='win';}	// windows
-		elseif	($os_id=='dar'){$os=='lin';}	// darwin = OSX
+		elseif	($os_id=='dar'){$os=='osx';}	// darwin = OSX
 		elseif	($os_id=='lin'){$os=='lin';}	// linux
 		$this->os = $os;
 	}
@@ -302,8 +303,6 @@ class EspBuddy {
 		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
 		$this->c_host['login']			= $this->_ChooseValueToUse('login');	
 		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');	
-		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$this->prefs['name_sep']}{$this->c_host['config']}";
-		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$this->prefs['name_sep']}{$this->c_conf['repo']}";
 
 		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);	
 		if($connected_serials=$this->_findConnectedSerialPorts()){
@@ -318,6 +317,7 @@ class EspBuddy {
 		}
 
 		// current repo ---------------
+
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
@@ -326,6 +326,36 @@ class EspBuddy {
 				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
 			}
 		}
+		
+		$this->_SetCurrentVersionNames();
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SetCurrentVersionNames(){
+		$s	=$this->prefs['name_sep'];
+		$version='';
+		$this->c_host['versions']['file']		=$this->orepo->GetVersion();
+		$this->c_host['versions']['branch']		=$this->orepo->GetBranch();
+		$this->c_host['versions']['tag']		=$this->orepo->GetTag();
+		$this->c_host['versions']['tag_commit']	=$this->orepo->GetTagCommit();
+		$this->c_host['versions']['commit']		=$this->orepo->GetCommit();
+
+		if($this->prefs['show_version']){
+			$this->c_host['versions']['file'] 		and $version	.="{$s}v{$this->c_host['versions']['file']}";
+		}
+		if($this->prefs['show_version'] > 1){
+			$v	="__";
+			$version	.="{$s}(";
+			$version	.="{$this->c_host['versions']['branch']}";
+			$this->c_host['versions']['tag']		and $version	.="{$v}{$this->c_host['versions']['tag']}";
+			if($this->c_host['versions']['tag_commit'] != 	$this->c_host['versions']['commit']	){
+				$this->c_host['versions']['commit']	and $version	.="{$v}#{$this->c_host['versions']['commit']}";
+			}
+			$version	.=")";
+		}
+		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version}";
+		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$s}{$this->c_conf['repo']}";		
+
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -452,7 +482,7 @@ class EspBuddy {
 		else{
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
-				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_conf['firststep_firmware']}";
+				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
@@ -470,7 +500,7 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f  $firmware";
+			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
 			echo "\n";
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
@@ -510,8 +540,8 @@ class EspBuddy {
 		}
 		if(!$r){
 			
-			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";	
-			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin\"";	
+			$command_backup[] = "cp -p \"{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\"";	
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
 			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
@@ -526,9 +556,9 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
-		$tmp_dir	=$this->c_host['path_dir_backup']."settings_tmp/";
-		$prev_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}_previous/";
-		$dest_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}/";
+		$tmp_dir	="{$this->c_host['path_dir_backup']}settings_tmp/";
+		$prev_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_previous/";
+		$dest_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}/";
 		@mkdir($tmp_dir, 0777, true);
 		if(is_dir($tmp_dir)){
 			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
@@ -583,7 +613,7 @@ class EspBuddy {
 
 		switch ($action) {
 			case 'write_flash':
-				$command .="0x0 {$firmware_file} ";
+				$command .="0x0 \"{$firmware_file}\" ";
 				break;
 			case 'erase_flash':
 				break;

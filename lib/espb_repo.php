@@ -118,6 +118,34 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _gitCommand($git_command){
+		$command="cd {$this->path_base} ; $git_command ";
+		$r=shell_exec($command);
+		return trim($r);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetBranch(){
+		return $this->_gitCommand("git rev-parse --abbrev-ref HEAD");
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetTag(){
+		return $this->_gitCommand("git describe --abbrev=0 --tags");
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetTagCommit(){
+		$tag= $this->GetTag();
+		return $this->_gitCommand("git rev-list -n 1 --abbrev-commit $tag");
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetCommit(){
+		return $this->_gitCommand("git rev-parse --short HEAD");
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function EchoLastError(){
 		if($this->last_http_code >=400 ){
 			echo "\033[31m HTTP Error {$this->last_http_code} => {$this->last_http_status} \033[0m";
@@ -145,6 +173,8 @@ class EspBuddy_Repo {
 	public function GetFirstStepDelay(){
 		return $this->firststep_delay;
 	}
+
+
 
 
 	// ---------------------------------------------------------------------------------------

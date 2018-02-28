@@ -322,7 +322,7 @@ class EspBuddy {
 
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
-			$this->_RequireRepo($this->c_conf['repo']);
+			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
@@ -428,7 +428,7 @@ class EspBuddy {
 		}
 
 		require_once($class_path);
-		$this->orepo= new $class_name($repo_path);
+		return new $class_name($repo_path);
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -487,6 +487,12 @@ class EspBuddy {
 		else{
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
+				if($repo_from=$this->arg_from){
+					$orepo1=$this->_RequireRepo($repo_from);
+					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
+					$this->c_conf['firststep_delay']	=$orepo1->GetFirstStepDelay();
+				}
+
 				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
@@ -658,7 +664,7 @@ class EspBuddy {
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
 
-		$this->_RequireRepo($repo_key);
+		$this->orepo=$this->_RequireRepo($repo_key);
 		
 		if($type == "version"){			
 			$version = $this->orepo->GetVersion() or $version= "Not found";
@@ -836,6 +842,7 @@ class EspBuddy {
 	--port=xxx     : serial port to use (overrride main or per host serial port)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
 	--conf=xxx     : config to use (overrride per host config)
+	--from=REPO    : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
 	--login=xxx    : login name (overrride host or per config login)

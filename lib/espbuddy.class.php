@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.70';	// EspBuddy Version
+	public $class_version		= '1.71b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -43,6 +43,7 @@ class EspBuddy {
 	private $arg_config			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
+	private $arg_from			= '';	// repo to migrate from
 
 	//selected configuration for the current host
 	private $c_host		=array();	//	current host
@@ -940,9 +941,10 @@ EOF;
 
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
-		$this->arg_config			= $this->args['vars']['conf'];
+		$this->arg_config		= $this->args['vars']['conf'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
+		$this->arg_from			= $this->args['vars']['from'];
 
 		$this->host				= $this->args['commands'][2];
 		

@@ -38,9 +38,9 @@ class EspBuddy {
 	private $flag_prevfirm		= false;
 
 	// command lines variables
-	private $arg_port			= '';
-	private $arg_rate			= 0;
-	private $arg_conf			= '';
+	private $arg_serial_port	= '';
+	private $arg_serial_rate	= 0;
+	private $arg_config			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
 
@@ -52,11 +52,41 @@ class EspBuddy {
 
 	private $orepo	;			//	repo_object
 
+	// preferences -------------
+	private $prefs	=array(
+		'config'		=>	'',				// default config to use
+		'serial_port'	=>	'',				// default serial Port (empty = autoselect)
+		'serial_rate'	=>	'boot',			// default serial rate
+		'time_zone'		=>	'Europe/Paris',	// Time Zone
+		'show_version'	=>	2,				// show version in firmware name (0=no, 1=file version, 2=full git version)
+		'firm_name'		=>	'Firmware',		// firmware name prefix
+		'settings_name'	=>	'Settings',		// firmware settings name prefix
+		'name_sep'		=>	'-',			// field separator in firmware name
+//		'keep_previous'	=>	1,				// number of previous firmware version to keep
+	);
+	
+	
+	private $serial_ports	= array(
+		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
+		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
+//		'espusb'	=>	'/dev/tty.wchusbserialfa140',	// generic ESP-01 USB programmer
+		'Xftdi'		=>	'/dev/tty.usbserial-',			// FTDI on OSX
 
+		'Lftdi'		=>	'/dev/tty.USB',					// FTDI on Linux
+	);
+	private $serial_rates	= array(
+		'slow'		=>	'57600',
+		'boot'		=>	'74880',
+		'fast'		=>	'115200',
+	);
+
+
+	private $os		="";			// what is the OS we are running
 
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
 		$this->espb_path=dirname(dirname(__FILE__)).'/';
+		$this->_SetRunningOS();		
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -66,9 +96,10 @@ class EspBuddy {
 		}
 		require($config_file);
 		$this->cfg=$cfg;
-		
-		date_default_timezone_set($this->cfg['misc']['time_zone']);
 
+		// preferences
+		$this->_LoadPreferences($this->cfg['prefs']);
+		
 		// dir backup ------------------------
 		if(!$this->cfg['paths']['dir_backup']){
 			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");			
@@ -80,6 +111,29 @@ class EspBuddy {
 				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");			
 			}
 		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _LoadPreferences($prefs){
+		foreach($this->prefs as $k => $v){
+			if(isset($prefs[$k])){
+				$this->prefs[$k] = $prefs[$k];
+			}
+		}
+		
+		date_default_timezone_set($this->prefs['time_zone']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SetRunningOS(){
+		$os		="lin";
+		$os_id	= strtolower(substr(php_uname(), 0, 3));
+		
+		if		($os_id=='win'){$os=='win';}	// windows
+		elseif	($os_id=='dar'){$os=='osx';}	// darwin = OSX
+		elseif	($os_id=='lin'){$os=='lin';}	// linux
+		$this->os = $os;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -215,6 +269,7 @@ class EspBuddy {
 			$host	=$this->c_host;
 			echo "       + Host Name : {$host['hostname']}\n";
 			echo "       + Host IP   : {$host['ip']}\n";
+			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 			echo "\nSelected Config    : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
@@ -240,51 +295,30 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function _AssignCurrentHostConfig($id){
+		// current host -------------
 		$this->_FillHostnameOrIp($id);
 
-		$this->c_host					=	$this->cfg['hosts'][$id];
-		$this->arg_conf and $this->c_host['config']=$this->arg_conf;
+		$this->c_host					= $this->cfg['hosts'][$id];
+		$this->c_host['config']			= $this->_ChooseValueToUse('config');	
+		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
+		$this->c_host['login']			= $this->_ChooseValueToUse('login');	
+		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');	
 
-		$this->c_host['path_dir_backup']=	$this->_CreateBackupDir($this->c_host);
+		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);	
+		if($connected_serials=$this->_findConnectedSerialPorts()){
+			$first_serial_found =reset($connected_serials);			
+		}
+		$this->c_host['serial_port']	= $this->_ChooseValueToUse('serial_port', $this->serial_ports, $first_serial_found);	
 		
-		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
-		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
-		
+		// current config ------------
+		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];		
 		if(!is_array($this->c_conf)){
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
 
-		// login / pass for this host ----------
-		$tmp		= $this->arg_login		or
-			$tmp	= $this->c_host['login']	or
-			$tmp	= $this->c_conf['login']	;
-		$this->c_host['login']	=$tmp;
+		// current repo ---------------
 
-		$tmp		= $this->arg_pass		or
-			$tmp	= $this->c_host['pass']	or
-			$tmp	= $this->c_conf['pass']	;
-		$this->c_host['pass']	=$tmp;
-
-		// serial port to use ---------------
-		$this->c_serial['port']		=	$this->arg_port	or
-			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_host['serial_port']]	or
-			$this->c_serial['port']	=	$this->c_host['serial_port']								or
-			$this->c_serial['port']	=	$this->cfg['serial_ports'][$this->c_conf['serial_port']]	or
-			$this->c_serial['port']	=	$this->c_conf['serial_port']								or
-			$this->c_serial['port']	=	$this->cfg['serial_ports']['default']	;
-
-		$this->c_serial['rate']		=	$this->arg_rate	or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_host['serial_rate']]	or
-			$this->c_serial['rate']	=	$this->c_host['serial_rate']								or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates'][$this->c_conf['serial_rate']]	or
-			$this->c_serial['rate']	=	$this->c_conf['serial_rate']								or
-			$this->c_serial['rate']	=	$this->cfg['serial_rates']['default']	;
-
-		//file and dir names --------------------
-		$this->c_host['firmware_name']="firmware_{$this->c_host['config']}";
-		$this->c_host['settings_name']="settings_{$this->c_conf['repo']}";
-
-		// repo
+		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
 			$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
@@ -292,6 +326,85 @@ class EspBuddy {
 				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
 			}
 		}
+		
+		$this->_SetCurrentVersionNames();
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SetCurrentVersionNames(){
+		$s	=$this->prefs['name_sep'];
+		$version='';
+		$this->c_host['versions']['file']		=$this->orepo->GetVersion();
+		$this->c_host['versions']['branch']		=$this->orepo->GetBranch();
+		$this->c_host['versions']['tag']		=$this->orepo->GetTag();
+		$this->c_host['versions']['tag_commit']	=$this->orepo->GetTagCommit();
+		$this->c_host['versions']['commit']		=$this->orepo->GetCommit();
+
+		if($this->prefs['show_version']){
+			$this->c_host['versions']['file'] 		and $version	.="{$s}v{$this->c_host['versions']['file']}";
+		}
+		if($this->prefs['show_version'] > 1){
+			$v	="__";
+			$version	.="{$s}(";
+			$version	.="{$this->c_host['versions']['branch']}";
+			$this->c_host['versions']['tag']		and $version	.="{$v}{$this->c_host['versions']['tag']}";
+			if($this->c_host['versions']['tag_commit'] != 	$this->c_host['versions']['commit']	){
+				$this->c_host['versions']['commit']	and $version	.="{$v}#{$this->c_host['versions']['commit']}";
+			}
+			$version	.=")";
+		}
+		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version}";
+		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$s}{$this->c_conf['repo']}";		
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ChooseValueToUse($name, $list='', $default=''){
+		$tmp		= '';
+		$arg_name	= "arg_$name";
+		$arg_value	= $this->$arg_name;
+		
+		($list and	$tmp = $list[	$arg_value]				)	or
+					$tmp =			$arg_value					or
+		 ($list and	$tmp = $list[	$this->c_host[$name]]	)	or
+					$tmp =			$this->c_host[$name]		or
+		 ($list and $tmp = $list[	$this->c_conf[$name]]	)	or
+					$tmp =			$this->c_conf[$name]		or
+		 ($list and $tmp = $list[	$this->prefs[$name]]	)	or
+					$tmp =			$this->prefs[$name]			or
+					$tmp = $default ;
+		return $tmp;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _findConnectedSerialPorts(){
+		$found=array();
+		foreach ($this->serial_ports as $k => $port){
+			// linux, osx
+			if($this->os=='lin' or $this->os=='osx' ){
+				if($matched= glob("{$port}*") ){
+					foreach($matched as $i => $matched_port){
+						if($matched > 1){
+							$k_name=$k."". ($i+1);
+						}
+						else{
+							$k_name=$k;
+						}
+						if(!in_array($matched_port, $found) ){
+							$found[$k_name]=$matched_port;
+						}
+					}
+				}
+			}
+			elseif($this->os=='win'){
+				//to do
+			}
+		}
+		
+		if(count($found)){
+			return $found;
+		}
+		return false;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -311,7 +424,6 @@ class EspBuddy {
 
 		require_once($class_path);
 		$this->orepo= new $class_name($repo_path);
-
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -370,7 +482,7 @@ class EspBuddy {
 		else{
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
-				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f {$this->c_conf['firststep_firmware']}";
+				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
@@ -388,7 +500,7 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f  $firmware";
+			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
 			echo "\n";
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
@@ -428,8 +540,8 @@ class EspBuddy {
 		}
 		if(!$r){
 			
-			$command_backup[] = "mv -f {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";	
-			$command_backup[] = "cp -p {$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin {$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin\"";	
+			$command_backup[] = "cp -p \"{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\"";	
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
 			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
@@ -444,9 +556,9 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
-		$tmp_dir	=$this->c_host['path_dir_backup']."settings_tmp/";
-		$prev_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}_previous/";
-		$dest_dir	=$this->c_host['path_dir_backup']."{$this->c_host['settings_name']}/";
+		$tmp_dir	="{$this->c_host['path_dir_backup']}settings_tmp/";
+		$prev_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_previous/";
+		$dest_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}/";
 		@mkdir($tmp_dir, 0777, true);
 		if(is_dir($tmp_dir)){
 			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
@@ -472,9 +584,9 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
 		$this->_AssignCurrentHostConfig($id);
-		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_serial['port']} --baud {$this->c_serial['rate']} --raw  --echo ";
+		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_host['serial_port']} --baud {$this->c_host['serial_rate']} --raw  --echo ";
 		echo "\n";
-		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_serial['port']} at {$this->c_serial['rate']} baud",$command);
+		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_host['serial_port']} at {$this->c_host['serial_rate']} baud",$command);
 		if(!$this->flag_drymode){
 			passthru($command, $r);
 			if($r){
@@ -489,19 +601,19 @@ class EspBuddy {
 		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
 
-		if(!$this->c_serial['port']){
+		if(!$this->c_host['serial_port']){
 			return $this->_dieError ("No Serial Port choosen");
 		}
 
-		$this->c_serial['rate']	 and 
-			$arg_rate=" -b {$this->c_serial['rate']}" and
-			$echo_rate=", Rate: {$this->c_serial['rate']} bauds";
+		$this->c_host['serial_rate']	 and 
+			$arg_rate=" -b {$this->c_host['serial_rate']}" and
+			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
 
-		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_serial['port']}{$arg_rate} $action ";
+		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
 
 		switch ($action) {
 			case 'write_flash':
-				$command .="0x0 {$firmware_file} ";
+				$command .="0x0 \"{$firmware_file}\" ";
 				break;
 			case 'erase_flash':
 				break;
@@ -512,7 +624,7 @@ class EspBuddy {
 				break;
 		}
 		echo "\n";
-		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_serial['port']}$echo_rate)",$command);
+		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
 	
 		if(!$this->flag_drymode){
 			passthru($command, $r);
@@ -822,9 +934,9 @@ EOF;
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 
-		$this->arg_port			= $this->args['vars']['port'];
-		$this->arg_rate			= $this->args['vars']['rate'];
-		$this->arg_conf			= $this->args['vars']['conf'];
+		$this->arg_serial_port	= $this->args['vars']['port'];
+		$this->arg_serial_rate	= $this->args['vars']['rate'];
+		$this->arg_config			= $this->args['vars']['conf'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 

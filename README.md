@@ -1,7 +1,7 @@
 # Esp Buddy
 
 - _Tired of typing very long commands to upload your custom firmwares?_
-- _Bored to manually uplooad your firmwares in two steps for 1MB devices?_
+- _Bored to manually upload your firmwares in two steps for 1MB devices?_
 - _Want to batch upload new firmwares to all your devices via OTA or backup all settings in one command?_
 
 This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air) or Serial, in one short command.

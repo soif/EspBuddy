@@ -69,7 +69,7 @@ class EspBuddy {
 	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
 		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
-//		'espusb'	=>	'/dev/tty.wchusbserialfa140',	// generic ESP-01 USB programmer
+		'espusb'	=>	'/dev/tty.wchusbserialfd130',	// generic ESP-01 USB programmer
 		'Xftdi'		=>	'/dev/tty.usbserial-',			// FTDI on OSX
 
 		'Lftdi'		=>	'/dev/tty.USB',					// FTDI on Linux
@@ -78,6 +78,7 @@ class EspBuddy {
 		'slow'		=>	'57600',
 		'boot'		=>	'74880',
 		'fast'		=>	'115200',
+		'turbo'		=>	'460800',
 	);
 
 
@@ -333,27 +334,30 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	private function _SetCurrentVersionNames(){
 		$s	=$this->prefs['name_sep'];
-		$version='';
-		$this->c_host['versions']['file']		=$this->orepo->GetVersion();
-		$this->c_host['versions']['branch']		=$this->orepo->GetBranch();
-		$this->c_host['versions']['tag']		=$this->orepo->GetTag();
-		$this->c_host['versions']['tag_commit']	=$this->orepo->GetTagCommit();
-		$this->c_host['versions']['commit']		=$this->orepo->GetCommit();
 
+		$this->c_host['versions']['file']		=$this->orepo->GetVersion();
+		$version_short="";
 		if($this->prefs['show_version']){
-			$this->c_host['versions']['file'] 		and $version	.="{$s}v{$this->c_host['versions']['file']}";
+			$this->c_host['versions']['file'] 		and $version_short	.="{$s}v{$this->c_host['versions']['file']}";
 		}
+
+		$version_full='';
 		if($this->prefs['show_version'] > 1){
-			$v	="__";
-			$version	.="{$s}(";
-			$version	.="{$this->c_host['versions']['branch']}";
-			$this->c_host['versions']['tag']		and $version	.="{$v}{$this->c_host['versions']['tag']}";
+			$this->c_host['versions']['branch']		=$this->orepo->GetBranch();
+			$this->c_host['versions']['tag']		=$this->orepo->GetTag();
+			$this->c_host['versions']['tag_commit']	=$this->orepo->GetTagCommit();
+			$this->c_host['versions']['commit']		=$this->orepo->GetCommit();
+
+			$v	=",";
+			$version_full	.="{$this->c_host['versions']['branch']}";
+			$this->c_host['versions']['tag']		and $version_full	.="{$v}{$this->c_host['versions']['tag']}";
 			if($this->c_host['versions']['tag_commit'] != 	$this->c_host['versions']['commit']	){
-				$this->c_host['versions']['commit']	and $version	.="{$v}#{$this->c_host['versions']['commit']}";
+				$this->c_host['versions']['commit']	and $version_full	.="{$v}#{$this->c_host['versions']['commit']}";
 			}
-			$version	.=")";
+			$this->c_host['versions']['full']	=$version_full;
+			$version_full						="{$s}({$version_full})";
 		}
-		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version}";
+		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version_short}{$version_full}";
 		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$s}{$this->c_conf['repo']}";		
 
 	}

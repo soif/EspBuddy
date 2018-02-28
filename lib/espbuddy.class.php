@@ -444,6 +444,7 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
+
 	public function Command_upload($id){
 		$this->_AssignCurrentHostConfig($id);
 
@@ -452,27 +453,28 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
 			$echo_name="NEWEST";	
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
 			$echo_name="PREVIOUS";			
 		}
 		else{
-			//$path_build=$this->orepo->GetPathBuild();
-			//$firmware_pio="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
 			$echo_name="LATEST";			
 		}
 		
 		if(!file_exists($firmware)){
 			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
 		}
-
+		
+		$firm_source=readlink($firmware) or $firm_source=$firmware;
 		echo "\n";
-		$date=date("d M Y - H:i::s", filemtime($firmware));
-		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date )  : $firmware","");
+		$date=date("d M Y - H:i::s", filemtime($firm_source));
+		$firm_source =basename($firm_source);
+
+		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
 
 		// wire mode ------------------
 		if($this->flag_serial){
@@ -513,6 +515,7 @@ class EspBuddy {
 			// Final Upload
 			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
 			echo "\n";
+			
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
 			if(!$this->flag_drymode){
@@ -540,7 +543,7 @@ class EspBuddy {
 		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
 		$command=implode(" ; \n   ", $commands_compil);
 		echo "\n";
-		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']}", $command);
+		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']} , version : {$this->c_host['versions']['file']} - {$this->c_host['versions']['full']}", $command);
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
@@ -550,12 +553,15 @@ class EspBuddy {
 			}
 		}
 		if(!$r){
-			
-			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin\"";	
+			if($prev_firmware=@readlink("{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin")){
+				$command_backup[] = "rm -f \"$prev_firmware\"";
+			}
+			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin\"";	
 			$command_backup[] = "cp -p \"{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\"";	
+			$command_backup[] = "ln -s \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin\"";	
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
-			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
+			$this->_EchoStepStart("Backup the previous firmware, and archive the new one : {$this->c_host['firmware_name']} ", $command);
 			if(! $this->flag_drymode){
 				passthru($command, $r2);
 			}
@@ -1036,7 +1042,7 @@ EOF;
 		if($verbose) echo "\n";
 		$mess	="$char$char $mess ";
 		if($do_end){
-			$mess=str_pad($mess, 120, $char);
+			$mess=str_pad($mess, 130, $char);
 		}
 		echo "\033[34m$mess";
 		if($verbose and $command){

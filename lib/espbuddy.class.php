@@ -69,7 +69,7 @@ class EspBuddy {
 	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
 		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
-//		'espusb'	=>	'/dev/tty.wchusbserialfa140',	// generic ESP-01 USB programmer
+		'espusb'	=>	'/dev/tty.wchusbserialfd130',	// generic ESP-01 USB programmer
 		'Xftdi'		=>	'/dev/tty.usbserial-',			// FTDI on OSX
 
 		'Lftdi'		=>	'/dev/tty.USB',					// FTDI on Linux
@@ -78,6 +78,7 @@ class EspBuddy {
 		'slow'		=>	'57600',
 		'boot'		=>	'74880',
 		'fast'		=>	'115200',
+		'turbo'		=>	'460800',
 	);
 
 

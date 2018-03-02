@@ -838,6 +838,8 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_help(){
 		$bin= $this->bin;
+		echo $this->_espbVersions();
+		echo "\n\n";
 		$this->Command_usage();
 		echo <<<EOF
 
@@ -914,6 +916,17 @@ class EspBuddy {
 
 EOF;
 	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _espbVersions(){
+		$version="EspBuddby v{$this->class_version}";
+		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
+		if(preg_match('#__version__\s*=\s*"([^"]+)"#', $tmp,$m)){
+			$version .= " - EspTool v{$m[1]}";
+		}
+		return $version;
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){

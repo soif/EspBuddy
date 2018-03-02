@@ -29,7 +29,7 @@ $cfg['paths']['bin_esptool']					=$tmp_current_dir.	"/bin/esptool.py";
 //$cfg['prefs']['firm_name']			='Firmware';		// Firmware name prefix
 //$cfg['prefs']['settings_name']		='Settings';		// Firmware settings name prefix
 //$cfg['prefs']['name_sep']				='-';				// Field separator in firmware name
-
+//$cfg['prefs']['keep_previous']		=3;					// Number of previous firmwares to keep
 
 
 

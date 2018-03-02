@@ -506,10 +506,16 @@ class EspBuddy {
 					}	
 				}
 				//wait ?
-				if($this->c_conf['firststep_delay']){
-					echo "\n";
-					$this->_WaitReboot($this->c_conf['firststep_delay']);
+				//if($this->c_conf['firststep_delay']){
+				//	echo "\n";
+				//	$this->_WaitReboot($this->c_conf['firststep_delay']);
+				//}
+				echo "\n";
+				sleep(1); // let him reboot
+				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
+					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
 				}
+				sleep(1); // give it some more time to be ready
 			}
 
 			// Final Upload
@@ -1104,6 +1110,35 @@ EOF;
 			}
 		}
 		echo " ********\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _WaitPingable($host,$timeout=60){
+		$this->_EchoStepStart("Waiting for ESP to be back online",'',0);
+		if($this->flag_drymode){
+			$out=true;
+		}
+		else{
+			$i=1;
+			while($i <= $timeout){
+				if($this->_ping($host)){
+					$out=true;
+					break;
+				}
+				echo "$i ";
+				$i++;
+				sleep(1);
+			}
+		}
+		echo " **********\n";
+		return $out;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	function _ping ($host) {
+		$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
+		exec($command, $output, $r);
+	    return ! $r;
 	}
 
 	// ---------------------------------------------------------------------------------------

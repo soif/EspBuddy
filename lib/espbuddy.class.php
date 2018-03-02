@@ -63,7 +63,7 @@ class EspBuddy {
 		'firm_name'		=>	'Firmware',		// firmware name prefix
 		'settings_name'	=>	'Settings',		// firmware settings name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
-//		'keep_previous'	=>	1,				// number of previous firmware version to keep
+		'keep_previous'	=>	3,				// number of previous firmware version to keep
 	);
 	
 	
@@ -529,6 +529,76 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _rotateFirmware($new_firmware=''){
+		$command_backup=array();
+		$back_dir		= $this->c_host['path_dir_backup'];
+		$firm_dir		= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$cur_firmware	="$firm_dir{$this->c_host['firmware_name']}.bin";
+		$cur_firm_link	="$back_dir{$this->prefs['firm_name']}.bin";
+		$prev_firm_link	="$back_dir{$this->prefs['firm_name']}_previous.bin";
+		$path_build=$this->orepo->GetPathBuild();
+		if(!is_dir($firm_dir)){
+			@mkdir($firm_dir, 0777, true);
+		}
+		if($this->prefs['keep_previous']){
+			$echo1="Keep the previous firmware, and a";
+			if(file_exists($cur_firm_link)){
+				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";		
+			}
+			if($list_firmares=$this->_listFirmwares()){
+				$i=1; 
+				krsort($list_firmares);
+				foreach($list_firmares as $t => $file){
+					if($i > $this->prefs['keep_previous'] +1 ){
+						unlink($file);
+					}
+					$i++;
+				}
+			}
+		}
+		else{
+			$echo1="A";
+			if($cur_firm=@readlink($cur_firm_link)){
+				$command_backup[] = "rm -f \"$cur_firm\"";
+			}
+		}
+		if(!$new_firmware){
+			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
+			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";	
+		}
+		
+		$command=implode(" ; \n   ", $command_backup);
+		$r=true;
+		if(count($command_backup)){
+			echo "\n";
+			$this->_EchoStepStart("{$echo1}rchive the new firmawre : {$this->c_host['firmware_name']} ", $command);
+			if(! $this->flag_drymode){
+				passthru($command, $r);
+			}
+			
+		}
+		
+		return !$r;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _listFirmwares($all=false){
+		$firm_dir			= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
+		$all	and $mask	="{$firm_dir}*.bin";
+		if($files=glob($mask) and count($files)){
+			$time_files=array();
+			foreach($files as $file){
+				$time=filemtime($file);
+				$time_files[$time]=$file;
+			}
+			krsort($time_files);
+			return $time_files;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
 		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
@@ -553,19 +623,7 @@ class EspBuddy {
 			}
 		}
 		if(!$r){
-			if($prev_firmware=@readlink("{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin")){
-				$command_backup[] = "rm -f \"$prev_firmware\"";
-			}
-			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin\"";	
-			$command_backup[] = "cp -p \"{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\"";	
-			$command_backup[] = "ln -s \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin\"";	
-			$command=implode(" ; \n   ", $command_backup);
-			echo "\n";
-			$this->_EchoStepStart("Backup the previous firmware, and archive the new one : {$this->c_host['firmware_name']} ", $command);
-			if(! $this->flag_drymode){
-				passthru($command, $r2);
-			}
-			return !$r2;
+			return $this->_rotateFirmware();
 		}
 		return !$r;
 	}

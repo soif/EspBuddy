@@ -25,7 +25,6 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
-	protected $firststep_delay 		= 16;								 				// time two wait before launching the second step
 	
 	private $default_login		='admin';
 

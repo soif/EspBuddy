@@ -25,7 +25,6 @@ class EspBuddy_Repo {
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware = ''; // when uploading in 2steps mode, first upload this intermediate firmware
-	protected $firststep_delay	= 16; // when uploading in 2steps mode, wait this time (sec) to let the esp reboot before launching the second step
 
 	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
 	protected $last_http_status = '';	// last HTTP status
@@ -159,7 +158,6 @@ class EspBuddy_Repo {
 		$this->last_http_status =$this->http_codes[$code];
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function GetPathBuild(){
 		return $this->path_build;
@@ -169,13 +167,6 @@ class EspBuddy_Repo {
 	public function GetFirstStepFirmware(){
 		return $this->firststep_firmware;
 	}
-	// ---------------------------------------------------------------------------------------
-	public function GetFirstStepDelay(){
-		return $this->firststep_delay;
-	}
-
-
-
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){

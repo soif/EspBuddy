@@ -325,7 +325,6 @@ class EspBuddy {
 			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
-				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
 			}
 		}
 		
@@ -492,7 +491,6 @@ class EspBuddy {
 				if($repo_from=$this->arg_from){
 					$orepo1=$this->_RequireRepo($repo_from);
 					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
-					$this->c_conf['firststep_delay']	=$orepo1->GetFirstStepDelay();
 				}
 
 				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";

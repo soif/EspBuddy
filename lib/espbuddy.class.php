@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.70';	// EspBuddy Version
+	public $class_version		= '1.71b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -43,6 +43,7 @@ class EspBuddy {
 	private $arg_config			= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
+	private $arg_from			= '';	// repo to migrate from
 
 	//selected configuration for the current host
 	private $c_host		=array();	//	current host
@@ -62,7 +63,7 @@ class EspBuddy {
 		'firm_name'		=>	'Firmware',		// firmware name prefix
 		'settings_name'	=>	'Settings',		// firmware settings name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
-//		'keep_previous'	=>	1,				// number of previous firmware version to keep
+		'keep_previous'	=>	3,				// number of previous firmware version to keep
 	);
 	
 	
@@ -321,7 +322,7 @@ class EspBuddy {
 
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
-			$this->_RequireRepo($this->c_conf['repo']);
+			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 				$this->c_conf['firststep_delay']	=$this->orepo->GetFirstStepDelay();
@@ -427,7 +428,7 @@ class EspBuddy {
 		}
 
 		require_once($class_path);
-		$this->orepo= new $class_name($repo_path);
+		return new $class_name($repo_path);
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -443,6 +444,7 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
+
 	public function Command_upload($id){
 		$this->_AssignCurrentHostConfig($id);
 
@@ -451,27 +453,28 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
 			$echo_name="NEWEST";	
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin";
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
 			$echo_name="PREVIOUS";			
 		}
 		else{
-			//$path_build=$this->orepo->GetPathBuild();
-			//$firmware_pio="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$firmware="{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
 			$echo_name="LATEST";			
 		}
 		
 		if(!file_exists($firmware)){
 			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
 		}
-
+		
+		$firm_source=readlink($firmware) or $firm_source=$firmware;
 		echo "\n";
-		$date=date("d M Y - H:i::s", filemtime($firmware));
-		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date )  : $firmware","");
+		$date=date("d M Y - H:i::s", filemtime($firm_source));
+		$firm_source =basename($firm_source);
+
+		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
 
 		// wire mode ------------------
 		if($this->flag_serial){
@@ -486,6 +489,12 @@ class EspBuddy {
 		else{
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
+				if($repo_from=$this->arg_from){
+					$orepo1=$this->_RequireRepo($repo_from);
+					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
+					$this->c_conf['firststep_delay']	=$orepo1->GetFirstStepDelay();
+				}
+
 				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
@@ -506,6 +515,7 @@ class EspBuddy {
 			// Final Upload
 			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
 			echo "\n";
+			
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
 			if(!$this->flag_drymode){
@@ -515,6 +525,76 @@ class EspBuddy {
 				}
 			}
 			return true;	
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _rotateFirmware($new_firmware=''){
+		$command_backup=array();
+		$back_dir		= $this->c_host['path_dir_backup'];
+		$firm_dir		= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$cur_firmware	="$firm_dir{$this->c_host['firmware_name']}.bin";
+		$cur_firm_link	="$back_dir{$this->prefs['firm_name']}.bin";
+		$prev_firm_link	="$back_dir{$this->prefs['firm_name']}_previous.bin";
+		$path_build=$this->orepo->GetPathBuild();
+		if(!is_dir($firm_dir)){
+			@mkdir($firm_dir, 0777, true);
+		}
+		if($this->prefs['keep_previous']){
+			$echo1="Keep the previous firmware, and a";
+			if(file_exists($cur_firm_link)){
+				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";		
+			}
+			if($list_firmares=$this->_listFirmwares()){
+				$i=1; 
+				krsort($list_firmares);
+				foreach($list_firmares as $t => $file){
+					if($i > $this->prefs['keep_previous'] +1 ){
+						unlink($file);
+					}
+					$i++;
+				}
+			}
+		}
+		else{
+			$echo1="A";
+			if($cur_firm=@readlink($cur_firm_link)){
+				$command_backup[] = "rm -f \"$cur_firm\"";
+			}
+		}
+		if(!$new_firmware){
+			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
+			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";	
+		}
+		
+		$command=implode(" ; \n   ", $command_backup);
+		$r=true;
+		if(count($command_backup)){
+			echo "\n";
+			$this->_EchoStepStart("{$echo1}rchive the new firmawre : {$this->c_host['firmware_name']} ", $command);
+			if(! $this->flag_drymode){
+				passthru($command, $r);
+			}
+			
+		}
+		
+		return !$r;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _listFirmwares($all=false){
+		$firm_dir			= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
+		$all	and $mask	="{$firm_dir}*.bin";
+		if($files=glob($mask) and count($files)){
+			$time_files=array();
+			foreach($files as $file){
+				$time=filemtime($file);
+				$time_files[$time]=$file;
+			}
+			krsort($time_files);
+			return $time_files;
 		}
 	}
 
@@ -533,7 +613,7 @@ class EspBuddy {
 		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
 		$command=implode(" ; \n   ", $commands_compil);
 		echo "\n";
-		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']}", $command);
+		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']} , version : {$this->c_host['versions']['file']} - {$this->c_host['versions']['full']}", $command);
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
@@ -543,16 +623,7 @@ class EspBuddy {
 			}
 		}
 		if(!$r){
-			
-			$command_backup[] = "mv -f \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}_previous.bin\"";	
-			$command_backup[] = "cp -p \"{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin\" \"{$this->c_host['path_dir_backup']}{$this->c_host['firmware_name']}.bin\"";	
-			$command=implode(" ; \n   ", $command_backup);
-			echo "\n";
-			$this->_EchoStepStart("Backup the previous firmware, and archive the new one", $command);
-			if(! $this->flag_drymode){
-				passthru($command, $r2);
-			}
-			return !$r2;
+			return $this->_rotateFirmware();
 		}
 		return !$r;
 	}
@@ -657,7 +728,7 @@ class EspBuddy {
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
 
-		$this->_RequireRepo($repo_key);
+		$this->orepo=$this->_RequireRepo($repo_key);
 		
 		if($type == "version"){			
 			$version = $this->orepo->GetVersion() or $version= "Not found";
@@ -835,6 +906,7 @@ class EspBuddy {
 	--port=xxx     : serial port to use (overrride main or per host serial port)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
 	--conf=xxx     : config to use (overrride per host config)
+	--from=REPO    : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
 	--login=xxx    : login name (overrride host or per config login)
@@ -862,6 +934,7 @@ EOF;
 				elseif	($v=='host_ip4')	{$str=str_replace('{{'.$v.'}}', $ip4,	$str);}
 				elseif	($v=='host_fqdn')	{$str=str_replace('{{'.$v.'}}', $fqdn,	$str);}
 				elseif	($v=='host_name')	{$str=str_replace('{{'.$v.'}}', $name,	$str);}
+				elseif	($v=='git_version')	{$str=str_replace('{{'.$v.'}}', $this->c_host['versions']['full'],	$str);}
 			}
 		}
 		return $str;
@@ -940,9 +1013,10 @@ EOF;
 
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
-		$this->arg_config			= $this->args['vars']['conf'];
+		$this->arg_config		= $this->args['vars']['conf'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
+		$this->arg_from			= $this->args['vars']['from'];
 
 		$this->host				= $this->args['commands'][2];
 		
@@ -1027,7 +1101,7 @@ EOF;
 		if($verbose) echo "\n";
 		$mess	="$char$char $mess ";
 		if($do_end){
-			$mess=str_pad($mess, 120, $char);
+			$mess=str_pad($mess, 130, $char);
 		}
 		echo "\033[34m$mess";
 		if($verbose and $command){

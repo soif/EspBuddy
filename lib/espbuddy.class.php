@@ -934,6 +934,7 @@ EOF;
 				elseif	($v=='host_ip4')	{$str=str_replace('{{'.$v.'}}', $ip4,	$str);}
 				elseif	($v=='host_fqdn')	{$str=str_replace('{{'.$v.'}}', $fqdn,	$str);}
 				elseif	($v=='host_name')	{$str=str_replace('{{'.$v.'}}', $name,	$str);}
+				elseif	($v=='git_version')	{$str=str_replace('{{'.$v.'}}', $this->c_host['versions']['full'],	$str);}
 			}
 		}
 		return $str;

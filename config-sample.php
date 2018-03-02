@@ -70,7 +70,7 @@ Define all configurations needed by your hosts, where:
 
 
 // ESPEasy Configurations --------------------------------------------------------------
-date_default_timezone_set($cfg['prefs']['time_zone']);$my_build="Soif-".date("dM-H.i");
+date_default_timezone_set($cfg['prefs']['time_zone']);$my_build="{{git_version}}/".date("dM-H.i");
 $my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
 $cfg['configs']['espeasy_1024']['repo']								="espeasy";

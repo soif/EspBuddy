@@ -15,16 +15,16 @@ Please fork the repo and submit Pull Requests :beer:
 #### Code Guidelines
 - Please use Tabs not Spaces
 - Use the same coding style
-- Always use brackets, eben for simple _if_ statements
+- Always use brackets, even for simple _if_ statements
 
 ## Regular Users
 
 #### Spread the World
-The more users, the more developers will join, the more features and bugs fixed
+The more users, the more developers will join, the more features added and bugs fixed
 - **Star the project** _(by clicking the :star: at the top of this page)_
 - Post on forums where there are users/developers that might like EspBuddy,
 - Make a blog article
-- Tweet about it, post on Facebook
+- Tweet about it, post on Facebook, post in forums
 - Etc...
 
 Any little link counts!

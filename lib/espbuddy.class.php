@@ -66,7 +66,6 @@ class EspBuddy {
 		'keep_previous'	=>	3,				// number of previous firmware version to keep
 	);
 	
-	
 	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
 		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
@@ -82,14 +81,21 @@ class EspBuddy {
 		'turbo'		=>	'460800',
 	);
 
-
 	private $os		="";			// what is the OS we are running
+
 
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
 		$this->espb_path=dirname(dirname(__FILE__)).'/';
 		$this->_SetRunningOS();		
 	}
+
+
+
+	// ##################################################################################################################################
+	// ##### PUBLIC #####################################################################################################################
+	// ##################################################################################################################################
+
 
 	// ---------------------------------------------------------------------------------------
 	public function LoadConf($config_file){
@@ -116,27 +122,6 @@ class EspBuddy {
 
 	}
 
-	// ---------------------------------------------------------------------------------------
-	private function _LoadPreferences($prefs){
-		foreach($this->prefs as $k => $v){
-			if(isset($prefs[$k])){
-				$this->prefs[$k] = $prefs[$k];
-			}
-		}
-		
-		date_default_timezone_set($this->prefs['time_zone']);
-	}
-
-	// ---------------------------------------------------------------------------------------
-	private function _SetRunningOS(){
-		$os		="lin";
-		$os_id	= strtolower(substr(php_uname(), 0, 3));
-		
-		if		($os_id=='win'){$os=='win';}	// windows
-		elseif	($os_id=='dar'){$os=='osx';}	// darwin = OSX
-		elseif	($os_id=='lin'){$os=='lin';}	// linux
-		$this->os = $os;
-	}
 
 	// ---------------------------------------------------------------------------------------
 	public function CommandLine(){
@@ -195,6 +180,7 @@ class EspBuddy {
 		echo "\n";
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	public function BatchProcessCommand($command, $id){
 		if($this->flag_drymode){
@@ -213,6 +199,455 @@ class EspBuddy {
 			$this->$fn($this_id);
 		}
 		//if($c==1){echo "\n";}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_build($id){
+		$this->_AssignCurrentHostConfig($id);
+		$path_build=$this->orepo->GetPathBuild();
+
+		$commands_compil[]="cd {$path_build} ";
+		if(is_array($this->c_conf['exports'])){
+			foreach( $this->c_conf['exports'] as $k => $v ){
+				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
+			}
+		}
+		$start_compil =time();
+		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
+		$command=implode(" ; \n   ", $commands_compil);
+		echo "\n";
+		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']} , version : {$this->c_host['versions']['file']} - {$this->c_host['versions']['full']}", $command);
+		if(! $this->flag_drymode){
+			passthru($command, $r);
+			//keep STARTING compil time
+			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			if(!$r and file_exists($firmware_created)){
+				touch($firmware_created,$start_compil);
+			}
+		}
+		if(!$r){
+			return $this->_rotateFirmware();
+		}
+		return !$r;
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_upload($id){
+		$this->_AssignCurrentHostConfig($id);
+
+		//compilation ---------------
+		if($this->flag_build){
+			if(! $this->Command_build($id)){
+				$this->_dieError ("Compilation Failed");
+			}
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
+			$echo_name="NEWEST";	
+		}
+		elseif($this->flag_prevfirm){
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
+			$echo_name="PREVIOUS";			
+		}
+		else{
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
+			$echo_name="LATEST";			
+		}
+		
+		if(!file_exists($firmware)){
+			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
+		}
+		
+		$firm_source=readlink($firmware) or $firm_source=$firmware;
+		echo "\n";
+		$date=date("d M Y - H:i::s", filemtime($firm_source));
+		$firm_source =basename($firm_source);
+
+		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
+
+		// wire mode ------------------
+		if($this->flag_serial){
+			if($this->flag_eraseflash){
+				$this->_DoSerial($id,'erase_flash');
+				$this->_WaitReboot(5);
+			}
+			$this->_DoSerial($id,'write_flash', $firmware);
+		}
+
+		// OTA mode ------------------
+		else{
+			// two steps  upload ?
+			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
+				if($repo_from=$this->arg_from){
+					$orepo1=$this->_RequireRepo($repo_from);
+					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
+				}
+
+				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
+				echo "\n";
+				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
+			
+			if(!$this->flag_drymode){
+					passthru($command, $r);
+					if($r){
+						return $this->_dieError ("First Upload Failed");
+					}	
+				}
+				//wait ?
+				//if($this->c_conf['firststep_delay']){
+				//	echo "\n";
+				//	$this->_WaitReboot($this->c_conf['firststep_delay']);
+				//}
+				echo "\n";
+				sleep(1); // let him reboot
+				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
+					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
+				}
+				sleep(1); // give it some more time to be ready
+			}
+
+			// Final Upload
+			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
+			echo "\n";
+			
+			$this->_EchoStepStart("Uploading Final Firmware", $command);
+
+			if(!$this->flag_drymode){
+				passthru($command, $r);
+				if($r){
+					return $this->_dieError ("Upload Failed");
+				}
+			}
+			return true;	
+		}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	function Command_backup($id){
+		$this->_AssignCurrentHostConfig($id);
+		$tmp_dir	="{$this->c_host['path_dir_backup']}settings_tmp/";
+		$prev_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_previous/";
+		$dest_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}/";
+		@mkdir($tmp_dir, 0777, true);
+		if(is_dir($tmp_dir)){
+			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
+			if($count){
+				echo "Downloaded $count files \n";
+				//remove prev
+				@array_map( "unlink", glob( $prev_dir."*" ) );
+				@rmdir($prev_dir);
+				//mv last to prev
+				@rename($dest_dir, $prev_dir);
+				//mv tmp to dest
+				@rename($tmp_dir, $dest_dir);
+				
+				return true;
+			}
+			else{
+				$this->orepo->EchoLastError();
+				echo "\n";
+			}
+		}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	function Command_monitor($id){
+		$this->_AssignCurrentHostConfig($id);
+		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_host['serial_port']} --baud {$this->c_host['serial_rate']} --raw  --echo ";
+		echo "\n";
+		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_host['serial_port']} at {$this->c_host['serial_rate']} baud",$command);
+		if(!$this->flag_drymode){
+			passthru($command, $r);
+			if($r){
+				return $this->_dieError ("Serial monitor Failed");
+			}	
+		}
+		return true;
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_version($id){
+		$this->_AssignCurrentHostConfig($id);
+		echo "{$this->c_conf['repo']}\t".$this->orepo->RemoteGetVersion($this->c_host) . "\n";
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_reboot($id){
+		$this->_AssignCurrentHostConfig($id);
+		echo "{$this->c_conf['repo']}\t";
+		$this->orepo->RemoteReboot($this->c_host);
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_repo($type){
+		$repo_key=$this->target;
+		$repo=$this->cfg['repos'][$repo_key];
+
+		$this->orepo=$this->_RequireRepo($repo_key);
+		
+		if($type == "version"){			
+			$version = $this->orepo->GetVersion() or $version= "Not found";
+			echo "*** Local '$repo_key' Repository Version is	: $version \n";
+		}
+		if($type == "pull"){
+			$this->Command_repo('version');
+			
+			$command="cd {$repo['path_repo']} ; git pull ";
+			echo("*** Loading '$repo_key' git commits	: ");
+			if(!$this->flag_drymode){
+				if(passthru($command, $r)){
+					echo "\n";
+				}
+			}
+			$this->Command_repo('version');
+			echo "\n";
+		}
+		echo "\n";
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_ping($id,$count=0){
+		$this->_AssignCurrentHostConfig($id);
+		if(!$count){
+			$count	=4;
+			$opt	="-o ";
+		}
+		$opt .="-c $count";
+		$command="ping $opt -n -W 2000 -q {$this->c_host['ip']} 2> /dev/null | grep loss";
+		if(!$this->flag_drymode){
+			$result	=trim(shell_exec($command));
+			$result	=str_replace('packet loss',	'loss',	$result);	
+			$result	=str_replace('packets transmitted',	'sent',	$result);	
+			$result	=str_replace('packets received',		'rcv',	$result);
+	
+			if		(preg_match('# 0.0% loss#', 	$result))	{$result .="\t\t OK";}	
+			elseif	(preg_match('# 100.0% loss#',	$result))	{$result .="\t\t Offline";}	
+			else												{$result .="\t\t -";}	
+			echo "$result\n";
+		}
+		return "$command\n";
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_list($type){
+		switch ($type) {
+			case 'configs':
+				echo "Available Configurations are: \n";
+				foreach($this->cfg['configs'] as $conf => $arr){
+					$name=str_pad($conf,25);
+					echo "  - $name : Repo = {$arr['repo']},	Env = {$arr['environment']}\n";
+				}
+				break;
+
+			case 'hosts':
+				echo "Available Hosts are: \n";
+				foreach($this->cfg['hosts'] as $id => $arr){
+					$name=str_pad($id,15);
+					echo "  - $name		: " . $this->_FillHostnameOrIp($id)."\n";
+				}
+				break;
+	
+			case 'repos':
+				echo "Available Repositories are: \n";
+				foreach($this->cfg['repos'] as $repo => $arr){
+					$name=str_pad($repo,15);
+					echo "  - $name		: {$arr['path_repo']}\n";
+				}
+				break;
+	
+			default:
+				$this->_dieError ("Unknown List type '$type'");
+				# code...
+				break;
+		}
+		echo "\n";
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_usage(){
+		$allowed_actions=array(
+			'upload'		=> "Build and/or Upload current repo version to Device(s)",
+			'build'			=> "Build current repo version",
+			'backup'		=> "Backup remote devices settings",
+			'monitor'		=> "Monitor the serial port",
+			'version'		=> "Show Device(s) Version",
+			'reboot'		=> "Reboot Device(s)",
+			'ping'			=> "Ping Device(s)",
+			'repo_version'	=> "Show Repo's Current version", 
+			'repo_pull'		=> "Git Pull Repo's master version",
+			'list_hosts'	=> "List all available hosts",
+			'list_configs'	=> "List all available configurations",
+			'list_repos'	=> "List all available repositories",
+			'help'			=> "Show full help"
+			);
+
+		echo "USAGE: {$this->bin} [options] action [TARGET] \n";
+		echo "\n";
+		echo "* Valid Actions are: \n";
+		foreach($allowed_actions as $k => $v){
+			echo "  - ".str_pad($k,15)." : $v\n";
+		}
+		echo "\n";
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_help(){
+		$bin= $this->bin;
+		echo $this->_espbVersions();
+		echo "\n\n";
+		$this->Command_usage();
+		echo <<<EOF
+
+* upload (Action) : 
+	USAGE   : $bin [options][upload_options] upload [TARGET]
+	Desc    : Upload to the board using OTA as default
+
+* build (Action) : 
+	USAGE   : $bin [options]  build [TARGET]
+	Desc    : Build the firmware
+
+* backup (Action) : 
+	USAGE   : $bin [options][auth_options]  backup [TARGET]
+	Desc    : Download and archive settings from the remote board
+
+* monitor (Action) : 
+	USAGE   : $bin [options]  monitor [TARGET]
+	Desc    : Monitor the serial port
+
+* version (Action) : 
+	USAGE   : $bin [options] version
+	Desc    : Get the board installed version
+
+* reboot (Action) : 
+	USAGE   : $bin [options] reboot
+	Desc    : Reboot board
+
+* ping (Action) : 
+	USAGE   : $bin [options] ping
+	Desc    : Ping board
+
+* repo_version (Action) : 
+	USAGE   : $bin repo_version REPO
+	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
+
+* repo_pull (Action) : 
+	USAGE   : $bin repo_pull REPO
+	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
+
+* list_hosts (Action) : 
+	USAGE   : $bin list_hosts
+	Desc    : List all hosts defined in config.php
+
+* list_configs (Action) : 
+	USAGE   : $bin list_configs
+	Desc    : List all available configurations defined in config.php
+
+* list_repos (Action) : 
+	USAGE   : $bin list_repos
+	Desc    : List all available repositories defined in config.php
+
+
+
+* OPTIONS :
+	-f  : don't confirm choosen host (when no host provided)
+	-d  : Dry Run. Show commands but don't apply them
+	-v  : Verbose
+
+* UPLOAD_OPTIONS :
+	-b  : Build before Uploading
+	-p  : Upload previous firmware backuped, instead of the latest built 
+	-s  : Skip Intermediate Upload (if set)
+	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
+	-e  : In Wire Mode, erase flash first, then upload
+
+	--port=xxx     : serial port to use (overrride main or per host serial port)
+	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
+	--conf=xxx     : config to use (overrride per host config)
+	--from=REPO    : migrate from REPO to the selected config
+
+* AUTH_OPTIONS :
+	--login=xxx    : login name (overrride host or per config login)
+	--pass=xxx     : password (overrride host or per config password)
+
+EOF;
+	}
+
+
+
+
+	// ##################################################################################################################################
+	// ##### PRIVATE ####################################################################################################################
+	// ##################################################################################################################################
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _LoadPreferences($prefs){
+		foreach($this->prefs as $k => $v){
+			if(isset($prefs[$k])){
+				$this->prefs[$k] = $prefs[$k];
+			}
+		}
+		
+		date_default_timezone_set($this->prefs['time_zone']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SetRunningOS(){
+		$os		="lin";
+		$os_id	= strtolower(substr(php_uname(), 0, 3));
+		
+		if		($os_id=='win'){$os=='win';}	// windows
+		elseif	($os_id=='dar'){$os=='osx';}	// darwin = OSX
+		elseif	($os_id=='lin'){$os=='lin';}	// linux
+		$this->os = $os;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _DoSerial($id,$action='write_flash',$firmware_file=''){
+		$this->_AssignCurrentHostConfig($id);
+		$path_build=$this->orepo->GetPathBuild();
+
+		if(!$this->c_host['serial_port']){
+			return $this->_dieError ("No Serial Port choosen");
+		}
+
+		$this->c_host['serial_rate']	 and 
+			$arg_rate=" -b {$this->c_host['serial_rate']}" and
+			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
+
+		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
+
+		switch ($action) {
+			case 'write_flash':
+				$command .="0x0 \"{$firmware_file}\" ";
+				break;
+			case 'erase_flash':
+				break;
+			case 'read_mac':
+				break;
+			default:
+				return $this->_dieError ("Invalid Action");
+				break;
+		}
+		echo "\n";
+		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
+	
+		if(!$this->flag_drymode){
+			passthru($command, $r);
+			if($r){
+				return $this->_dieError ("Serial Upload Failed");
+			}	
+		}
+		return true;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -442,98 +877,6 @@ class EspBuddy {
 		}
 		return $path;
 	}
-
-
-	// ---------------------------------------------------------------------------------------
-
-	public function Command_upload($id){
-		$this->_AssignCurrentHostConfig($id);
-
-		//compilation ---------------
-		if($this->flag_build){
-			if(! $this->Command_build($id)){
-				$this->_dieError ("Compilation Failed");
-			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
-			$echo_name="NEWEST";	
-		}
-		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
-			$echo_name="PREVIOUS";			
-		}
-		else{
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
-			$echo_name="LATEST";			
-		}
-		
-		if(!file_exists($firmware)){
-			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
-		}
-		
-		$firm_source=readlink($firmware) or $firm_source=$firmware;
-		echo "\n";
-		$date=date("d M Y - H:i::s", filemtime($firm_source));
-		$firm_source =basename($firm_source);
-
-		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
-
-		// wire mode ------------------
-		if($this->flag_serial){
-			if($this->flag_eraseflash){
-				$this->DoSerial($id,'erase_flash');
-				$this->_WaitReboot(5);
-			}
-			$this->DoSerial($id,'write_flash', $firmware);
-		}
-
-		// OTA mode ------------------
-		else{
-			// two steps  upload ?
-			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
-				if($repo_from=$this->arg_from){
-					$orepo1=$this->_RequireRepo($repo_from);
-					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
-				}
-
-				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
-				echo "\n";
-				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
-			
-			if(!$this->flag_drymode){
-					passthru($command, $r);
-					if($r){
-						return $this->_dieError ("First Upload Failed");
-					}	
-				}
-				//wait ?
-				//if($this->c_conf['firststep_delay']){
-				//	echo "\n";
-				//	$this->_WaitReboot($this->c_conf['firststep_delay']);
-				//}
-				echo "\n";
-				sleep(1); // let him reboot
-				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
-					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
-				}
-				sleep(1); // give it some more time to be ready
-			}
-
-			// Final Upload
-			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
-			echo "\n";
-			
-			$this->_EchoStepStart("Uploading Final Firmware", $command);
-
-			if(!$this->flag_drymode){
-				passthru($command, $r);
-				if($r){
-					return $this->_dieError ("Upload Failed");
-				}
-			}
-			return true;	
-		}
-	}
-
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($new_firmware=''){
 		$command_backup=array();
@@ -582,9 +925,7 @@ class EspBuddy {
 			if(! $this->flag_drymode){
 				passthru($command, $r);
 			}
-			
 		}
-		
 		return !$r;
 	}
 
@@ -605,325 +946,6 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function Command_build($id){
-		$this->_AssignCurrentHostConfig($id);
-		$path_build=$this->orepo->GetPathBuild();
-
-		$commands_compil[]="cd {$path_build} ";
-		if(is_array($this->c_conf['exports'])){
-			foreach( $this->c_conf['exports'] as $k => $v ){
-				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
-			}
-		}
-		$start_compil =time();
-		$commands_compil[]="{$this->cfg['paths']['bin_pio']} run -e {$this->c_conf['environment']}";
-		$command=implode(" ; \n   ", $commands_compil);
-		echo "\n";
-		$this->_EchoStepStart("Compiling {$this->c_conf['repo']} : {$this->c_conf['environment']} , version : {$this->c_host['versions']['file']} - {$this->c_host['versions']['full']}", $command);
-		if(! $this->flag_drymode){
-			passthru($command, $r);
-			//keep STARTING compil time
-			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			if(!$r and file_exists($firmware_created)){
-				touch($firmware_created,$start_compil);
-			}
-		}
-		if(!$r){
-			return $this->_rotateFirmware();
-		}
-		return !$r;
-	}
-
-	// ---------------------------------------------------------------------------------------
-	function Command_backup($id){
-		$this->_AssignCurrentHostConfig($id);
-		$tmp_dir	="{$this->c_host['path_dir_backup']}settings_tmp/";
-		$prev_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_previous/";
-		$dest_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}/";
-		@mkdir($tmp_dir, 0777, true);
-		if(is_dir($tmp_dir)){
-			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
-			if($count){
-				echo "Downloaded $count files \n";
-				//remove prev
-				@array_map( "unlink", glob( $prev_dir."*" ) );
-				@rmdir($prev_dir);
-				//mv last to prev
-				@rename($dest_dir, $prev_dir);
-				//mv tmp to dest
-				@rename($tmp_dir, $dest_dir);
-				
-				return true;
-			}
-			else{
-				$this->orepo->EchoLastError();
-				echo "\n";
-			}
-		}
-	}
-
-	// ---------------------------------------------------------------------------------------
-	function Command_monitor($id){
-		$this->_AssignCurrentHostConfig($id);
-		$command="{$this->cfg['paths']['bin_pio']} device monitor --port {$this->c_host['serial_port']} --baud {$this->c_host['serial_rate']} --raw  --echo ";
-		echo "\n";
-		$this->_EchoStepStart("Monitoring Serial Port: {$this->c_host['serial_port']} at {$this->c_host['serial_rate']} baud",$command);
-		if(!$this->flag_drymode){
-			passthru($command, $r);
-			if($r){
-				return $this->_dieError ("Serial monitor Failed");
-			}	
-		}
-		return true;
-	}
-
-	// ---------------------------------------------------------------------------------------
-	private function DoSerial($id,$action='write_flash',$firmware_file=''){
-		$this->_AssignCurrentHostConfig($id);
-		$path_build=$this->orepo->GetPathBuild();
-
-		if(!$this->c_host['serial_port']){
-			return $this->_dieError ("No Serial Port choosen");
-		}
-
-		$this->c_host['serial_rate']	 and 
-			$arg_rate=" -b {$this->c_host['serial_rate']}" and
-			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
-
-		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
-
-		switch ($action) {
-			case 'write_flash':
-				$command .="0x0 \"{$firmware_file}\" ";
-				break;
-			case 'erase_flash':
-				break;
-			case 'read_mac':
-				break;
-			default:
-				return $this->_dieError ("Invalid Action");
-				break;
-		}
-		echo "\n";
-		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
-	
-		if(!$this->flag_drymode){
-			passthru($command, $r);
-			if($r){
-				return $this->_dieError ("Serial Upload Failed");
-			}	
-		}
-		return true;
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_version($id){
-		$this->_AssignCurrentHostConfig($id);
-		echo "{$this->c_conf['repo']}\t".$this->orepo->RemoteGetVersion($this->c_host) . "\n";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_reboot($id){
-		$this->_AssignCurrentHostConfig($id);
-		echo "{$this->c_conf['repo']}\t";
-		$this->orepo->RemoteReboot($this->c_host);
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_repo($type){
-		$repo_key=$this->target;
-		$repo=$this->cfg['repos'][$repo_key];
-
-		$this->orepo=$this->_RequireRepo($repo_key);
-		
-		if($type == "version"){			
-			$version = $this->orepo->GetVersion() or $version= "Not found";
-			echo "*** Local '$repo_key' Repository Version is	: $version \n";
-		}
-		if($type == "pull"){
-			$this->Command_repo('version');
-			
-			$command="cd {$repo['path_repo']} ; git pull ";
-			echo("*** Loading '$repo_key' git commits	: ");
-			if(!$this->flag_drymode){
-				if(passthru($command, $r)){
-					echo "\n";
-				}
-			}
-			$this->Command_repo('version');
-			echo "\n";
-		}
-		echo "\n";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_ping($id,$count=0){
-		$this->_AssignCurrentHostConfig($id);
-		if(!$count){
-			$count	=4;
-			$opt	="-o ";
-		}
-		$opt .="-c $count";
-		$command="ping $opt -n -W 2000 -q {$this->c_host['ip']} 2> /dev/null | grep loss";
-		if(!$this->flag_drymode){
-			$result	=trim(shell_exec($command));
-			$result	=str_replace('packet loss',	'loss',	$result);	
-			$result	=str_replace('packets transmitted',	'sent',	$result);	
-			$result	=str_replace('packets received',		'rcv',	$result);
-	
-			if		(preg_match('# 0.0% loss#', 	$result))	{$result .="\t\t OK";}	
-			elseif	(preg_match('# 100.0% loss#',	$result))	{$result .="\t\t Offline";}	
-			else												{$result .="\t\t -";}	
-			echo "$result\n";
-		}
-		return "$command\n";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_list($type){
-		switch ($type) {
-			case 'configs':
-				echo "Available Configurations are: \n";
-				foreach($this->cfg['configs'] as $conf => $arr){
-					$name=str_pad($conf,25);
-					echo "  - $name : Repo = {$arr['repo']},	Env = {$arr['environment']}\n";
-				}
-				break;
-
-			case 'hosts':
-				echo "Available Hosts are: \n";
-				foreach($this->cfg['hosts'] as $id => $arr){
-					$name=str_pad($id,15);
-					echo "  - $name		: " . $this->_FillHostnameOrIp($id)."\n";
-				}
-				break;
-	
-			case 'repos':
-				echo "Available Repositories are: \n";
-				foreach($this->cfg['repos'] as $repo => $arr){
-					$name=str_pad($repo,15);
-					echo "  - $name		: {$arr['path_repo']}\n";
-				}
-				break;
-	
-			default:
-				$this->_dieError ("Unknown List type '$type'");
-				# code...
-				break;
-		}
-		echo "\n";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_usage(){
-		$allowed_actions=array(
-			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build current repo version",
-			'backup'		=> "Backup remote devices settings",
-			'monitor'		=> "Monitor the serial port",
-			'version'		=> "Show Device(s) Version",
-			'reboot'		=> "Reboot Device(s)",
-			'ping'			=> "Ping Device(s)",
-			'repo_version'	=> "Show Repo's Current version", 
-			'repo_pull'		=> "Git Pull Repo's master version",
-			'list_hosts'	=> "List all available hosts",
-			'list_configs'	=> "List all available configurations",
-			'list_repos'	=> "List all available repositories",
-			'help'			=> "Show full help"
-			);
-
-		echo "USAGE: {$this->bin} [options] action [TARGET] \n";
-		echo "\n";
-		echo "* Valid Actions are: \n";
-		foreach($allowed_actions as $k => $v){
-			echo "  - ".str_pad($k,15)." : $v\n";
-		}
-		echo "\n";
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_help(){
-		$bin= $this->bin;
-		echo $this->_espbVersions();
-		echo "\n\n";
-		$this->Command_usage();
-		echo <<<EOF
-
-* upload (Action) : 
-	USAGE   : $bin [options][upload_options] upload [TARGET]
-	Desc    : Upload to the board using OTA as default
-
-* build (Action) : 
-	USAGE   : $bin [options]  build [TARGET]
-	Desc    : Build the firmware
-
-* backup (Action) : 
-	USAGE   : $bin [options][auth_options]  backup [TARGET]
-	Desc    : Download and archive settings from the remote board
-
-* monitor (Action) : 
-	USAGE   : $bin [options]  monitor [TARGET]
-	Desc    : Monitor the serial port
-
-* version (Action) : 
-	USAGE   : $bin [options] version
-	Desc    : Get the board installed version
-
-* reboot (Action) : 
-	USAGE   : $bin [options] reboot
-	Desc    : Reboot board
-
-* ping (Action) : 
-	USAGE   : $bin [options] ping
-	Desc    : Ping board
-
-* repo_version (Action) : 
-	USAGE   : $bin repo_version REPO
-	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
-
-* repo_pull (Action) : 
-	USAGE   : $bin repo_pull REPO
-	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
-
-* list_hosts (Action) : 
-	USAGE   : $bin list_hosts
-	Desc    : List all hosts defined in config.php
-
-* list_configs (Action) : 
-	USAGE   : $bin list_configs
-	Desc    : List all available configurations defined in config.php
-
-* list_repos (Action) : 
-	USAGE   : $bin list_repos
-	Desc    : List all available repositories defined in config.php
-
-
-
-* OPTIONS :
-	-f  : don't confirm choosen host (when no host provided)
-	-d  : Dry Run. Show commands but don't apply them
-	-v  : Verbose
-
-* UPLOAD_OPTIONS :
-	-b  : Build before Uploading
-	-p  : Upload previous firmware backuped, instead of the latest built 
-	-s  : Skip Intermediate Upload (if set)
-	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
-	-e  : In Wire Mode, erase flash first, then upload
-
-	--port=xxx     : serial port to use (overrride main or per host serial port)
-	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
-	--conf=xxx     : config to use (overrride per host config)
-	--from=REPO    : migrate from REPO to the selected config
-
-* AUTH_OPTIONS :
-	--login=xxx    : login name (overrride host or per config login)
-	--pass=xxx     : password (overrride host or per config password)
-
-EOF;
-	}
-
-	// ---------------------------------------------------------------------------------------
 	private function _espbVersions(){
 		$version="EspBuddby v{$this->class_version}";
 		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
@@ -932,7 +954,6 @@ EOF;
 		}
 		return $version;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){

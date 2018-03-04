@@ -68,7 +68,7 @@ Examples:
 
 ## Contribute!
 
-Whether you are a developer or a regular user, [your help is most welcome](CONTRIBUTING.md)!
+Whether you are a developer or a regular user, [your help is most welcome](.github/CONTRIBUTING.md)!
 
 ## Licence
 

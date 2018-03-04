@@ -48,7 +48,7 @@ class EspBuddy {
 	//selected configuration for the current host
 	private $c_host		=array();	//	current host
 	private $c_conf		=array();	//	current config
-	private $c_repo		=array();	//	current repository
+	//private $c_repo		=array();	//	current repository
 	private $c_serial	=array();	//	current serial port and rate
 
 	private $orepo	;			//	repo_object
@@ -326,7 +326,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
-		$tmp_dir	="{$this->c_host['path_dir_backup']}settings_tmp/";
+		$tmp_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_tmp/";
 		$prev_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}_previous/";
 		$dest_dir	="{$this->c_host['path_dir_backup']}{$this->c_host['settings_name']}/";
 		@mkdir($tmp_dir, 0777, true);
@@ -740,6 +740,7 @@ EOF;
 		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
 		$this->c_host['login']			= $this->_ChooseValueToUse('login');	
 		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');	
+		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$this->prefs['name_sep']}{$this->c_conf['repo']}";		
 
 		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);	
 		if($connected_serials=$this->_findConnectedSerialPorts()){
@@ -754,13 +755,14 @@ EOF;
 		}
 
 		// current repo ---------------
-		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
+		//$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
 			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 			}
 		}
+
 
 		// git commands add a little delay, so only use then if needed
 		if($this->action=='build' or ($this->action=='upload' and $this->flag_build)){
@@ -795,7 +797,6 @@ EOF;
 			$version_full						="{$s}({$version_full})";
 		}
 		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version_short}{$version_full}";
-		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$s}{$this->c_conf['repo']}";		
 
 	}
 

@@ -1,9 +1,18 @@
-## OS Specific Files ############
+## OS Specific Hidden Files ####
+
+# MacOSX Finder *****
 .DS_Store
+
+# Fuse FileSystem ***
 .fuse_hidden*
+
 
 ## Platformio ######################
 .pioenvs
+.clang_complete
+.gcc-flags.json
+.piolibdeps
 
-## Project ######################
+
+## Project #########################
 config.php

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.75';	// EspBuddy Version
+	public $class_version		= '1.76b2';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -319,7 +319,6 @@ class EspBuddy {
 		}
 
 		// current repo ---------------
-
 		$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
 			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
@@ -327,8 +326,11 @@ class EspBuddy {
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 			}
 		}
-		
-		$this->_SetCurrentVersionNames();
+
+		// git commands add a little delay, so only use then if needed
+		if($this->action=='build' or ($this->action=='upload' and $this->flag_build)){
+			$this->_SetCurrentVersionNames();
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------

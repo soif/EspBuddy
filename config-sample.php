@@ -45,7 +45,7 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
 // Repositories ###################################################################################################################
 // Define the paths to your local copy (as 'path_repo') of each repositories you wish to use :
-$cfg['repos']['espurna']['path_repo']				="/Users/soif/dev/espurna/";
+$cfg['repos']['espurna']['path_repo']				="/Users/soif/mount/dev_apache/src/espurna/";
 $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPEasy/";
 $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasmota/";
 
@@ -66,26 +66,27 @@ Define all configurations needed by your hosts, where:
 		- {{host_name}}	is replaced by the host (first) part of the FQDN
 		- {{host_ip}}	is replaced by the host IP address
 		- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
+		- {{git_version}} is replaced by the full git version (branch,tag,commit)
 */
 
 
 // ESPEasy Configurations --------------------------------------------------------------
-date_default_timezone_set($cfg['prefs']['time_zone']);$my_build="{{git_version}}/".date("dM-H.i");
-$my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
+//date_default_timezone_set($cfg['prefs']['time_zone']);$my_build="{{git_version}}/".date("dM-H.i");
+//$my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
-$cfg['configs']['espeasy_1024']['repo']								="espeasy";
-$cfg['configs']['espeasy_1024']['environment']						="normal_ESP8266_1024";
-$cfg['configs']['espeasy_1024']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
-$cfg['configs']['espeasy_1024']['2steps']							=true;
+$cfg['configs']['espeasy_1M']['repo']								="espeasy";
+$cfg['configs']['espeasy_1M']['environment']						="normal_ESP8266_1024";
+$cfg['configs']['espeasy_1M']['2steps']								=true;
+//$cfg['configs']['espeasy_1024']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
 
-$cfg['configs']['espeasy_4096']['repo']								="espeasy";
-$cfg['configs']['espeasy_4096']['environment']						="normal_ESP8266_4096";
-$cfg['configs']['espeasy_4096']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
-//$cfg['configs']['espurna_h801']['pass']							="MyEspeasyPassword";
-//$cfg['configs']['espeasy_4096']['serial_port']					="nodemcu";
+$cfg['configs']['espeasy_4M']['repo']								="espeasy";
+$cfg['configs']['espeasy_4M']['environment']						="normal_ESP8266_4096";
+//$cfg['configs']['espeasy_4M']['exports']['PLATFORMIO_BUILD_FLAGS']=$my_espeasy_flags;
+//$cfg['configs']['espeasy_4M']['pass']								="MyEspeasyPassword";
+//$cfg['configs']['espeasy_4M']['serial_port']						="nodemcu";
 
-$cfg['configs']['espeasy_4096_testing']								=$cfg['configs']['espeasy_4096'];
-$cfg['configs']['espeasy_4096_testing']['environment']				="dev_ESP8266_4096";
+$cfg['configs']['espeasy_4M_testing']								=$cfg['configs']['espeasy_4096'];
+$cfg['configs']['espeasy_4M_testing']['environment']				="dev_ESP8266_4096";
 
 
 // Espurna Configurations --------------------------------------------------------------

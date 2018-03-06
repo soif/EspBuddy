@@ -34,6 +34,8 @@ class EspBuddy_Repo {
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
 
+
+
 //	private $git_version		= "";	// latest commit
 //	private $git_date			= "";	// latest commit date
 
@@ -150,6 +152,11 @@ class EspBuddy_Repo {
 			echo "\033[31m HTTP Error {$this->last_http_code} => {$this->last_http_status} \033[0m";
 			return true;
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetPostBuildCommands($host_arr,$cfg){
+		return false;
 	}
 
 	// ---------------------------------------------------------------------------------------

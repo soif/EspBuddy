@@ -26,6 +26,9 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 
 	protected $firststep_firmware 	= 'firmwares/ESPEasyUploader.OTA.1m128.esp8266.bin';	// first (intermediate) firmware to upload
 
+	private $bin_crc2 	= 'crc2.py';
+
+
 	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){
 		parent::__construct($path_to_repo);
@@ -71,6 +74,15 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		}
 		echo " Failed\n";			
 	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function GetPostBuildCommands($host_arr,$cfg){
+		$bin_crc2	=$cfg['paths']['bin'].$this->bin_crc2;
+		$commands[]	="python \"$bin_crc2\" \"{$host_arr['path_firmware']}\" ";					
+		return $commands;		
+	}
+
 
 
 	// ####### Privates ##########################################################################

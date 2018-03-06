@@ -64,7 +64,8 @@ class EspBuddy {
 		'settings_name'	=>	'Settings',		// firmware settings name prefix
 		'name_sep'		=>	'-',			// field separator in firmware name
 		'keep_previous'	=>	3,				// number of previous firmware version to keep
-	);
+		'checkout_mode'	=>	1,				// Mode when doing a Git checkout : 0 = no checkout, 1 = only if clean, 2 = allows modifications, 3 stash modifications first if any
+ 	);
 	
 	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
@@ -394,18 +395,16 @@ class EspBuddy {
 			$version = $this->orepo->GetVersion() or $version= "Not found";
 			echo "*** Local '$repo_key' Repository Version is	: $version \n";
 		}
-		if($type == "pull"){
+		elseif($type == "pull"){
+			$this->Command_repo('version');			
+			echo("*** Pulling '$repo_key' git commits	: ");
+			$this->_DoGit('git pull');
 			$this->Command_repo('version');
-			
-			$command="cd {$repo['path_repo']} ; git pull ";
-			echo("*** Loading '$repo_key' git commits	: ");
-			if(!$this->flag_drymode){
-				if(passthru($command, $r)){
-					echo "\n";
-				}
-			}
-			$this->Command_repo('version');
-			echo "\n";
+		}
+		elseif($type == 'checkout'){
+// TODO ==========================================
+			$branch	= $this->c_host['checkout'] or $branch = 'master';
+			$this->_DoGit("git checkout {$branch}");
 		}
 		echo "\n";
 	}
@@ -610,6 +609,28 @@ EOF;
 		elseif	($os_id=='lin'){$os=='lin';}	// linux
 		$this->os = $os;
 	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _DoGit($git_command){
+		$path_base	= $this->orepo->GetPathBase();
+		$commands[]	= "cd {$path_base} ";
+		$commands[]	= $git_command;
+		$command=implode(" ; \n   ", $commands);
+		//echo "\n";
+		//$this->_EchoStepStart("GIT: $git_command ",$command);
+		if(!$this->flag_drymode){
+			passthru($command, $r);
+			if($r){
+				return false;
+			}
+			else{
+				return true;
+			}	
+		}
+		return true;
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _DoSerial($id,$action='write_flash',$firmware_file=''){

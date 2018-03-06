@@ -164,6 +164,11 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function GetPathBase(){
+		return $this->path_base;
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function GetFirstStepFirmware(){
 		return $this->firststep_firmware;
 	}

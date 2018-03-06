@@ -120,7 +120,11 @@ class EspBuddy {
 				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");			
 			}
 		}
-
+		
+		// make paths
+		$this->cfg['paths']['bin']			= $this->espb_path.'bin/';
+		$this->cfg['paths']['bin_espota']	= $this->cfg['paths']['bin'].	"espota.py";
+		$this->cfg['paths']['bin_esptool']	= $this->cfg['paths']['bin'].	"esptool.py";
 	}
 
 
@@ -228,7 +232,18 @@ class EspBuddy {
 			}
 		}
 		if(!$r){
-			return $this->_rotateFirmware();
+			if($this->_rotateFirmware()){
+				if($commands_post=$this->orepo->GetPostBuildCommands($this->c_host, $this->cfg)){
+					$command=implode(" ; \n   ", $commands_post);
+					echo "\n";
+					$this->_EchoStepStart("Processing Post Build Scripts ", $command);
+					if(! $this->flag_drymode){
+						passthru($command, $r);
+						return !$r;
+					}
+				}
+				return true;
+			}
 		}
 		return !$r;
 	}
@@ -284,7 +299,7 @@ class EspBuddy {
 					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
 				}
 
-				$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
+				$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
@@ -308,7 +323,7 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_esp_ota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
+			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
 			echo "\n";
 			
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
@@ -817,7 +832,9 @@ EOF;
 			$this->c_host['versions']['full']	=$version_full;
 			$version_full						="{$s}({$version_full})";
 		}
-		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$version_short}{$version_full}";
+		$esc_version_short	=str_replace('/','_',$esc_version_short);
+		$esc_version_full	=str_replace('/','_',$version_full);
+		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
 
 	}
 
@@ -913,9 +930,9 @@ EOF;
 		}
 		if($this->prefs['keep_previous']){
 			$echo1="Keep the previous firmware, and a";
-			if(file_exists($cur_firm_link)){
+			//if(file_exists($cur_firm_link)){
 				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";		
-			}
+			//}
 			if($list_firmares=$this->_listFirmwares()){
 				$i=1; 
 				krsort($list_firmares);
@@ -936,19 +953,20 @@ EOF;
 		if(!$new_firmware){
 			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
 			$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
-			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";	
+			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
+			$this->c_host['path_firmware']=$cur_firmware;
 		}
-		
-		$command=implode(" ; \n   ", $command_backup);
-		$r=true;
+				
 		if(count($command_backup)){
+			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
 			$this->_EchoStepStart("{$echo1}rchive the new firmawre : {$this->c_host['firmware_name']} ", $command);
 			if(! $this->flag_drymode){
 				passthru($command, $r);
+				return !$r;
 			}
 		}
-		return !$r;
+		return true;
 	}
 
 	// ---------------------------------------------------------------------------------------

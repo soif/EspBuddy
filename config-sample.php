@@ -5,16 +5,9 @@
 
 
 // Global Paths ###################################################################################################################
-$tmp_current_dir=dirname(__FILE__);	//shortcut to the current dir (only used as a shorcut in this file)
 
 //path to the platformio binary
 $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
-
-//path to esp_ota.py (script provided with the esp8266 arduino v2.3 environment, in packages/esp8266/hardware/esp8266/2.3.0/tools/)
-$cfg['paths']['bin_esp_ota']					=$tmp_current_dir.	"/bin/espota.py";
-
-//path to esptools , ie /usr/local/bin/esptool.py 
-$cfg['paths']['bin_esptool']					=$tmp_current_dir.	"/bin/esptool.py";
 
 
 

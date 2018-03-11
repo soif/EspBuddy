@@ -14,9 +14,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 You should have received a copy of the GNU General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 --------------------------------------------------------------------------------------------------------------------------------------
 */
-class EspBuddy_Repo {
 
-	// Should be defined in ach Repo classes
+
+class EspBuddy_Repo {
 
 	// location relative to the base repository path
 	protected $dir_build 		= ""; // (Trailing Slash) directory where the compiler must start
@@ -29,11 +29,13 @@ class EspBuddy_Repo {
 	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
 	protected $last_http_status = '';	// last HTTP status
 
-	// internal properties
+	protected $url_gpio_on 		= '';	// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+	protected $url_gpio_off 	= '';	// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+
+	// internal properties -----------------------------------
 	protected $version			= "";	// extracted version
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
-
 
 
 //	private $git_version		= "";	// latest commit
@@ -195,6 +197,41 @@ class EspBuddy_Repo {
 	public function RemoteReboot($host_arr){
 		echo "Not Implemented\n";
 		return false;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteTestAllGpios($host_arr){
+		$url_host		='http://'.$host_arr['ip'];
+		$first_gpio 	= 0;
+		$last_gpio		= 16;
+		$delay_state 	= 100;	// ms
+		$delay_gpio 	= 800;	// ms
+
+		if($this->url_gpio_on or $this->url_gpio_off){
+			for($i=$first_gpio; $i <= $last_gpio ; $i++){
+				echo "$i";
+				if($this->url_gpio_on){
+					$url=$url_host.str_replace('{{gpio}}', $i, $this->url_gpio_on);
+					$this->_TriggerUrl($url, $host_arr['login'], $host_arr['pass']);
+					//echo " $url\n";
+					usleep($delay_state * 1000);
+				}
+				if($this->url_gpio_off){
+					$url=$url_host.str_replace('{{gpio}}', $i, $this->url_gpio_off);
+					$this->_TriggerUrl($url, $host_arr['login'], $host_arr['pass']);
+					//echo " $url\n";
+					usleep($delay_state * 1000);
+				}
+				usleep($delay_gpio * 1000);
+				echo " ";
+			}
+			echo "\n";
+			return true;
+		}
+		else{
+			echo "Not Implemented\n";
+			return false;
+		}
 	}
 
 

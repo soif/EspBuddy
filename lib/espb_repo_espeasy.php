@@ -26,6 +26,9 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 
 	protected $firststep_firmware 	= 'firmwares/ESPEasyUploader.OTA.1m128.esp8266.bin';	// first (intermediate) firmware to upload
 
+	protected $url_gpio_on 		= '/control?cmd=gpio,{{gpio}},1';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+	protected $url_gpio_off 	= '/control?cmd=gpio,{{gpio}},0';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+
 	private $bin_crc2 	= 'crc2.py';
 
 

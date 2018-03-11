@@ -151,6 +151,9 @@ class EspBuddy {
 			case 'reboot':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
+			case 'gpios':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
@@ -400,6 +403,14 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
+	public function Command_gpios($id){
+		$this->_AssignCurrentHostConfig($id);
+		//echo "{$this->c_conf['repo']}\t";
+		$this->orepo->RemoteTestAllGpios($this->c_host);
+	}
+
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
@@ -494,6 +505,7 @@ class EspBuddy {
 			'monitor'		=> "Monitor the serial port",
 			'version'		=> "Show Device(s) Version",
 			'reboot'		=> "Reboot Device(s)",
+			'gpios'			=> "Test all GPIOs",
 			'ping'			=> "Ping Device(s)",
 			'repo_version'	=> "Show Repo's Current version", 
 			'repo_pull'		=> "Git Pull Repo's master version",
@@ -544,6 +556,10 @@ class EspBuddy {
 * reboot (Action) : 
 	USAGE   : $bin [options] reboot
 	Desc    : Reboot board
+
+* gpios (Action) : 
+	USAGE   : $bin [options] gpios
+	Desc    : Test each GPIOs (On then Off)
 
 * ping (Action) : 
 	USAGE   : $bin [options] ping

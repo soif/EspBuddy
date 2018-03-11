@@ -78,7 +78,7 @@ $cfg['configs']['espeasy_4M']['environment']						="normal_ESP8266_4096";
 //$cfg['configs']['espeasy_4M']['pass']								="MyEspeasyPassword";
 //$cfg['configs']['espeasy_4M']['serial_port']						="nodemcu";
 
-$cfg['configs']['espeasy_4M_testing']								=$cfg['configs']['espeasy_4096'];
+$cfg['configs']['espeasy_4M_testing']								=$cfg['configs']['espeasy_4M'];
 $cfg['configs']['espeasy_4M_testing']['environment']				="dev_ESP8266_4096";
 
 
@@ -87,15 +87,13 @@ $cfg['configs']['espurna_mh20']['repo']								="espurna";
 $cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_mh20']['exports']['ESPURNA_BOARD']			="MAGICHOME_LED_CONTROLLER_20";
-$cfg['configs']['espurna_mh20']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword";
-$cfg['configs']['espurna_mh20']['pass']								="MyEspurnaPassword";
+//$cfg['configs']['espurna_mh20']['pass']								="MyEspurnaPassword";
 
 $cfg['configs']['espurna_h801']['repo']								="espurna";
 $cfg['configs']['espurna_h801']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_h801']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801";
-$cfg['configs']['espurna_h801']['exports']['ESPURNA_AUTH']			="MyEspurnaPassword";
-$cfg['configs']['espurna_h801']['pass']								="MyEspurnaPassword";
+//$cfg['configs']['espurna_h801']['pass']								="MyEspurnaPassword";
 
 
 // Tasmota Configurations --------------------------------------------------------------
@@ -127,15 +125,15 @@ $cfg['hosts']['led2']['hostname']		="led2.local";
 $cfg['hosts']['led2']['config']			="espurna_h801";
 
 $cfg['hosts']['led3']['ip']				="192.168.1.203";
-$cfg['hosts']['led3']['config']			="espeasy_1024";
-$cfg['hosts']['led3']['pass']			="MyEspeasyPassword";
+$cfg['hosts']['led3']['config']			="espeasy_1M";
+//$cfg['hosts']['led3']['pass']			="MyEspeasyPassword";
 
 $cfg['hosts']['relay1']['hostname']		="relay1.local";
-$cfg['hosts']['relay1']['config']		="espeasy_4096";
-$cfg['hosts']['relay1']['serial_port']	="wemos";
+$cfg['hosts']['relay1']['config']		="espeasy_4M";
+//$cfg['hosts']['relay1']['serial_port']	="wemos";
 
 $cfg['hosts']['nodemcu']['ip']			="192.168.1.240";
-$cfg['hosts']['nodemcu']['config']		="espeasy_4096_testing";
-$cfg['hosts']['nodemcu']['serial_port']	="nodemcu";
+$cfg['hosts']['nodemcu']['config']		="espeasy_4M_testing";
+//$cfg['hosts']['nodemcu']['serial_port']	="nodemcu";
 
 ?>

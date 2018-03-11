@@ -295,6 +295,10 @@ class EspBuddy {
 
 		// OTA mode ------------------
 		else{
+			if($this->c_host['pass']){
+				$arg_pass=" -a {$this->c_host['pass']}";
+			}
+			
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
 				if($repo_from=$this->arg_from){
@@ -302,7 +306,7 @@ class EspBuddy {
 					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
 				}
 
-				$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"";
+				$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"$arg_pass";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
@@ -326,7 +330,7 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\" ";
+			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\"$arg_pass";
 			echo "\n";
 			
 			$this->_EchoStepStart("Uploading Final Firmware", $command);

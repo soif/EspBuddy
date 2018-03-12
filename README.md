@@ -47,6 +47,8 @@ Valid Actions are:
   - **backup**          : Backup remote devices' settings
   - **monitor**         : Monitor the serial port
   - **version**         : Show Device(s) Version
+  - **reboot**          : Reboot remote devive
+  - **gpios**           : Test (On/Off) each GPIOs
   - **ping**            : Ping Device(s)
   - **repo_version**    : Show Repo's Current version
   - **repo_pull**       : Git Pull Repo's master version

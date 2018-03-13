@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.81';	// EspBuddy Version
+	public $class_version		= '1.82b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -500,29 +500,48 @@ class EspBuddy {
 	}
 
 
-	// ---------------------------------------------------------------------------------------
-	public function Command_usage(){
-		$allowed_actions=array(
+	private	$actions_desc=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build current repo version",
-			'backup'		=> "Backup remote devices settings",
-			'monitor'		=> "Monitor the serial port",
-			'version'		=> "Show Device(s) Version",
+			'build'			=> "Build firmware for the selected device",
+			'backup'		=> "Download and archive settings from the remote device",
+			'monitor'		=> "Monitor device connected to the serial port",
+			'version'		=> "Show remote device version",
 			'reboot'		=> "Reboot Device(s)",
-			'gpios'			=> "Test all GPIOs",
+			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
-			'repo_version'	=> "Show Repo's Current version", 
-			'repo_pull'		=> "Git Pull Repo's master version",
-			'list_hosts'	=> "List all available hosts",
-			'list_configs'	=> "List all available configurations",
-			'list_repos'	=> "List all available repositories",
+			'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)", 
+			'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)",
+			'list_hosts'	=> "List all hosts defined in config.php",
+			'list_configs'	=> "List all available configurations, defined in config.php",
+			'list_repos'	=> "List all available repositories, defined in config.php",
 			'help'			=> "Show full help"
 			);
 
-		echo "USAGE: {$this->bin} [options] action [TARGET] \n";
+	private	$actions_usage=array(
+			'upload'		=> "upload	[TARGET] [options, auth_options, upload_options]",
+			'build'			=> "build	[TARGET] [options]",
+			'backup'		=> "backup	[TARGET] [options, auth_options]",
+			'monitor'		=> "monitor	[TARGET] [options]",
+			'version'		=> "version	[options]",
+			'reboot'		=> "reboot	[options]",
+			'gpios'			=> "gpios	[options]",
+			'ping'			=> "ping	[options]",
+			'repo_version'	=> "repo_version REPO", 
+			'repo_pull'		=> "repo_pull    REPO",
+			'list_hosts'	=> "list_hosts",
+			'list_configs'	=> "list_configs",
+			'list_repos'	=> "list_repos",
+			'help'			=> "help"
+			);
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_usage(){
+
+		echo "* Usage             : {$this->bin} ACTION [TARGET] [options]\n";
 		echo "\n";
-		echo "* Valid Actions are: \n";
-		foreach($allowed_actions as $k => $v){
+		echo "* Valid Actions : \n";
+		foreach($this->actions_desc as $k => $v){
 			echo "  - ".str_pad($k,15)." : $v\n";
 		}
 		echo "\n";
@@ -535,61 +554,13 @@ class EspBuddy {
 		echo $this->_espbVersions();
 		echo "\n\n";
 		$this->Command_usage();
+		echo "* Actions Usage: \n";
+		foreach($this->actions_usage as $k => $usage){
+			echo "  - ".str_pad($k,15)." : $bin $usage\n";
+			//echo str_pad('',6)." {$this->actions_desc[$k]}\n";
+			//echo "\n";
+		}
 		echo <<<EOF
-
-* upload (Action) : 
-	USAGE   : $bin [options][upload_options] upload [TARGET]
-	Desc    : Upload to the board using OTA as default
-
-* build (Action) : 
-	USAGE   : $bin [options]  build [TARGET]
-	Desc    : Build the firmware
-
-* backup (Action) : 
-	USAGE   : $bin [options][auth_options]  backup [TARGET]
-	Desc    : Download and archive settings from the remote board
-
-* monitor (Action) : 
-	USAGE   : $bin [options]  monitor [TARGET]
-	Desc    : Monitor the serial port
-
-* version (Action) : 
-	USAGE   : $bin [options] version
-	Desc    : Get the board installed version
-
-* reboot (Action) : 
-	USAGE   : $bin [options] reboot
-	Desc    : Reboot board
-
-* gpios (Action) : 
-	USAGE   : $bin [options] gpios
-	Desc    : Test each GPIOs (On then Off)
-
-* ping (Action) : 
-	USAGE   : $bin [options] ping
-	Desc    : Ping board
-
-* repo_version (Action) : 
-	USAGE   : $bin repo_version REPO
-	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
-
-* repo_pull (Action) : 
-	USAGE   : $bin repo_pull REPO
-	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
-
-* list_hosts (Action) : 
-	USAGE   : $bin list_hosts
-	Desc    : List all hosts defined in config.php
-
-* list_configs (Action) : 
-	USAGE   : $bin list_configs
-	Desc    : List all available configurations defined in config.php
-
-* list_repos (Action) : 
-	USAGE   : $bin list_repos
-	Desc    : List all available repositories defined in config.php
-
-
 
 * OPTIONS :
 	-f  : don't confirm choosen host (when no host provided)
@@ -598,10 +569,10 @@ class EspBuddy {
 
 * UPLOAD_OPTIONS :
 	-b  : Build before Uploading
-	-p  : Upload previous firmware backuped, instead of the latest built 
-	-s  : Skip Intermediate Upload (if set)
 	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
 	-e  : In Wire Mode, erase flash first, then upload
+	-p  : Upload previous firmware backuped, instead of the latest built 
+	-s  : Skip Intermediate Upload (if set)
 
 	--port=xxx     : serial port to use (overrride main or per host serial port)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
@@ -1010,7 +981,7 @@ EOF;
 		$version="EspBuddby v{$this->class_version}";
 		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
 		if(preg_match('#__version__\s*=\s*"([^"]+)"#', $tmp,$m)){
-			$version .= " - EspTool v{$m[1]}";
+			$version .= " ( EspTool v{$m[1]} )";
 		}
 		return $version;
 	}

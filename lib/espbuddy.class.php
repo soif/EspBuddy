@@ -178,7 +178,7 @@ class EspBuddy {
 				break;
 	
 			default:
-				echo "Invalid Command! ";
+				echo "Invalid Command! \n";
 				$this->Command_usage();
 				global $argv;
 				echo "* Use '{$this->bin} help' to list all options\n";

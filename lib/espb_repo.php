@@ -25,6 +25,12 @@ class EspBuddy_Repo {
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware = ''; // when uploading in 2steps mode, first upload this intermediate firmware
+	protected $flash_sizes 	  = array(	//maximum flash sizes
+		'512K'	=>	524288,		// 512 * 1024
+		'1M'	=>	1048576,	// 1024 * 1024
+		'2M'	=>	2097152,	// 2048 * 1024
+		'4M'	=>	4194304		// 4096 * 1024
+	);
 
 	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
 	protected $last_http_status = '';	// last HTTP status
@@ -232,6 +238,11 @@ class EspBuddy_Repo {
 			echo "Not Implemented\n";
 			return false;
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetFlashSize($k){
+		return $this->flash_sizes[$k];
 	}
 
 

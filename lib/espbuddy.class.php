@@ -277,10 +277,11 @@ class EspBuddy {
 			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
 		}
 		
-		$firm_source=readlink($firmware) or $firm_source=$firmware;
 		echo "\n";
-		$date=date("d M Y - H:i::s", filemtime($firm_source));
-		$firm_source =basename($firm_source);
+		$firm_source=readlink($firmware) or $firm_source=$firmware;
+		$date		=date("d M Y - H:i::s", filemtime($firm_source));
+		$firm_size	=filesize($firm_source);
+		$firm_source=basename($firm_source);
 
 		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
 
@@ -310,23 +311,36 @@ class EspBuddy {
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
-			if(!$this->flag_drymode){
+				if(!$this->flag_drymode){
 					passthru($command, $r);
 					if($r){
 						return $this->_dieError ("First Upload Failed");
 					}	
 				}
-				//wait ?
-				//if($this->c_conf['firststep_delay']){
-				//	echo "\n";
-				//	$this->_WaitReboot($this->c_conf['firststep_delay']);
-				//}
 				echo "\n";
 				sleep(1); // let him reboot
 				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
 					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
 				}
 				sleep(1); // give it some more time to be ready
+
+				// assuming this is a 1M borard if not set------
+				$this->c_conf['size'] or $this->c_conf['size']='1M';
+				if($this->flag_verbose and $this->c_conf['size']){
+					$board_size	= $this->orepo->GetFlashSize($this->c_conf['size']);
+					$firm1_size	= filesize($this->c_conf['firststep_firmware']);
+					$max_size	= $board_size - $firm1_size;
+					$f_firm_size=round($firm_size/1024);
+					$f_max_size	=round($max_size/1024);
+					echo "You're going to upload a {$f_firm_size}K firmware into a {$this->c_conf['size']} device\n";
+					echo "The maximum allowed size is {$f_max_size}k : ";
+					if($firm_size > $max_size){
+						echo "This will certainly FAIL, while espota.py will falsely seem to wait for the upload.\n";
+					}
+					else{
+						echo "Excellent, it should fit in the flash memory !\n";
+					}
+				}
 			}
 
 			// Final Upload
@@ -500,6 +514,7 @@ class EspBuddy {
 	}
 
 
+	// ---------------------------------------------------------------------------------------
 	private	$actions_desc=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
 			'build'			=> "Build firmware for the selected device",
@@ -516,7 +531,7 @@ class EspBuddy {
 			'list_repos'	=> "List all available repositories, defined in config.php",
 			'help'			=> "Show full help"
 			);
-
+	// ---------------------------------------------------------------------------------------
 	private	$actions_usage=array(
 			'upload'		=> "upload	[TARGET] [options, auth_options, upload_options]",
 			'build'			=> "build	[TARGET] [options]",
@@ -533,7 +548,6 @@ class EspBuddy {
 			'list_repos'	=> "list_repos",
 			'help'			=> "help"
 			);
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_usage(){
@@ -1161,7 +1175,8 @@ EOF;
 				$sleep--;
 			}
 		}
-		echo " ********\n";
+		echo " ********";
+		$this->_EchoStepEnd();
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -1182,7 +1197,8 @@ EOF;
 				sleep(1);
 			}
 		}
-		echo " **********\n";
+		echo " **********";
+		$this->_EchoStepEnd();
 		return $out;
 	}
 

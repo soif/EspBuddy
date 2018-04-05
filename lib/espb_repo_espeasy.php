@@ -25,6 +25,11 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/ESPEasyUploader.OTA.1m128.esp8266.bin';	// first (intermediate) firmware to upload
+	protected $flash_sizes 	  = array(	//maximum flash sizes
+		'1M'	=>	917504,	// 1M - 128k SPIFS 
+		'2M'	=>	1048576,	// 2M - 1M   SPIFS
+		'4M'	=>	3145728		// 4M - 1M   SPIFS
+	);
 
 	protected $url_gpio_on 		= '/control?cmd=gpio,{{gpio}},1';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
 	protected $url_gpio_off 	= '/control?cmd=gpio,{{gpio}},0';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
@@ -83,9 +88,10 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	public function GetPostBuildCommands($host_arr,$cfg){
 		$bin_crc2	=$cfg['paths']['bin'].$this->bin_crc2;
 		$commands[]	="python \"$bin_crc2\" \"{$host_arr['path_firmware']}\" ";					
+		$commands[]	="rm -f \"{$host_arr['path_firmware']}1\" "; // remove bin1 not properly removed by the crc script					
+		$commands[]	="rm -f \"{$host_arr['path_firmware']}2\" "; // remove bin2 not properly removed by the crc script					
 		return $commands;		
 	}
-
 
 
 	// ####### Privates ##########################################################################

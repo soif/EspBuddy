@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.81';	// EspBuddy Version
+	public $class_version		= '1.82b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -41,6 +41,7 @@ class EspBuddy {
 	private $arg_serial_port	= '';
 	private $arg_serial_rate	= 0;
 	private $arg_config			= '';
+	private $arg_firmware		= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
 	private $arg_from			= '';	// repo to migrate from
@@ -178,7 +179,7 @@ class EspBuddy {
 				break;
 	
 			default:
-				echo "Invalid Command! ";
+				echo "Invalid Command! \n";
 				$this->Command_usage();
 				global $argv;
 				echo "* Use '{$this->bin} help' to list all options\n";
@@ -256,8 +257,15 @@ class EspBuddy {
 	public function Command_upload($id){
 		$this->_AssignCurrentHostConfig($id);
 
-		//compilation ---------------
-		if($this->flag_build){
+		// choose firmware ---------------
+		if($this->arg_firmware){
+			if(file_exists($this->arg_firmware)){
+				$this->_rotateFirmware($this->arg_firmware);
+				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
+			}
+			$echo_name="EXTERNAL";			
+		}
+		elseif($this->flag_build){
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
@@ -277,10 +285,11 @@ class EspBuddy {
 			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
 		}
 		
-		$firm_source=readlink($firmware) or $firm_source=$firmware;
 		echo "\n";
-		$date=date("d M Y - H:i::s", filemtime($firm_source));
-		$firm_source =basename($firm_source);
+		$firm_source=readlink($firmware) or $firm_source=$firmware;
+		$date		=date("d M Y - H:i::s", filemtime($firm_source));
+		$firm_size	=filesize($firm_source);
+		$firm_source=basename($firm_source);
 
 		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
 
@@ -310,23 +319,36 @@ class EspBuddy {
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 			
-			if(!$this->flag_drymode){
+				if(!$this->flag_drymode){
 					passthru($command, $r);
 					if($r){
 						return $this->_dieError ("First Upload Failed");
 					}	
 				}
-				//wait ?
-				//if($this->c_conf['firststep_delay']){
-				//	echo "\n";
-				//	$this->_WaitReboot($this->c_conf['firststep_delay']);
-				//}
 				echo "\n";
 				sleep(1); // let him reboot
 				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
 					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
 				}
 				sleep(1); // give it some more time to be ready
+
+				// assuming this is a 1M borard if not set------
+				$this->c_conf['size'] or $this->c_conf['size']='1M';
+				if($this->flag_verbose and $this->c_conf['size']){
+					$board_size	= $this->orepo->GetFlashSize($this->c_conf['size']);
+					$firm1_size	= filesize($this->c_conf['firststep_firmware']);
+					$max_size	= $board_size - $firm1_size;
+					$f_firm_size=round($firm_size/1024);
+					$f_max_size	=round($max_size/1024);
+					echo "You're going to upload a {$f_firm_size}K firmware into a {$this->c_conf['size']} device\n";
+					echo "The maximum allowed size is {$f_max_size}k : ";
+					if($firm_size > $max_size){
+						echo "This will certainly FAIL, while espota.py will falsely seem to wait for the upload.\n";
+					}
+					else{
+						echo "Excellent, it should fit in the flash memory !\n";
+					}
+				}
 			}
 
 			// Final Upload
@@ -501,28 +523,47 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
-	public function Command_usage(){
-		$allowed_actions=array(
+	private	$actions_desc=array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build current repo version",
-			'backup'		=> "Backup remote devices settings",
-			'monitor'		=> "Monitor the serial port",
-			'version'		=> "Show Device(s) Version",
+			'build'			=> "Build firmware for the selected device",
+			'backup'		=> "Download and archive settings from the remote device",
+			'monitor'		=> "Monitor device connected to the serial port",
+			'version'		=> "Show remote device version",
 			'reboot'		=> "Reboot Device(s)",
-			'gpios'			=> "Test all GPIOs",
+			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
-			'repo_version'	=> "Show Repo's Current version", 
-			'repo_pull'		=> "Git Pull Repo's master version",
-			'list_hosts'	=> "List all available hosts",
-			'list_configs'	=> "List all available configurations",
-			'list_repos'	=> "List all available repositories",
+			'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)", 
+			'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)",
+			'list_hosts'	=> "List all hosts defined in config.php",
+			'list_configs'	=> "List all available configurations, defined in config.php",
+			'list_repos'	=> "List all available repositories, defined in config.php",
 			'help'			=> "Show full help"
 			);
+	// ---------------------------------------------------------------------------------------
+	private	$actions_usage=array(
+			'upload'		=> "upload	[TARGET] [options, auth_options, upload_options]",
+			'build'			=> "build	[TARGET] [options]",
+			'backup'		=> "backup	[TARGET] [options, auth_options]",
+			'monitor'		=> "monitor	[TARGET] [options]",
+			'version'		=> "version	[options]",
+			'reboot'		=> "reboot	[options]",
+			'gpios'			=> "gpios	[options]",
+			'ping'			=> "ping	[options]",
+			'repo_version'	=> "repo_version REPO", 
+			'repo_pull'		=> "repo_pull    REPO",
+			'list_hosts'	=> "list_hosts",
+			'list_configs'	=> "list_configs",
+			'list_repos'	=> "list_repos",
+			'help'			=> "help"
+			);
 
-		echo "USAGE: {$this->bin} [options] action [TARGET] \n";
+	// ---------------------------------------------------------------------------------------
+	public function Command_usage(){
+
+		echo "* Usage             : {$this->bin} ACTION [TARGET] [options]\n";
 		echo "\n";
-		echo "* Valid Actions are: \n";
-		foreach($allowed_actions as $k => $v){
+		echo "* Valid Actions : \n";
+		foreach($this->actions_desc as $k => $v){
 			echo "  - ".str_pad($k,15)." : $v\n";
 		}
 		echo "\n";
@@ -535,61 +576,13 @@ class EspBuddy {
 		echo $this->_espbVersions();
 		echo "\n\n";
 		$this->Command_usage();
+		echo "* Actions Usage: \n";
+		foreach($this->actions_usage as $k => $usage){
+			echo "  - ".str_pad($k,15)." : $bin $usage\n";
+			//echo str_pad('',6)." {$this->actions_desc[$k]}\n";
+			//echo "\n";
+		}
 		echo <<<EOF
-
-* upload (Action) : 
-	USAGE   : $bin [options][upload_options] upload [TARGET]
-	Desc    : Upload to the board using OTA as default
-
-* build (Action) : 
-	USAGE   : $bin [options]  build [TARGET]
-	Desc    : Build the firmware
-
-* backup (Action) : 
-	USAGE   : $bin [options][auth_options]  backup [TARGET]
-	Desc    : Download and archive settings from the remote board
-
-* monitor (Action) : 
-	USAGE   : $bin [options]  monitor [TARGET]
-	Desc    : Monitor the serial port
-
-* version (Action) : 
-	USAGE   : $bin [options] version
-	Desc    : Get the board installed version
-
-* reboot (Action) : 
-	USAGE   : $bin [options] reboot
-	Desc    : Reboot board
-
-* gpios (Action) : 
-	USAGE   : $bin [options] gpios
-	Desc    : Test each GPIOs (On then Off)
-
-* ping (Action) : 
-	USAGE   : $bin [options] ping
-	Desc    : Ping board
-
-* repo_version (Action) : 
-	USAGE   : $bin repo_version REPO
-	Desc    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
-
-* repo_pull (Action) : 
-	USAGE   : $bin repo_pull REPO
-	Desc    : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
-
-* list_hosts (Action) : 
-	USAGE   : $bin list_hosts
-	Desc    : List all hosts defined in config.php
-
-* list_configs (Action) : 
-	USAGE   : $bin list_configs
-	Desc    : List all available configurations defined in config.php
-
-* list_repos (Action) : 
-	USAGE   : $bin list_repos
-	Desc    : List all available repositories defined in config.php
-
-
 
 * OPTIONS :
 	-f  : don't confirm choosen host (when no host provided)
@@ -598,14 +591,15 @@ class EspBuddy {
 
 * UPLOAD_OPTIONS :
 	-b  : Build before Uploading
-	-p  : Upload previous firmware backuped, instead of the latest built 
-	-s  : Skip Intermediate Upload (if set)
 	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
 	-e  : In Wire Mode, erase flash first, then upload
+	-p  : Upload previous firmware backuped, instead of the latest built 
+	-s  : Skip Intermediate Upload (if set)
 
 	--port=xxx     : serial port to use (overrride main or per host serial port)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
 	--conf=xxx     : config to use (overrride per host config)
+	--firm=xxx     : full path to the firmware file to upload (override latest build one)
 	--from=REPO    : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
@@ -936,6 +930,7 @@ EOF;
 		}
 		return $path;
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($new_firmware=''){
 		$command_backup=array();
@@ -970,12 +965,17 @@ EOF;
 				$command_backup[] = "rm -f \"$cur_firm\"";
 			}
 		}
-		if(!$new_firmware){
-			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
-			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
-			$this->c_host['path_firmware']=$cur_firmware;
+		if($new_firmware){
+			$cur_firmware=$firm_dir.basename($new_firmware);
 		}
+		else{
+			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+		}
+		
+		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
+		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
+		$this->c_host['path_firmware']=$cur_firmware;
+		
 				
 		if(count($command_backup)){
 			$command=implode(" ; \n   ", $command_backup);
@@ -1010,7 +1010,7 @@ EOF;
 		$version="EspBuddby v{$this->class_version}";
 		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
 		if(preg_match('#__version__\s*=\s*"([^"]+)"#', $tmp,$m)){
-			$version .= " - EspTool v{$m[1]}";
+			$version .= " ( EspTool v{$m[1]} )";
 		}
 		return $version;
 	}
@@ -1114,12 +1114,12 @@ EOF;
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
 		$this->arg_config		= $this->args['vars']['conf'];
+		$this->arg_firmware		= $this->args['vars']['firm'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 		$this->arg_from			= $this->args['vars']['from'];
 
-		$this->host				= $this->args['commands'][2];
-		
+		//$this->host				= $this->args['commands'][2];
 	}
 
 	// -------------------------------------------------------------
@@ -1190,7 +1190,8 @@ EOF;
 				$sleep--;
 			}
 		}
-		echo " ********\n";
+		echo " ********";
+		$this->_EchoStepEnd();
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -1211,7 +1212,8 @@ EOF;
 				sleep(1);
 			}
 		}
-		echo " **********\n";
+		echo " **********";
+		$this->_EchoStepEnd();
 		return $out;
 	}
 

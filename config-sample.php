@@ -50,6 +50,7 @@ Define all configurations needed by your hosts, where:
 - 'repo'		: the repository to use from the list above
 - 'environment'	: the environment to pass to platformio when compiling
 - '2steps'		: set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
+- 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
 - 'login'		: (optionnal) a global default login name to use for this config
 - 'pass'		: (optionnal) a global default password to use for this config
 - 'serial_port'	: (optionnal) the serial port (or its alias name) to use, when in Wire mode

@@ -15,6 +15,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 You should have received a copy of the GNU General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 --------------------------------------------------------------------------------------------------------------------------------------
 */
+//error_reporting(E_ERROR | E_WARNING | E_PARSE | E_NOTICE); // Show Notices
+error_reporting(E_ERROR | E_WARNING | E_PARSE); // Only Fatal & Warning errors
 
 $config_file=dirname(__FILE__).'/config.php';
 

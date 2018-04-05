@@ -41,6 +41,7 @@ class EspBuddy {
 	private $arg_serial_port	= '';
 	private $arg_serial_rate	= 0;
 	private $arg_config			= '';
+	private $arg_firmware		= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
 	private $arg_from			= '';	// repo to migrate from
@@ -256,8 +257,15 @@ class EspBuddy {
 	public function Command_upload($id){
 		$this->_AssignCurrentHostConfig($id);
 
-		//compilation ---------------
-		if($this->flag_build){
+		// choose firmware ---------------
+		if($this->arg_firmware){
+			if(file_exists($this->arg_firmware)){
+				$this->_rotateFirmware($this->arg_firmware);
+				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
+			}
+			$echo_name="EXTERNAL";			
+		}
+		elseif($this->flag_build){
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
@@ -591,6 +599,7 @@ class EspBuddy {
 	--port=xxx     : serial port to use (overrride main or per host serial port)
 	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
 	--conf=xxx     : config to use (overrride per host config)
+	--firm=xxx     : full path to the firmware file to upload (override latest build one)
 	--from=REPO    : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
@@ -921,6 +930,7 @@ EOF;
 		}
 		return $path;
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($new_firmware=''){
 		$command_backup=array();
@@ -955,12 +965,17 @@ EOF;
 				$command_backup[] = "rm -f \"$cur_firm\"";
 			}
 		}
-		if(!$new_firmware){
-			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
-			$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
-			$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
-			$this->c_host['path_firmware']=$cur_firmware;
+		if($new_firmware){
+			$cur_firmware=$firm_dir.basename($new_firmware);
 		}
+		else{
+			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+		}
+		
+		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
+		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
+		$this->c_host['path_firmware']=$cur_firmware;
+		
 				
 		if(count($command_backup)){
 			$command=implode(" ; \n   ", $command_backup);
@@ -1099,12 +1114,12 @@ EOF;
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
 		$this->arg_config		= $this->args['vars']['conf'];
+		$this->arg_firmware		= $this->args['vars']['firm'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 		$this->arg_from			= $this->args['vars']['from'];
 
-		$this->host				= $this->args['commands'][2];
-		
+		//$this->host				= $this->args['commands'][2];
 	}
 
 	// -------------------------------------------------------------

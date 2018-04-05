@@ -88,8 +88,8 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	public function GetPostBuildCommands($host_arr,$cfg){
 		$bin_crc2	=$cfg['paths']['bin'].$this->bin_crc2;
 		$commands[]	="python \"$bin_crc2\" \"{$host_arr['path_firmware']}\" ";					
-		$commands[]	="rm -f \"{$host_arr['path_firmware']}1\" "; // remoeve bin1, bin2 not properly removed by the crc script					
-		$commands[]	="rm -f \"{$host_arr['path_firmware']}2\" "; // remoeve bin1, bin2 not properly removed by the crc script					
+		$commands[]	="rm -f \"{$host_arr['path_firmware']}1\" "; // remove bin1 not properly removed by the crc script					
+		$commands[]	="rm -f \"{$host_arr['path_firmware']}2\" "; // remove bin2 not properly removed by the crc script					
 		return $commands;		
 	}
 

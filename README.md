@@ -17,7 +17,7 @@ It also gathers various tool commands to be used in batch mode.
  - Fetch versions of remote devices
  - Archive current firmware & previous firmware per target
  - Backup current settings & previous settings per target
- - Parse Repositories' installed versions
+ - Parse Repositories installed versions
  - Git Pull Repositories
  - Ping Remote Host
 
@@ -63,8 +63,8 @@ Examples:
 - `espbuddy.php upload relay1` upload to target 'relay1'
 - `espbuddy.php upload all -b` upload to all defined targets, while building the firmware first
 - `espbuddy.php upload relay1 -w` upload using serial to target 'relay1'
-- `espbuddy.php backup all` backup settings all defined targets
-- `espbuddy.php monitor relay1 --rate=9600` serial monitor target 'led1' at 9600 bauds
+- `espbuddy.php backup all` backup settings ofall defined targets
+- `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
 - `espbuddy.php version all` show versions of all defined targets
 - `espbuddy.php ping all` ping the all defined targets
 

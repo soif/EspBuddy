@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.82';	// EspBuddy Version
+	public $class_version		= '1.83b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -76,6 +76,7 @@ class EspBuddy {
 
 		'Lftdi'		=>	'/dev/tty.USB',					// FTDI on Linux
 	);
+
 	private $serial_rates	= array(
 		'slow'		=>	'57600',
 		'boot'		=>	'74880',
@@ -230,7 +231,7 @@ class EspBuddy {
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
-			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$firmware_created="{$path_build}.pio/build/{$this->c_conf['environment']}/firmware.bin";
 			if(!$r and file_exists($firmware_created)){
 				touch($firmware_created,$start_compil);
 			}
@@ -628,6 +629,7 @@ EOF;
 		date_default_timezone_set($this->prefs['time_zone']);
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _SetRunningOS(){
 		$os		="lin";
@@ -700,6 +702,7 @@ EOF;
 		return true;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _ListHosts($id){
 		if($id == '0'){
@@ -710,6 +713,7 @@ EOF;
 		}
 		return $ret;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function ChooseTarget(){
@@ -780,6 +784,7 @@ EOF;
 		return $id;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _AssignCurrentHostConfig($id){
 		// current host -------------
@@ -820,6 +825,7 @@ EOF;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _SetCurrentVersionNames(){
 		$s	=$this->prefs['name_sep'];
@@ -852,6 +858,7 @@ EOF;
 
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _ChooseValueToUse($name, $list='', $default=''){
 		$tmp		= '';
@@ -869,6 +876,7 @@ EOF;
 					$tmp = $default ;
 		return $tmp;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _findConnectedSerialPorts(){
@@ -901,6 +909,7 @@ EOF;
 		return false;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _RequireRepo($name){
 		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
@@ -920,6 +929,7 @@ EOF;
 		return new $class_name($repo_path);
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
 		$dir	= $this->cfg['paths']['dir_backup'];
@@ -930,6 +940,7 @@ EOF;
 		}
 		return $path;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($new_firmware=''){
@@ -969,7 +980,7 @@ EOF;
 			$cur_firmware=$firm_dir.basename($new_firmware);
 		}
 		else{
-			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$new_firmware="{$path_build}.pio/build/{$this->c_conf['environment']}/firmware.bin";
 		}
 		
 		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
@@ -989,6 +1000,7 @@ EOF;
 		return true;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _listFirmwares($all=false){
 		$firm_dir			= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
@@ -1005,6 +1017,7 @@ EOF;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _espbVersions(){
 		$version="EspBuddby v{$this->class_version}";
@@ -1014,6 +1027,7 @@ EOF;
 		}
 		return $version;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
@@ -1039,6 +1053,7 @@ EOF;
 		}
 		return $str;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
@@ -1082,6 +1097,7 @@ EOF;
 		return $c;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _FillHostnameOrIp($id){
 		global $cfg;
@@ -1091,6 +1107,7 @@ EOF;
 		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;	
 		return $name;
 	}
+
 
 	// -------------------------------------------------------------
 	private function _ParseCommandLine(){
@@ -1118,9 +1135,8 @@ EOF;
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 		$this->arg_from			= $this->args['vars']['from'];
-
-		//$this->host				= $this->args['commands'][2];
 	}
+
 
 	// -------------------------------------------------------------
 	// http://php.net/manual/en/features.commandline.php#78804
@@ -1160,6 +1176,7 @@ EOF;
 		return $_ARG;	
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0){
@@ -1180,6 +1197,7 @@ EOF;
 	    }
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _WaitReboot($sleep){
 		$this->_EchoStepStart("Waiting  {$sleep} sec for ESP to reboot",'',0);
@@ -1193,6 +1211,7 @@ EOF;
 		echo " ********";
 		$this->_EchoStepEnd();
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _WaitPingable($host,$timeout=60){
@@ -1217,12 +1236,14 @@ EOF;
 		return $out;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	function _ping ($host) {
 		$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
 		exec($command, $output, $r);
 	    return ! $r;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepStart($mess, $command="", $do_end=1,$char="*"){
@@ -1243,10 +1264,12 @@ EOF;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepEnd(){
 		echo "\033[0m\n";
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _dieError($mess,$list=''){

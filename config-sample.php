@@ -31,6 +31,10 @@ $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 // ################################################################################################################################
 /* Here is where you set your own settings */
 
+// URL of the Firmware to upload when using then "sonodiy flash" command (for Sonoff "DIY" devices only )
+// be sure to use a firmware < 508kB, but DON'T use the tasmota-minimal.bin (it wont allow to store settings)
+$cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-basic.bin"; 
+
 // Backup Directory where uploaded firmwares and download settings are stored 
 $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 

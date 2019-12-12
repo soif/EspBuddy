@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.85b';	// EspBuddy Version
+	public $class_version		= '1.86b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -633,10 +633,10 @@ EOF;
 	private function _SetRunningOS(){
 		$os		="lin";
 		$os_id	= strtolower(substr(php_uname(), 0, 3));
-		
-		if		($os_id=='win'){$os=='win';}	// windows
-		elseif	($os_id=='dar'){$os=='osx';}	// darwin = OSX
-		elseif	($os_id=='lin'){$os=='lin';}	// linux
+
+		if		($os_id=='win'){$os='win';}	// windows
+		elseif	($os_id=='dar'){$os='osx';}	// darwin = OSX
+		elseif	($os_id=='lin'){$os='lin';}	// linux
 		$this->os = $os;
 	}
 

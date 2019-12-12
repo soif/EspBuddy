@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.87b';	// EspBuddy Version
+	public $class_version		= '1.88b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -87,8 +87,7 @@ class EspBuddy {
 
 	private $os		="";			// what is the OS we are running
 
-
-	// ---------------------------------------------------------------------------------------
+	// Action Help Texts ------------------------------------------------------------------------
 	private	$actions_desc=array(
 		'root'=>array(
 				'upload'		=> "Build and/or Upload current repo version to Device(s)",
@@ -124,7 +123,7 @@ class EspBuddy {
 		),
 	);
 
-	// ---------------------------------------------------------------------------------------
+	// Command Usages Texts ------------------------------------------------------------------------
 	private	$actions_usage=array(
 		'root'=>array(
 				'upload'		=> "[TARGET] [options, auth_options, upload_options]",
@@ -160,6 +159,8 @@ class EspBuddy {
 		),
 	);
 
+
+	// ##################################################################################################################################
 
 
 	// ---------------------------------------------------------------------------------------
@@ -372,7 +373,7 @@ class EspBuddy {
 
 		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
 
-		// wire mode ------------------
+		// .wire mode ------------------
 		if($this->flag_serial){
 			if($this->flag_eraseflash){
 				$this->_DoSerial($id,'erase_flash');
@@ -381,7 +382,7 @@ class EspBuddy {
 			$this->_DoSerial($id,'write_flash', $firmware);
 		}
 
-		// OTA mode ------------------
+		// .OTA mode ------------------
 		else{
 			if($this->c_host['pass']){
 				$arg_pass=" -a {$this->c_host['pass']}";
@@ -564,6 +565,7 @@ class EspBuddy {
 		return "$command\n";
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	public function Command_list($type){
 		switch ($type) {
@@ -642,6 +644,7 @@ EOF;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	public function Command_sonodiy(){
 
@@ -686,6 +689,7 @@ EOF;
 
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_test($ip, $id){
 		$this->Sonodiy_ping($ip,5);
@@ -700,6 +704,7 @@ EOF;
 		echo "API response	:\n";
 		print_r($this->_sonodiy_api_info($ip,$id));
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_help(){
@@ -717,6 +722,7 @@ Setup Instructions
 
 EOF;
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_ping($ip, $count=1){
@@ -751,6 +757,7 @@ EOF;
 			echo "I've received $r answers out of $count requests.\n";
 		}
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_scan(){
@@ -1025,6 +1032,7 @@ EOFB;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_info($ip, $id){
 		$data=array(
@@ -1033,6 +1041,7 @@ EOFB;
 		);
 		return $this->_sondiy_curl($ip,'info',$data);
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_flash($ip, $id,$url,$sha256=''){
@@ -1081,6 +1090,7 @@ EOFB;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_pulse($ip, $id, $state_bool=0, $width=1000){
 		$state='off';
@@ -1100,6 +1110,7 @@ EOFB;
 		return $this->_sondiy_curl($ip,'pulse',$data);
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_signal($ip, $id){
 		$data=array(
@@ -1109,6 +1120,7 @@ EOFB;
 		return $this->_sondiy_curl($ip,'signal_strength',$data);
 	}
 	
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_startup($ip, $id, $state_num=0){
 		if(!$state_num){
@@ -1132,6 +1144,7 @@ EOFB;
 		return $this->_sondiy_curl($ip,'startup',$data);
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_switch($ip, $id, $state_bool=0){
 		$state='off';
@@ -1145,6 +1158,7 @@ EOFB;
 		return $this->_sondiy_curl($ip,'switch',$data);
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_toggle($ip, $id){
 		if($info=$this->_sonodiy_api_info($ip,$id)){
@@ -1156,6 +1170,7 @@ EOFB;
 		}
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_unlock($ip, $id){
 		$data=array(
@@ -1164,6 +1179,7 @@ EOFB;
 		);
 		return $this->_sondiy_curl($ip,'ota_unlock',$data);
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_wifi($ip, $id, $ssid, $pass){
@@ -1197,6 +1213,7 @@ EOFB;
 		);
 		return $this->_sondiy_curl($ip,'wifi',$data);
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private $_last_curl_request;
@@ -1747,6 +1764,7 @@ EOFB;
 		return $confirm;
 	}
 	
+
 	// ---------------------------------------------------------------------------------------
 	private function _AskYesNo(){
 		$confirm=strtolower($this->_Ask("Yes,No",'',", ","? "));
@@ -1754,6 +1772,7 @@ EOFB;
 			return true;
 		}	
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f

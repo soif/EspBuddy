@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.88b';	// EspBuddy Version
+	public $class_version		= '1.89b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -98,7 +98,7 @@ class EspBuddy {
 				'reboot'		=> "Reboot Device(s)",
 				'gpios'			=> "Test all Device's GPIOs",
 				'ping'			=> "Ping Device(s)",
-				'sonodiy'		=> "Discover and flash Sonoff devices in DIY mode",
+				'sonodiy'		=> "Discover, Control or Flash Sonoff devices in DIY mode",
 				'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)",
 				'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)",
 				'list_hosts'	=> "List all hosts defined in config.php",

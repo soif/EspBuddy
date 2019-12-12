@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.84b';	// EspBuddy Version
+	public $class_version		= '1.85b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -1213,21 +1213,30 @@ EOF;
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _WaitPingable($host,$timeout=60){
-		$this->_EchoStepStart("Waiting for ESP to be back online",'',0);
+	private function _WaitPingable($host,$timeout=60,$invert=false){
+		$message="Waiting for ESP to be back online";
+		if($invert){
+			$message="Waiting for ESP to be offline (reboot)";
+		}
+		$this->_EchoStepStart($message,'',0);
 		if($this->flag_drymode){
 			$out=true;
 		}
 		else{
 			$i=1;
 			while($i <= $timeout){
-				if($this->_ping($host)){
+				$state=$this->_ping($host);
+				$bool=$state;
+				$invert and $bool = ! $bool;
+				if($bool){
 					$out=true;
 					break;
 				}
 				echo "$i ";
+				if($state and $i < $timeout){
+					sleep(1);
+				}
 				$i++;
-				sleep(1);
 			}
 		}
 		echo " **********";
@@ -1238,9 +1247,21 @@ EOF;
 
 	// ---------------------------------------------------------------------------------------
 	function _ping ($host) {
-		$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
-		exec($command, $output, $r);
-	    return ! $r;
+		//$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
+		//exec($command, $output, $r);
+		//return ! $r;
+		//https://stackoverflow.com/questions/8030789/pinging-an-ip-address-using-php-and-echoing-the-result
+		if($this->os=='win'){
+			if (!exec("ping -n 1 -w 1 $host 2>NUL > NUL && (echo 0) || (echo 1)")){
+				return true;
+			}	
+		}
+		else{
+			if (!exec("ping -q -c1 -t1 $host >/dev/null 2>&1 ; echo $?")){
+				return true;
+			}
+		}
+		return false;
 	}
 
 

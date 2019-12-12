@@ -131,6 +131,10 @@ def main():
         zeroconf = Zeroconf()
         listener = MyListener()
         browser = ServiceBrowser(zeroconf, "_ewelink._tcp.local.",listener= listener)
+#EspBuddy Addition ###################### >>>
+        stop=0
+#EspBuddy Addition ###################### <<<
+
         while True:
                 if listener.all_sub_num>0:
                     dict=listener.all_info_dict.copy()
@@ -146,6 +150,11 @@ def main():
                             cur_str=x[8:18]+"\nDEL"
                             print(cur_str)
                 time.sleep(0.5)
+#EspBuddy Addition ###################### >>>
+                stop=stop+1
+                if stop> 5:
+                   break
+#EspBuddy Addition ###################### <<<
 
 def parseAddress(address):
         add_list = []

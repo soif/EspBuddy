@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.83b';	// EspBuddy Version
+	public $class_version		= '1.84b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -67,7 +67,7 @@ class EspBuddy {
 		'keep_previous'	=>	3,				// number of previous firmware version to keep
 		'checkout_mode'	=>	1,				// Mode when doing a Git checkout : 0 = no checkout, 1 = only if clean, 2 = allows modifications, 3 stash modifications first if any
  	);
-	
+
 	private $serial_ports	= array(
 		'nodemcu'	=>	'/dev/tty.SLAB_USBtoUART',		// Node Mcu
 		'wemos'		=>	'/dev/tty.wchusbserialfa140',	// Wemos
@@ -90,7 +90,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
 		$this->espb_path=dirname(dirname(__FILE__)).'/';
-		$this->_SetRunningOS();		
+		$this->_SetRunningOS();
 	}
 
 
@@ -110,19 +110,19 @@ class EspBuddy {
 
 		// preferences
 		$this->_LoadPreferences($this->cfg['prefs']);
-		
+
 		// dir backup ------------------------
 		if(!$this->cfg['paths']['dir_backup']){
-			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");			
+			$this->_dieError("You must define a \$cfg['paths']['dir_backup'] to store firmwares. See config-sample.php for an example.");
 		}
 
 		if(! file_exists($this->cfg['paths']['dir_backup'])){
 			mkdir($this->cfg['paths']['dir_backup']);
 			if(!is_dir($this->cfg['paths']['dir_backup'])){
-				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");			
+				$this->_dieError("Can not create the backup directory at : {$this->cfg['paths']['dir_backup']}");
 			}
 		}
-		
+
 		// make paths
 		$this->cfg['paths']['bin']			= $this->espb_path.'bin/';
 		$this->cfg['paths']['bin_espota']	= $this->cfg['paths']['bin'].	"espota.py";
@@ -178,7 +178,7 @@ class EspBuddy {
 			case 'help':
 				$this->Command_help();
 				break;
-	
+
 			default:
 				echo "Invalid Command! \n";
 				$this->Command_usage();
@@ -262,30 +262,30 @@ class EspBuddy {
 		if($this->arg_firmware){
 			if(file_exists($this->arg_firmware)){
 				$this->_rotateFirmware($this->arg_firmware);
-				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
+				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
 			}
-			$echo_name="EXTERNAL";			
+			$echo_name="EXTERNAL";
 		}
 		elseif($this->flag_build){
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
-			$echo_name="NEWEST";	
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$echo_name="NEWEST";
 		}
 		elseif($this->flag_prevfirm){
 			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
-			$echo_name="PREVIOUS";			
+			$echo_name="PREVIOUS";
 		}
 		else{
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";	
-			$echo_name="LATEST";			
+			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$echo_name="LATEST";
 		}
-		
+
 		if(!file_exists($firmware)){
 			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
 		}
-		
+
 		echo "\n";
 		$firm_source=readlink($firmware) or $firm_source=$firmware;
 		$date		=date("d M Y - H:i::s", filemtime($firm_source));
@@ -308,7 +308,7 @@ class EspBuddy {
 			if($this->c_host['pass']){
 				$arg_pass=" -a {$this->c_host['pass']}";
 			}
-			
+
 			// two steps  upload ?
 			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
 				if($repo_from=$this->arg_from){
@@ -319,12 +319,12 @@ class EspBuddy {
 				$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"$arg_pass";
 				echo "\n";
 				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
-			
+
 				if(!$this->flag_drymode){
 					passthru($command, $r);
 					if($r){
 						return $this->_dieError ("First Upload Failed");
-					}	
+					}
 				}
 				echo "\n";
 				sleep(1); // let him reboot
@@ -355,7 +355,7 @@ class EspBuddy {
 			// Final Upload
 			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\"$arg_pass";
 			echo "\n";
-			
+
 			$this->_EchoStepStart("Uploading Final Firmware", $command);
 
 			if(!$this->flag_drymode){
@@ -364,7 +364,7 @@ class EspBuddy {
 					return $this->_dieError ("Upload Failed");
 				}
 			}
-			return true;	
+			return true;
 		}
 	}
 
@@ -387,7 +387,7 @@ class EspBuddy {
 				@rename($dest_dir, $prev_dir);
 				//mv tmp to dest
 				@rename($tmp_dir, $dest_dir);
-				
+
 				return true;
 			}
 			else{
@@ -408,7 +408,7 @@ class EspBuddy {
 			passthru($command, $r);
 			if($r){
 				return $this->_dieError ("Serial monitor Failed");
-			}	
+			}
 		}
 		return true;
 	}
@@ -443,21 +443,21 @@ class EspBuddy {
 		$repo=$this->cfg['repos'][$repo_key];
 
 		$this->orepo=$this->_RequireRepo($repo_key);
-		
-		if($type == "version"){			
+
+		if($type == "version"){
 			$version = $this->orepo->GetVersion() or $version= "Not found";
 			echo "*** Local '$repo_key' Repository Version is	: $version \n";
 		}
 		elseif($type == "pull"){
-			$this->Command_repo('version');			
+			$this->Command_repo('version');
 			echo("*** Pulling '$repo_key' git commits	: ");
 			$this->_DoGit('git pull');
 			$this->Command_repo('version');
 		}
 		elseif($type == 'checkout'){
-// TODO ==========================================
-			$branch	= $this->c_host['checkout'] or $branch = 'master';
-			$this->_DoGit("git checkout {$branch}");
+// TODO: Checkout Git
+			//$branch	= $this->c_host['checkout'] or $branch = 'master';
+			//$this->_DoGit("git checkout {$branch}");
 		}
 		echo "\n";
 	}
@@ -474,18 +474,17 @@ class EspBuddy {
 		$command="ping $opt -n -W 2000 -q {$this->c_host['ip']} 2> /dev/null | grep loss";
 		if(!$this->flag_drymode){
 			$result	=trim(shell_exec($command));
-			$result	=str_replace('packet loss',	'loss',	$result);	
-			$result	=str_replace('packets transmitted',	'sent',	$result);	
+			$result	=str_replace('packet loss',	'loss',	$result);
+			$result	=str_replace('packets transmitted',	'sent',	$result);
 			$result	=str_replace('packets received',		'rcv',	$result);
-	
-			if		(preg_match('# 0.0% loss#', 	$result))	{$result .="\t\t OK";}	
-			elseif	(preg_match('# 100.0% loss#',	$result))	{$result .="\t\t Offline";}	
-			else												{$result .="\t\t -";}	
+
+			if		(preg_match('# 0.0% loss#', 	$result))	{$result .="\t\t OK";}
+			elseif	(preg_match('# 100.0% loss#',	$result))	{$result .="\t\t Offline";}
+			else												{$result .="\t\t -";}
 			echo "$result\n";
 		}
 		return "$command\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_list($type){
@@ -505,7 +504,7 @@ class EspBuddy {
 					echo "  - $name		: " . $this->_FillHostnameOrIp($id)."\n";
 				}
 				break;
-	
+
 			case 'repos':
 				echo "Available Repositories are: \n";
 				foreach($this->cfg['repos'] as $repo => $arr){
@@ -513,7 +512,7 @@ class EspBuddy {
 					echo "  - $name		: {$arr['path_repo']}\n";
 				}
 				break;
-	
+
 			default:
 				$this->_dieError ("Unknown List type '$type'");
 				# code...
@@ -625,7 +624,7 @@ EOF;
 				$this->prefs[$k] = $prefs[$k];
 			}
 		}
-		
+
 		date_default_timezone_set($this->prefs['time_zone']);
 	}
 
@@ -657,7 +656,7 @@ EOF;
 			}
 			else{
 				return true;
-			}	
+			}
 		}
 		return true;
 	}
@@ -672,7 +671,7 @@ EOF;
 			return $this->_dieError ("No Serial Port choosen");
 		}
 
-		$this->c_host['serial_rate']	 and 
+		$this->c_host['serial_rate']	 and
 			$arg_rate=" -b {$this->c_host['serial_rate']}" and
 			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
 
@@ -692,12 +691,12 @@ EOF;
 		}
 		echo "\n";
 		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
-	
+
 		if(!$this->flag_drymode){
 			passthru($command, $r);
 			if($r){
 				return $this->_dieError ("Serial Upload Failed");
-			}	
+			}
 		}
 		return true;
 	}
@@ -718,7 +717,7 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	public function ChooseTarget(){
 		if($host=$this->target){
-			$force_selected=true; 
+			$force_selected=true;
 			if($host=='all'){
 				$choosen='a';
 			}
@@ -741,9 +740,9 @@ EOF;
 			$str_choices .="$index {$name}";
 			if($n <= count($this->cfg['hosts'])){$str_choices .=",";}
 		}
-		
+
 		if(!$force_selected){
-			echo "Choose Target Host : \n ";	
+			echo "Choose Target Host : \n ";
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
 			echo "\n-----------------------------------\n";
@@ -791,20 +790,20 @@ EOF;
 		$this->_FillHostnameOrIp($id);
 
 		$this->c_host					= $this->cfg['hosts'][$id];
-		$this->c_host['config']			= $this->_ChooseValueToUse('config');	
+		$this->c_host['config']			= $this->_ChooseValueToUse('config');
 		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
-		$this->c_host['login']			= $this->_ChooseValueToUse('login');	
-		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');	
-		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$this->prefs['name_sep']}{$this->c_conf['repo']}";		
+		$this->c_host['login']			= $this->_ChooseValueToUse('login');
+		$this->c_host['pass']			= $this->_ChooseValueToUse('pass');
+		$this->c_host['settings_name']	="{$this->prefs['settings_name']}{$this->prefs['name_sep']}{$this->c_conf['repo']}";
 
-		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);	
+		$this->c_host['serial_rate']	= $this->_ChooseValueToUse('serial_rate', $this->serial_rates, $this->serial_rates['boot']);
 		if($connected_serials=$this->_findConnectedSerialPorts()){
-			$first_serial_found =reset($connected_serials);			
+			$first_serial_found =reset($connected_serials);
 		}
-		$this->c_host['serial_port']	= $this->_ChooseValueToUse('serial_port', $this->serial_ports, $first_serial_found);	
-		
+		$this->c_host['serial_port']	= $this->_ChooseValueToUse('serial_port', $this->serial_ports, $first_serial_found);
+
 		// current config ------------
-		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];		
+		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
 		if(!is_array($this->c_conf)){
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
@@ -864,7 +863,7 @@ EOF;
 		$tmp		= '';
 		$arg_name	= "arg_$name";
 		$arg_value	= $this->$arg_name;
-		
+
 		($list and	$tmp = $list[	$arg_value]				)	or
 					$tmp =			$arg_value					or
 		 ($list and	$tmp = $list[	$this->c_host[$name]]	)	or
@@ -899,10 +898,10 @@ EOF;
 				}
 			}
 			elseif($this->os=='win'){
-				//to do
+//TODO: WINDOWS list Serials Ports
 			}
 		}
-		
+
 		if(count($found)){
 			return $found;
 		}
@@ -957,10 +956,10 @@ EOF;
 		if($this->prefs['keep_previous']){
 			$echo1="Keep the previous firmware, and a";
 			//if(file_exists($cur_firm_link)){
-				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";		
+				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";
 			//}
 			if($list_firmares=$this->_listFirmwares()){
-				$i=1; 
+				$i=1;
 				krsort($list_firmares);
 				foreach($list_firmares as $t => $file){
 					if($i > $this->prefs['keep_previous'] +1 ){
@@ -982,12 +981,12 @@ EOF;
 		else{
 			$new_firmware="{$path_build}.pio/build/{$this->c_conf['environment']}/firmware.bin";
 		}
-		
-		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";	
+
+		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";
 		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
 		$this->c_host['path_firmware']=$cur_firmware;
-		
-				
+
+
 		if(count($command_backup)){
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
@@ -1034,10 +1033,10 @@ EOF;
 		$this->_AssignCurrentHostConfig($id);
 
 		$ip		=	$this->c_host['ip'];
-		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);	
+		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);
 
 		$fqdn	=	$this->c_host['hostname'];
-		list($name,$domain)=explode('.', $fqdn);	
+		list($name,$domain)=explode('.', $fqdn);
 
 		if(preg_match_all('#{{([^}]*)}}#',$str,$matches)){
 			foreach($matches[1] as $k=>$v){
@@ -1103,8 +1102,8 @@ EOF;
 		global $cfg;
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
-		
-		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;	
+
+		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;
 		return $name;
 	}
 
@@ -1156,8 +1155,8 @@ EOF;
 					default:
 						$arg = $matches[2];
 				}
-		   
-				/* make unix like -afd == -a -f -d */			
+
+				/* make unix like -afd == -a -f -d */
 				if(preg_match("/^-([a-zA-Z0-9]+)/", $matches[0], $match)) {
 					$string = $match[1];
 					for($i=0; strlen($string) > $i; $i++) {
@@ -1165,15 +1164,15 @@ EOF;
 					}
 				}
 				else {
-					$_ARG['vars'][$key] = $arg;	  
-				}			
+					$_ARG['vars'][$key] = $arg;
+				}
 			}
 			else {
 				$_ARG['commands'][] = $arg;
-			}		
+			}
 		}
 		$_ARG['commands'][0] = basename($_ARG['commands'][0]);
-		return $_ARG;	
+		return $_ARG;
 	}
 
 
@@ -1191,7 +1190,7 @@ EOF;
 	            $this->_Prettyfy($val, $level + 1);
 	        } else {
 	            if($val && $val !== 0){
-	                print ($tabs . str_pad($key,22) . " : " . $val . "\n"); 
+	                print ($tabs . str_pad($key,22) . " : " . $val . "\n");
 	            }
 	        }
 	    }

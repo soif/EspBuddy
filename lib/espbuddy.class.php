@@ -410,7 +410,7 @@ class EspBuddy {
 				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
 					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
 				}
-				sleep(1); // give it some more time to be ready
+				sleep(2); // give it some more time to be ready
 
 				// assuming this is a 1M borard if not set------
 				$this->c_conf['size'] or $this->c_conf['size']='1M';

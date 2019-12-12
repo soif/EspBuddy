@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.86b';	// EspBuddy Version
+	public $class_version		= '1.87b';	// EspBuddy Version
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -36,6 +36,7 @@ class EspBuddy {
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
+	private $flag_json			= false;
 
 	// command lines variables
 	private $arg_serial_port	= '';
@@ -85,6 +86,80 @@ class EspBuddy {
 	);
 
 	private $os		="";			// what is the OS we are running
+
+
+	// ---------------------------------------------------------------------------------------
+	private	$actions_desc=array(
+		'root'=>array(
+				'upload'		=> "Build and/or Upload current repo version to Device(s)",
+				'build'			=> "Build firmware for the selected device",
+				'backup'		=> "Download and archive settings from the remote device",
+				'monitor'		=> "Monitor device connected to the serial port",
+				'version'		=> "Show remote device version",
+				'reboot'		=> "Reboot Device(s)",
+				'gpios'			=> "Test all Device's GPIOs",
+				'ping'			=> "Ping Device(s)",
+				'sonodiy'		=> "Discover and flash Sonoff devices in DIY mode",
+				'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)",
+				'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)",
+				'list_hosts'	=> "List all hosts defined in config.php",
+				'list_configs'	=> "List all available configurations, defined in config.php",
+				'list_repos'	=> "List all available repositories, defined in config.php",
+				'help'			=> "Show full help"
+		),
+		'sonodiy'		=> array(
+			'help'		=>	'Show Sonoff DIY Help',
+			'scan'		=>	'Scan Sonoff devices to find their IP & deviceID',
+			'test'		=>	'Toggle relay to verify communication',
+			'flash'		=>	'Upload a Tasmota firmware (508KB max, DOUT mode)',
+			'ping'		=>	'Check if device is Online',
+			'info'		=>	'Get Device Info',
+			'pulse'		=>	'Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)',
+			'signal'	=>	'Get WiFi Signal Strength',
+			'startup'	=>	'Set the Power On State (0=off, 1=on, 2=stay)',
+			'switch'	=>	'Set Relay (0=off, 1=on)',
+			'toggle'	=>	'Toggle Relay between ON and OFF',
+			'unlock'	=>	'Unlock OTA mode',
+			'wifi'		=>	'Set WiFi SSID and Password',
+		),
+	);
+
+	// ---------------------------------------------------------------------------------------
+	private	$actions_usage=array(
+		'root'=>array(
+				'upload'		=> "[TARGET] [options, auth_options, upload_options]",
+				'build'			=> "[TARGET] [options]",
+				'backup'		=> "[TARGET] [options, auth_options]",
+				'monitor'		=> "[TARGET] [options]",
+				'version'		=> "[options]",
+				'reboot'		=> "[options]",
+				'gpios'			=> "[options]",
+				'ping'			=> "[options]",
+				'sonodiy'		=> "SONOFF_TASK [options]",
+				'repo_version'	=> "REPO",
+				'repo_pull'		=> "REPO",
+				'list_hosts'	=> "",
+				'list_configs'	=> "",
+				'list_repos'	=> "",
+				'help'			=> ""
+		),
+		'sonodiy'		=> array(
+			'help'		=>	'',
+			'scan'		=>	'',
+			'test'		=>	'IP ID',
+			'flash'		=>	'IP ID [URL] [SHA256SUM]',
+			'ping'		=>  "IP [COUNT]",
+			'info'		=>	'',
+			'pulse'		=>	'[MODE] [WIDTH]',
+			'signal'	=>	'',
+			'startup'	=>	'[STATE]',
+			'switch'	=>	'[STATE]',
+			'toggle'	=>	'STATE',
+			'unlock'	=>	'',
+			'wifi'		=>	'SSID [PASSWORD]',
+		),
+	);
+
 
 
 	// ---------------------------------------------------------------------------------------
@@ -160,6 +235,9 @@ class EspBuddy {
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 
+			case 'sonodiy':
+				$this->Command_sonodiy();
+				break;
 			case 'repo_version':
 				$this->Command_repo('version');
 				break;
@@ -181,7 +259,7 @@ class EspBuddy {
 
 			default:
 				echo "Invalid Command! \n";
-				$this->Command_usage();
+				$this->_show_action_desc();
 				global $argv;
 				echo "* Use '{$this->bin} help' to list all options\n";
 				echo "\n";
@@ -523,98 +601,702 @@ class EspBuddy {
 
 
 	// ---------------------------------------------------------------------------------------
-	private	$actions_desc=array(
-			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build firmware for the selected device",
-			'backup'		=> "Download and archive settings from the remote device",
-			'monitor'		=> "Monitor device connected to the serial port",
-			'version'		=> "Show remote device version",
-			'reboot'		=> "Reboot Device(s)",
-			'gpios'			=> "Test all Device's GPIOs",
-			'ping'			=> "Ping Device(s)",
-			'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)", 
-			'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)",
-			'list_hosts'	=> "List all hosts defined in config.php",
-			'list_configs'	=> "List all available configurations, defined in config.php",
-			'list_repos'	=> "List all available repositories, defined in config.php",
-			'help'			=> "Show full help"
-			);
-	// ---------------------------------------------------------------------------------------
-	private	$actions_usage=array(
-			'upload'		=> "upload	[TARGET] [options, auth_options, upload_options]",
-			'build'			=> "build	[TARGET] [options]",
-			'backup'		=> "backup	[TARGET] [options, auth_options]",
-			'monitor'		=> "monitor	[TARGET] [options]",
-			'version'		=> "version	[options]",
-			'reboot'		=> "reboot	[options]",
-			'gpios'			=> "gpios	[options]",
-			'ping'			=> "ping	[options]",
-			'repo_version'	=> "repo_version REPO", 
-			'repo_pull'		=> "repo_pull    REPO",
-			'list_hosts'	=> "list_hosts",
-			'list_configs'	=> "list_configs",
-			'list_repos'	=> "list_repos",
-			'help'			=> "help"
-			);
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_usage(){
-
-		echo "* Usage             : {$this->bin} ACTION [TARGET] [options]\n";
-		echo "\n";
-		echo "* Valid Actions : \n";
-		foreach($this->actions_desc as $k => $v){
-			echo "  - ".str_pad($k,15)." : $v\n";
+	public function Command_help($action='root'){
+		$action or $action='root';
+		if($action=='root'){
+			echo $this->_espbVersions();
+			echo "\n\n";	
 		}
-		echo "\n";
-	}
-
-
-	// ---------------------------------------------------------------------------------------
-	public function Command_help(){
-		$bin= $this->bin;
-		echo $this->_espbVersions();
-		echo "\n\n";
-		$this->Command_usage();
-		echo "* Actions Usage: \n";
-		foreach($this->actions_usage as $k => $usage){
-			echo "  - ".str_pad($k,15)." : $bin $usage\n";
-			//echo str_pad('',6)." {$this->actions_desc[$k]}\n";
-			//echo "\n";
-		}
-		echo <<<EOF
-
+		$this->_show_command_usage($action);
+		$this->_show_action_desc($action);
+		$this->_show_action_usage($action);
+		if($action=='root'){
+			echo <<<EOF
+---------------------------------------------------------------------------------
 * OPTIONS :
 	-f  : don't confirm choosen host (when no host provided)
 	-d  : Dry Run. Show commands but don't apply them
 	-v  : Verbose
 
 * UPLOAD_OPTIONS :
-	-b  : Build before Uploading
-	-w  : Wire Mode : Upload using the Serial port instead of the default OTA
-	-e  : In Wire Mode, erase flash first, then upload
-	-p  : Upload previous firmware backuped, instead of the latest built 
-	-s  : Skip Intermediate Upload (if set)
+	-b           : Build before Uploading
+	-w           : Wire Mode : Upload using the Serial port instead of the default OTA
+	-e           : In Wire Mode, erase flash first, then upload
+	-p           : Upload previous firmware backuped, instead of the latest built
+	-s           : Skip Intermediate Upload (if set)
 
-	--port=xxx     : serial port to use (overrride main or per host serial port)
-	--rate=xxx     : serial port speed to use (overrride main or per host serial port)
-	--conf=xxx     : config to use (overrride per host config)
-	--firm=xxx     : full path to the firmware file to upload (override latest build one)
-	--from=REPO    : migrate from REPO to the selected config
+	--port=xxx   : serial port to use (overrride main or per host serial port)
+	--rate=xxx   : serial port speed to use (overrride main or per host serial port)
+	--conf=xxx   : config to use (overrride per host config)
+	--firm=xxx   : full path to the firmware file to upload (override latest build one)
+	--from=REPO  : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx    : login name (overrride host or per config login)
-	--pass=xxx     : password (overrride host or per config password)
+	--login=xxx  : login name (overrride host or per config login)
+	--pass=xxx   : password (overrride host or per config password)
+
+---------------------------------------------------------------------------------
+
+EOF;
+			$this->_show_action_desc('sonodiy','SONOFF_TASKS');
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_sonodiy(){
+
+		if($this->target=='help'){
+			$this->Sonodiy_help();
+		}
+		elseif($this->target=='ping'){
+			$this->Sonodiy_ping($this->args['commands'][3], $this->args['commands'][4]);
+			echo "\n";
+		}
+		elseif($this->target=='scan'){
+			$this->Sonodiy_scan();
+		}
+		elseif($this->target=='test'){
+			$this->Sonodiy_test($this->args['commands'][3],$this->args['commands'][4]);
+		}
+		elseif($this->target){
+			if(in_array($this->target,array_keys($this->actions_desc[$this->action]))){
+				$device_ip		=$this->args['commands'][3];
+				$device_id		=$this->args['commands'][4];
+				$device_param1	=$this->args['commands'][5];
+				$device_param2	=$this->args['commands'][6];
+				$this->Sonodiy_api($this->target,$device_ip, $device_id,$device_param1,$device_param2);	
+			}
+			else{
+				$error="Invalid Task: '{$this->target}'";
+			}
+		}
+		else{
+			$error="Missing a '{$this->action}' Task";
+		}
+		if($error){
+			$this->_printError($error);
+			echo "\n";
+			$this->_show_command_usage($this->action);
+			$this->_show_action_desc($this->action);
+			echo "* Use '{$this->bin} {$this->action} help' for all options\n";
+			echo "\n";
+			exit(1);
+		}
+		exit(0);
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public 	function Sonodiy_test($ip, $id){
+		$this->Sonodiy_ping($ip,5);
+		echo "Toggling Relay: ";
+		if($r=$this->_sonodiy_api_toggle($ip,$id,0)){
+			echo "OK (did you heard it?)";
+		}
+		else{
+			echo "FAILED";
+		}
+		echo "\n";
+		echo "API response	:\n";
+		print_r($this->_sonodiy_api_info($ip,$id));
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public 	function Sonodiy_help(){
+		$this->Command_help('sonodiy');
+		echo <<<EOF
+---------------------------------------------------------------------------------
+Setup Instructions
+---------------------------------------------------------------------------------
+  1) Setup an access point in your network named "sonoffDiy" with password "20170618sn"
+  2) Set the OTA/DIY jumper in your Sonoff Device, and power it On.
+  3) Run '{$this->bin} sonodiy scan'        to find your device IP & ID
+  4) Run '{$this->bin} sonodiy test  IP ID' to toggle the relay on the device (verification)
+  5) Run '{$this->bin} sonodiy flash IP ID' to upload another firmware (Tasmota by default)
+  6) Enjoy!
 
 EOF;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public 	function Sonodiy_ping($ip, $count=1){
+		$count =intval($count);
+		$count or $count=1;
+		if(!$ip){
+			$this->_dieError("Missing IP");
+		}
+		echo "Sending $count pings to $ip : ";
+		if($this->flag_verbose){
+			echo "\n";
+		}
+		$r=0;
+		for ($i=0; $i < $count ; $i++) { 
+			$x=$i+1;
+			$state ='not OK!';
+			if($bool = $this->_ping($ip) ){
+				$r++;
+			}
+			$bool and $state="OK";
+			if($this->flag_verbose){
+				echo " $x	: $state\n";
+			}
+			if($bool and $x < $count){
+				sleep(1);
+			}
+	}
+		if($x==$r){
+			echo "OK!\n";
+		}
+		else{
+			echo "I've received $r answers out of $count requests.\n";
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public 	function Sonodiy_scan(){
+		$service="_ewelink._tcp";
+
+		if($this->os == "lin"){
+			$command="avahi-browse -t _ewelink._tcp  --resolve";
+			echo "Scanning network for Devices using command:	$command\n";
+			$raw=trim(shell_exec($command));
+			$raw_example=<<<EOF
++   eth0 IPv4 eWeLink_1000aba1ee                            _ewelink._tcp        local
+=   eth0 IPv4 eWeLink_1000aba1ee                            _ewelink._tcp        local
+	hostname = [eWeLink_1000aba1ee.local]
+	address = [10.1.250.154]
+	port = [8081]
+	txt = ["data1={"switch":"off","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1500,"rssi":-63}" "seq=96" "apivers=1" "type=diy_plug" "id=1000aba1ee" "txtvers=1"]
+
+
+EOF;
+			if($raw){
+				//echo $raw_example;
+				$lines=explode("\n",$raw);
+				$i=0;
+				foreach($lines as $line){
+					if(preg_match('#IPv4\s*?([^\s]+)#',$line,$match)){
+						$ids[$i]=$match[1];
+					}
+					if(preg_match('#address\s*?=\s*?\[([^\]]+)\]#',$line,$match)){
+						$ips[$i]=$match[1];
+					}
+					if(preg_match('#port\s*?=\s*?\[([^\]]+)\]#',$line,$match)){
+						$ports[$i]=$match[1];
+						$i++;
+					}
+				}
+				
+				if($ids){
+					echo "--> Devices Found:\n";
+					$pad=15;
+					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
+					echo str_repeat('-',45)."\n";
+					foreach($ids as $k => $id){
+						echo "".str_pad($id,$pad+8).str_pad($ips[$k],$pad).str_pad($ports[$k],$pad)."\n";
+					}
+					echo str_repeat('-',45)."\n";
+					$found_args="{$ips[0]} {$ids[0]}";	
+				}
+				else{
+					echo "--> Sorry, I did not found any device\n";
+				}
+			}
+		}
+		elseif($this->os == "osx"){
+			$command="dns-sd -B $service";
+
+			echo "Scanning network for Devices using command:	$command\n";
+			$bash=$this->_sondiy_osx_com2bash($command,5);
+			$lines_ids=trim(shell_exec($bash));
+			if($lines_ids){
+				echo "--> Device IDs Found:\n";
+				$lines=explode("\n",$lines_ids);
+				foreach($lines as $line){
+					list($trash,$raw_id)=explode($service.'.' , $line);
+					$ids[]=trim(str_replace('eWeLink_','',$raw_id));
+				}
+				echo "   - ". implode("\n   - ",$ids);
+				echo "\n\n";
+
+				$first_id='eWeLink_'.$ids[0];
+				$command="dns-sd -q $first_id.local";
+				echo "Resolving IP Address for the first device found ({$ids[0]}) using command:	$command\n";
+				$command=$this->_sondiy_osx_com2bash($command,4);
+				$line_ip=trim(shell_exec($command));
+				if($line_ip){
+					list($trash,$raw_ip)=explode('IN' , $line_ip);
+					$ip=trim($raw_ip);
+					echo "--> Device IP Address is: $ip\n";
+					$found_args="$ip {$ids[0]}";
+				}
+				else{
+					echo "--> Sorry, I could not resolve the IP Address\n";
+				}
+				// dns-sd -L  $first_id _ewelink._tcp local
+			}
+			else{
+				echo "--> Sorry, I did not found any device\n";
+			}
+		}
+		elseif($this->os == "win"){ //windows
+			$command="python {$this->cfg['paths']['bin']}mdns.py";
+			echo "Scanning network for Devices using command:	$command\n";
+			$raw=trim(shell_exec($command));
+			$raw_example=<<<EOF
+inter add_service()
+1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
+1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
+1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
+			
+EOF;
+			if($raw){
+				//echo $raw_example;
+				$lines=explode("\n",$raw);
+				$first_line=$lines[0];
+				unset($lines[0]);
+				foreach($lines as $line){
+					if(preg_match('#^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+.*?diy_plug#',$line,$match)){
+						$ids[$match[1]]		=$match[1];
+						$ips[$match[1]]		=$match[2];
+						$ports[$match[1]]	=$match[3];
+					}
+				}
+				
+				if($ids){
+					echo "--> Devices Found:\n";
+					$pad=15;
+					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
+					echo str_repeat('-',45)."\n";
+					$i=0;
+					foreach($ids as $k => $id){
+						echo "".str_pad($id,$pad+8).str_pad($ips[$k],$pad).str_pad($ports[$k],$pad)."\n";
+						//reassign to num array
+						$ids[$i]	=$ids[$k];
+						$ips[$i]	=$ips[$k];
+						$ports[$i]	=$ports[$k];
+						$i++;
+					}
+					echo str_repeat('-',45)."\n";
+					$found_args="{$ips[0]} {$ids[0]}";	
+				}
+				else{
+					if(preg_match('#add_service#',$first_line)){
+						echo "--> Sorry, I did not found any device\n";
+					}
+					else{
+						$crashed=1;
+					}
+				}
+			}
+			else{
+				$crashed=1;
+			}
+
+			if($crashed){
+				$this->_printError("The python script has certainly crashed");
+				echo <<<EOF
+
+It seems that you dont have a working Python installation!
+Please follows these steps;
+  1) Install Python v3.xx , bundled with pip.
+  2) From the command line, type: "python --version" (to verify the version)
+  3) From the command line; type: "pip install zeroconf PySide2"
+Then try again!
+
+(WINDOWS SUPPORT IS STILL EXPERIMENTAL !)
+
+EOF;
+				
+			}
+		}
+
+		if($found_args){
+			echo "\nYou can now use: \"$found_args\" as arguments for sonodiy tasks!\nie:\n";
+			echo "  {$this->bin} sonodiy test  $found_args\n";
+			echo "  {$this->bin} sonodiy flash $found_args\n";
+		}
+		echo "\n";
+
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _sondiy_osx_com2bash($command,$skip){
+		//https://github.com/pstadler/non-terminating-bash-processes/blob/master/README.md
+		$bash=<<<EOFB
+bash <<'END'
+trap '{
+	if [ -z "\$out" ]; then
+		#echo "-->No Sonoff device found."
+		exit 0
+	fi
+	printf "%s\n" "\${out[@]}"
+	#echo "-->\${#out[@]} host(s) found."
+}' EXIT
+
+out=(); i=0
+while read -r line; do
+	i=`expr \$i + 1`
+	if [ \$i -lt $skip ]; then continue; fi
+	out+=("\$line")
+	if [ $(echo \$line | cut -d ' ' -f 3) -ne '3' ]; then
+		break
+	fi
+done < <((sleep 0.5; pgrep -q dns-sd && kill -13 \$(pgrep dns-sd)) &
+			$command)
+pgrep -q dns-sd && kill -13 \$(pgrep dns-sd)
+exit 0
+END
+EOFB;
+		return $bash;
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private $_itead_error_codes=array(
+		400	=> "The request was formatted incorrectly. The request body is not a valid JSON format.",
+		401	=> "The request was unauthorized. Device information encryption is enabled on the device, but the request is not encrypted.",
+		404	=> "The device does not exist. The device does not support the requested deviceid.",
+		422	=> "The request parameters are invalid. For example, the device does not support setting specific device information.",
+		403	=> "The OTA function was not unlocked. The interface '3.2.6OTA function unlocking' must be successfully called first",
+		408	=> "The pre-download firmware timed out. You can try to call this interface again after optimizing the network environment or increasing the network speed.",
+		413	=> "The request body size is too large. The size of the new OTA firmware exceeds the firmware size limit allowed by the device.",
+		424	=> "The firmware could not be downloaded. The URL address is unreachable (IP address is unreachable, HTTP protocol is unreachable, firmware does not exist, server does not support Range request header, etc.)",
+		471	=> "The firmware integrity check failed. The SHA256 checksum of the downloaded new firmware does not match the value of the request body's sha256sum field. Restarting the device will cause bricking issue.",
+	);
+
+	public 	function Sonodiy_api($task, $ip, $id, $param1='', $param2=''){
+		if(!$ip){
+			$this->_dieError("Missing IP");
+		}
+		if(!$id){
+			$this->_dieError("Missing ID");
+		}
+		$fn="_sonodiy_api_$task";
+		if(method_exists($this, $fn)){
+			$result		=$this->$fn($ip, $id, $param1, $param2);
+			$curl_req	=$this->_last_curl_request;
+			$curl_url	=$this->_last_curl_url;
+			$curl_res	=$this->_last_curl_result;
+			
+			if(!$result){
+				$this->_printError("API failed with error code: {$curl_res['error']}");
+				echo "\n";
+				echo "From : https://github.com/itead/Sonoff_Devices_DIY_Tools/blob/master/SONOFF%20DIY%20MODE%20Protocol%20Doc%20v1.4.md \n";
+				echo " {$curl_res['error']} : \"".$this->_itead_error_codes[$curl_res['error']]."\"\n";
+				echo "\n";
+			}
+
+			if($this->flag_verbose){
+				$info=$this->_sonodiy_api_info($ip,$id);
+				if(is_array($result['data'])){
+					$info['data']=array_merge($result['data'],$info['data']);
+				}
+				
+				if(!$result or $this->flag_drymode){
+					echo "--- URL requested ---------------------------\n";
+					echo "$curl_url\n";
+					echo "\n--- Request Sent: ---------------------------\n";
+					print_r($curl_req);
+					echo "\n--- Response Received: ----------------------\n";
+					print_r($curl_res);
+				}
+				echo "\n--- Last Information Data Received: ---------\n";
+				print_r($info['data']);
+				echo "\n";
+			}
+			
+			if($this->flag_json){
+				$info or $info=$this->_sonodiy_api_info($ip,$id);
+				$curl_info['data']=$info['data'];
+				if($this->flag_verbose){
+					echo "JSON: ";
+				}
+				echo json_encode($curl_info)."\n";
+			}
+			
+			if(! $result){
+				exit(1);
+			}
+		}
+		else{
+			$this->_dieError("No method for task: '$task'");
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_info($ip, $id){
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array()
+		);
+		return $this->_sondiy_curl($ip,'info',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_flash($ip, $id,$url,$sha256=''){
+		$url or $url=$this->cfg['sonodiy']['firmware_url'];
+		// 508KB max, DOUT mode
+		if(!$url){
+			$this->_dieError( "Missing Firmaware URL");
+		}
+
+		$data	=file_get_contents($url);
+		$size	=strlen(bin2hex($data))/2;
+		$size_k	=$size/1024;
+		$sha256 or $sha256=hash('sha256',$data);
+		$size_k_round=ceil($size_k);
+		echo "Firmware to upload: \n";
+		echo " - URL    : $url\n";
+		echo " - sha256 : $sha256\n";
+		echo " - Size   : {$size_k_round} kB ($size bytes)\n";
+		if($size_k >= 508 ){
+			$this->_dieError("Size is more than 508 kB. Please use a smaller firmware");
+		}
+		elseif($size_k < 100 ){
+			$this->_dieError("Size is less than 108 kB, this seems strange");
+		}
+		echo "\n";
+		$ok=$this->_AskConfirm();
+		
+		if(!$ok){
+			echo "--> Cancelling...\n";
+			echo "\n";
+			exit(0);
+		}
+		echo "--> Uploading....\n";
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array(
+				'downloadUrl'	=> $url,
+				'sha256sum'		=> $sha256
+			)
+		);
+		if($r=$this->_sondiy_curl($ip,'ota_flash',$data)){
+			$this->_WaitPingable($ip, 60, true);
+			$this->_WaitPingable($ip, 3);
+			echo "Finished!\n";
+			return $r;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_pulse($ip, $id, $state_bool=0, $width=1000){
+		$state='off';
+		$state_bool and $state="on";
+		$width=intval($width);
+
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array(
+				'pulse'			=> $state
+			)
+		);
+		if($width){
+//TODO Check that $width is a multiples of 500
+			$data['data']['pulseWidth']=$width;
+		}
+		return $this->_sondiy_curl($ip,'pulse',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_signal($ip, $id){
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array()
+		);
+		return $this->_sondiy_curl($ip,'signal_strength',$data);
+	}
+	
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_startup($ip, $id, $state_num=0){
+		if(!$state_num){
+			$state='off';
+		}
+		elseif($state_num==1){
+			$state='on';
+		}
+		elseif($state_num==2){
+			$state='stay';
+		}
+		else{
+			return;
+		}
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array(
+				'startup'	=> $state
+			)
+		);
+		return $this->_sondiy_curl($ip,'startup',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_switch($ip, $id, $state_bool=0){
+		$state='off';
+		$state_bool and $state="on";
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array(
+				'switch'	=> $state
+			)
+		);
+		return $this->_sondiy_curl($ip,'switch',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_toggle($ip, $id){
+		if($info=$this->_sonodiy_api_info($ip,$id)){
+			$state=1;
+			if($info['data']['switch']=='on'){
+				$state=0;
+			}
+			return $this->_sonodiy_api_switch($ip,$id,$state);
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_unlock($ip, $id){
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array()
+		);
+		return $this->_sondiy_curl($ip,'ota_unlock',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _sonodiy_api_wifi($ip, $id, $ssid, $pass){
+		if(!$ssid){			
+			$this->_dieError( "Missing SSID");
+		}
+		if(!$pass){
+			if(!$this->flag_noconfirm){
+				$this->_printError("Missing Password");
+				echo "Use '-f', if you don't want to set a password.\n\n";
+				exit(1);					
+			}
+			else{
+				$pass="";
+				if($this->flag_verbose){
+					echo "Setting Wifi to SSID=$ssid with NO password!\n";
+				}
+			}
+		}
+		else{
+			if($this->flag_verbose){
+				echo "Setting Wifi to SSID=\"$ssid\" , Password=\"$pass\"\n";
+			}
+		}
+		$data=array(
+			'deviceid'	=> $id,
+			'data'		=> array(
+				'ssid'			=> $ssid,
+				'password'		=> $pass
+			)
+		);
+		return $this->_sondiy_curl($ip,'wifi',$data);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private $_last_curl_request;
+	private $_last_curl_url;
+	private $_last_curl_result;
+	private function _sondiy_curl($ip, $endpoint, $data){
+		//https://github.com/itead/Sonoff_Devices_DIY_Tools/blob/master/SONOFF%20DIY%20MODE%20Protocol%20Doc%20v1.4.md
+
+		$json=json_encode($data);
+		$url="http://$ip:8081/zeroconf/$endpoint";
+		
+		$this->_last_curl_request	=$data;
+		$this->_last_curl_url		=$url;
+
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json',
+			'Content-Length: ' . strlen($json))
+		);
+		if($this->flag_drymode){
+			curl_close($ch);
+			$out['error']=0;
+			$out['data']['dryMode']="No Datas in Dry mode";
+		}
+		else{
+			$result 	= curl_exec($ch);
+			curl_close($ch);
+			$out 		= @json_decode($result,true);	
+			$out['data']=@json_decode($out['data'],true);
+		}
+		$this->_last_curl_result=$out;
+		if($out['error']==0){
+			return $out;
+		}
+	}
 
 
 
 	// ##################################################################################################################################
 	// ##### PRIVATE ####################################################################################################################
 	// ##################################################################################################################################
+
+
+	// ---------------------------------------------------------------------------------------
+	public function _show_action_desc($action='root',$title=""){
+		if($action=='root'){
+			$name="Valid ACTIONS";
+		}
+		else{
+			$name="Valid '$action' TASKS";
+		}
+		$title or $title="$name";
+		if($this->actions_desc[$action]){
+			echo "* $title : \n";
+			foreach($this->actions_desc[$action] as $k => $v){
+				echo "  - ".str_pad($k,15)." : $v\n";
+			}
+			echo "\n";
+		}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _show_action_usage($action='root',$title=""){
+		if($action=='root'){
+			$pad_sub=12;
+			$name="Actions";
+		}
+		else{
+			$pad_sub=6;
+			$name="'$action' Tasks";
+			$sub="$action ";
+		}
+		$title or $title="$name Usage";
+		if($this->actions_usage[$action]){
+			echo "* $title : \n";
+			foreach($this->actions_usage[$action] as $k => $v){
+				echo "  - ".str_pad($k,15)." : {$this->bin} $sub".str_pad($k,$pad_sub)." $v\n";
+			}
+			echo "\n";
+		}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _show_command_usage($action=''){
+		
+		if($action !='root'){
+			$usage="$action ". $this->actions_usage['root'][$action];
+		}
+		else{
+			$usage="ACTION [TARGET] [options]";
+		}
+		echo "* Usage             : {$this->bin} $usage\n";
+		echo "\n";
+	}
 
 
 	// ---------------------------------------------------------------------------------------
@@ -1055,6 +1737,25 @@ EOF;
 
 
 	// ---------------------------------------------------------------------------------------
+	private function _AskConfirm(){
+		if($this->flag_noconfirm){
+			return true;
+		}
+		echo "Please Confirm : ";
+		$confirm=$this->_AskYesNo();
+		echo "\n";
+		return $confirm;
+	}
+	
+	// ---------------------------------------------------------------------------------------
+	private function _AskYesNo(){
+		$confirm=strtolower($this->_Ask("Yes,No",'',", ","? "));
+		if($confirm=='y'){
+			return true;
+		}	
+	}
+
+	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
 	private function _Ask($str_choices='', $force='', $sep="\n ", $eol="\n"){
 		if($force){
@@ -1126,6 +1827,7 @@ EOF;
 		$this->flag_serial		= (boolean) $this->args['flags']['w'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
+		$this->flag_json		= (boolean) $this->args['flags']['j'];
 
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
@@ -1303,7 +2005,14 @@ EOF;
 		else{
 			echo "\n";
 		}
-		die();
+		exit(1);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _printError($mess=''){
+		echo "\n";
+		echo "\033[31mERROR: $mess !!!";
+		echo "\033[0m\n";
 	}
 
 }

@@ -1,9 +1,12 @@
-## OS Specific Hidden Files ####
+## Well-Known ######################
+.vscode/
 
-# MacOSX Finder *****
+## OS Specific Hidden Files ########
+
+# MacOSX Finder ------------
 .DS_Store
 
-# Fuse FileSystem ***
+# Fuse FileSystem ----------
 .fuse_hidden*
 
 

@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.89b';	// EspBuddy Version
+	public $class_version		= '1.89b';						// EspBuddy Version
+	public $class_gh_owner		= 'soif';						// Github Owner
+	public $class_gh_repo		= 'EspBuddy';					// Github Repository
+	public $class_gh_api_url	= 'https://api.github.com';	// Github API URL
+	public $app_name			= 'EspBuddy';					// Application Name
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -104,6 +108,7 @@ class EspBuddy {
 				'list_hosts'	=> "List all hosts defined in config.php",
 				'list_configs'	=> "List all available configurations, defined in config.php",
 				'list_repos'	=> "List all available repositories, defined in config.php",
+				'self'			=> "Get current, latest or update EspBuddy version",
 				'help'			=> "Show full help"
 		),
 		'sonodiy'		=> array(
@@ -121,6 +126,12 @@ class EspBuddy {
 			'unlock'	=>	'Unlock OTA mode',
 			'wifi'		=>	'Set WiFi SSID and Password',
 		),
+		'self'		=> array(
+			'version'	=> "Show EspBuddy version",
+			'latest'	=> 'Show the lastest version available',
+			'avail'	=> 'Show all versions available',
+			'update'	=> 'Update EspBuddy to the latest version',
+		)
 	);
 
 	// Command Usages Texts ------------------------------------------------------------------------
@@ -135,6 +146,7 @@ class EspBuddy {
 				'gpios'			=> "[options]",
 				'ping'			=> "[options]",
 				'sonodiy'		=> "SONOFF_TASK [options]",
+				'self'			=> "version|latest|avail|update [options]",
 				'repo_version'	=> "REPO",
 				'repo_pull'		=> "REPO",
 				'list_hosts'	=> "",
@@ -157,6 +169,12 @@ class EspBuddy {
 			'unlock'	=>	'',
 			'wifi'		=>	'SSID [PASSWORD]',
 		),
+		'self'		=> array(
+			'version'	=> '',
+			'latest'	=> '',
+			'avail'		=> '',
+			'update'	=> '[TAG]',
+		)
 	);
 
 
@@ -253,6 +271,9 @@ class EspBuddy {
 				break;
 			case 'list_repos':
 				$this->Command_list('repos');
+				break;
+			case 'self':
+				$this->Command_self();
 				break;
 			case 'help':
 				$this->Command_help();
@@ -606,7 +627,7 @@ class EspBuddy {
 	public function Command_help($action='root'){
 		$action or $action='root';
 		if($action=='root'){
-			echo $this->_espbVersions();
+			echo $this->_getVersionBuddyLong();
 			echo "\n\n";	
 		}
 		$this->_show_command_usage($action);
@@ -646,6 +667,51 @@ EOF;
 
 
 	// ---------------------------------------------------------------------------------------
+	public function Command_self(){
+		if($this->target=='version'){
+			echo "Current version: {$this->class_version}";
+		}
+		elseif($this->target=='latest'){
+			$gh=$this->_GithubFetchLatestVersion();
+			echo "Latest version: {$gh['version']}";
+		}
+		elseif($this->target=='avail'){
+			$versions=$this->_GithubFetchLatestVersions();
+			echo "Versions available : \n";
+			$p=10;
+			echo "    ". str_pad('TAG', $p). str_pad('Version', $p). str_pad('Commit', 20)."\n";
+			foreach ($versions as $v){
+				echo "  - ". str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['commit'], $p)."\n";
+			}
+		}
+		elseif($this->target=='update'){
+			$gh=$this->_GithubFetchLatestVersion();
+			$wanted_tag=$this->args['commands'][3] or $wanted_tag=$gh['tag'];
+			$wanted_version=preg_replace('/^v/','',$wanted_tag);
+			if($wanted_version==$this->class_version){
+				echo "You're alreay running this version!";
+			}
+			else{
+				echo "Update Espbuddy from v{$this->class_version} to $wanted_tag : ";
+				if($ok=$this->_AskYesNo()){
+					echo "\n";
+					echo "Updating to version {$wanted_tag} ...\n";
+					echo "--> NOT YET IMPLEMENTED <-- ";
+				}
+				else{
+					echo "\n";
+					echo "Canceled!";
+				}
+
+			}
+		}
+		else{
+			$this->_showActionUsage();			
+		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_sonodiy(){
 
 		if($this->target=='help'){
@@ -677,18 +743,22 @@ EOF;
 			$error="Missing a '{$this->action}' Task";
 		}
 		if($error){
-			$this->_printError($error);
-			echo "\n";
-			$this->_show_command_usage($this->action);
-			$this->_show_action_desc($this->action);
-			echo "* Use '{$this->bin} {$this->action} help' for all options\n";
-			echo "\n";
-			exit(1);
+			$this->_showActionUsage($error);
 		}
 		exit(0);
 
 	}
-
+	// ---------------------------------------------------------------------------------------
+	public 	function _showActionUsage($error=""){
+		$error or $error="Invalid Task: '{$this->target}'";
+		$this->_printError($error);
+		echo "\n";
+		$this->_show_command_usage($this->action);
+		$this->_show_action_desc($this->action);
+		echo "* Use '{$this->bin} {$this->action} help' for all options\n";
+		echo "\n";
+		exit(1);
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_test($ip, $id){
@@ -1717,15 +1787,24 @@ EOFB;
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _espbVersions(){
+	private function _getVersionBuddyLong(){
 		$version="EspBuddby v{$this->class_version}";
-		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
-		if(preg_match('#__version__\s*=\s*"([^"]+)"#', $tmp,$m)){
-			$version .= " ( EspTool v{$m[1]} )";
-		}
+		
+		$esptool_ve=$this->_getVersionEsptool();
+		$esptool_ve and $version .=" ( EspTool v{$mesptool_ve} )";
+		
 		return $version;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _getVersionEsptool(){
+		$tmp= @file_get_contents($this->cfg['paths']['bin_esptool']);
+		if(preg_match('#__version__\s*=\s*"([^"]+)"#', $tmp,$m)){
+			return $m[1];
+		}
+	}
+
+	
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
@@ -2034,6 +2113,39 @@ EOFB;
 		echo "\033[0m\n";
 	}
 
-}
 
+	// ---------------------------------------------------------------------------------------
+	private function _GithubFetchLatestVersion(){
+		if($versions=$this->_GithubFetchLatestVersions()){
+			return $versions[0];
+		}
+	}	
+	// ---------------------------------------------------------------------------------------
+	private function _GithubFetchLatestVersions(){
+		$opts = array(
+			'http' => array(
+				'method' => 'GET',
+				'header' => array(
+						"User-Agent: {$this->app_name}"
+				)
+			)
+		);
+		$context = stream_context_create($opts);
+		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
+		$data	= file_get_contents($url,false,$context);
+		if($data){
+			$data=json_decode($data,true);
+			foreach( $data as $k => $v){
+				$out[$k]['tag']			=$v['name'];
+				$out[$k]['commit']		=$v['commit']['sha'];
+				$out[$k]['url_zip']		=$v['zipball_url'];
+				$out[$k]['url_gz']		=$v['tarball_url'];
+				$out[$k]['version']		=preg_replace('/^v/','',$v['name']);	
+			}
+			return $out;
+		}
+
+	}	
+
+}
 ?>

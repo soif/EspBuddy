@@ -285,7 +285,8 @@ class EspBuddy {
 				break;
 
 			default:
-				$this->_printError("Invalid Command");
+				$this->action and $com=" '{$this->action}'";
+				$this->_printError("Invalid$com Command");
 				echo "\n";
 				$this->_show_command_usage();
 				$this->_show_action_desc();
@@ -656,15 +657,15 @@ class EspBuddy {
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
 
-	--port=xxx   : serial port to use (overrride main or per host serial port)
-	--rate=xxx   : serial port speed to use (overrride main or per host serial port)
-	--conf=xxx   : config to use (overrride per host config)
+	--port=xxx   : serial port to use (override main or per host serial port)
+	--rate=xxx   : serial port speed to use (override main or per host serial port)
+	--conf=xxx   : config to use (override per host config)
 	--firm=xxx   : full path to the firmware file to upload (override latest build one)
 	--from=REPO  : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx  : login name (overrride host or per config login)
-	--pass=xxx   : password (overrride host or per config password)
+	--login=xxx  : login name (override host or per config login)
+	--pass=xxx   : password (override host or per config password)
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
@@ -1549,7 +1550,9 @@ EOFB;
 			$host	=$this->c_host;
 			echo "       + Host Name : {$host['hostname']}\n";
 			echo "       + Host IP   : {$host['ip']}\n";
-			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+			if($host['serial_port']){
+				echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+			}
 			echo "\nSelected Config    : {$this->c_host['config']}\n";
 			if($this->flag_verbose){
 				echo "\033[37m";
@@ -1561,6 +1564,7 @@ EOFB;
 
 		// confirm -------
 		if(!$force_selected){
+			echo "\n";
 			if(!$this->_AskConfirm()){
 				echo("--> Cancelled!\n");
 				exit(0);

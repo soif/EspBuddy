@@ -16,11 +16,13 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version		= '1.89b';						// EspBuddy Version
-	public $class_gh_owner		= 'soif';						// Github Owner
-	public $class_gh_repo		= 'EspBuddy';					// Github Repository
-	public $class_gh_api_url	= 'https://api.github.com';	// Github API URL
-	public $app_name			= 'EspBuddy';					// Application Name
+	public $class_version			= '1.89.1b';					// EspBuddy Version
+	public $class_gh_owner			= 'soif';						// Github Owner
+	public $class_gh_repo			= 'EspBuddy';					// Github Repository
+	public $class_gh_branch_main	= 'master';						// Github Master Branch
+	public $class_gh_branch_dev		= 'develop';					// Github Develop Branch
+	public $class_gh_api_url		= 'https://api.github.com';		// Github API URL
+	public $app_name				= 'EspBuddy';					// Application Name
 
 	private $cfg				= array();	// hold the configuration
 	private $espb_path			= '';	// Location of the EspBuddy root directory
@@ -35,11 +37,14 @@ class EspBuddy {
 	private $flag_noconfirm		= false;
 	private $flag_drymode		= false;
 	private $flag_verbose		= false;
+	private $flag_force			= false;
+	
 	private $flag_build			= false;
 	private $flag_serial		= false;
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
+	
 	private $flag_json			= false;
 
 	// command lines variables
@@ -152,6 +157,7 @@ class EspBuddy {
 				'list_hosts'	=> "",
 				'list_configs'	=> "",
 				'list_repos'	=> "",
+				'self'			=> "TASK [options]",
 				'help'			=> ""
 		),
 		'sonodiy'		=> array(
@@ -173,7 +179,7 @@ class EspBuddy {
 			'version'	=> '',
 			'latest'	=> '',
 			'avail'		=> '',
-			'update'	=> '[TAG]',
+			'update'	=> '[TAG|BRANCH]',
 		)
 	);
 
@@ -637,9 +643,9 @@ class EspBuddy {
 			echo <<<EOF
 ---------------------------------------------------------------------------------
 * OPTIONS :
-	-f  : don't confirm choosen host (when no host provided)
+	-y  : Automatically confirm Yes/No
 	-d  : Dry Run. Show commands but don't apply them
-	-v  : Verbose
+	-v  : Verbose mode
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -672,35 +678,45 @@ EOF;
 			echo "Current version: {$this->class_version}";
 		}
 		elseif($this->target=='latest'){
-			$gh=$this->_GithubFetchLatestVersion();
-			echo "Latest version: {$gh['version']}";
+			$tag=$this->_GithubFetchLatestTag();
+			echo "Latest version: {$tag['version']}";
 		}
 		elseif($this->target=='avail'){
-			$versions=$this->_GithubFetchLatestVersions();
+			$tags=$this->_GithubFetchLatestTags();
 			echo "Versions available : \n";
 			$p=10;
-			echo "    ". str_pad('TAG', $p). str_pad('Version', $p). str_pad('Commit', 20)."\n";
-			foreach ($versions as $v){
-				echo "  - ". str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['commit'], $p)."\n";
+			echo "    ". str_pad('TAG', $p). str_pad('Version', $p). str_pad('Branch', $p). str_pad('Commit', 20)."\n";
+			foreach ($tags as $branch => $rows){
+				foreach ($rows as $v){
+					echo "  - ". str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['branch'], $p). str_pad($v['commit'], $p)."\n";					
+				}
 			}
 		}
 		elseif($this->target=='update'){
-			$gh=$this->_GithubFetchLatestVersion();
-			$wanted_tag=$this->args['commands'][3] or $wanted_tag=$gh['tag'];
-			$wanted_version=preg_replace('/^v/','',$wanted_tag);
-			if($wanted_version==$this->class_version){
+			$tags=$this->_GithubFetchLatestTags();
+
+			$arg=$this->args['commands'][3];
+			if($arg=='dev'){
+				$arg=$this->class_gh_branch_dev;
+			}
+
+			$arg or $tag=current($tags[$this->class_gh_branch_main]);
+				
+			$tag or	$tag=current($tags[$arg])
+				or	$tag=$tags[$this->class_gh_branch_main][$arg]
+				or	$tag=$tags[$this->class_gh_branch_dev][$arg]
+				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
+
+			if($tag['version']==$this->class_version and !$this->flag_force){
 				echo "You're alreay running this version!";
 			}
 			else{
-				echo "Update Espbuddy from v{$this->class_version} to $wanted_tag : ";
-				if($ok=$this->_AskYesNo()){
-					echo "\n";
-					echo "Updating to version {$wanted_tag} ...\n";
-					echo "--> NOT YET IMPLEMENTED <-- ";
+				if($ok=$this->_AskYesNo("Update Espbuddy from v{$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch)")){
+					echo "--> Updating to version {$tag['version']} ...\n";
+					$this->_GitCheckoutTag($this->espb_path, $tag['tag'], $tag['branch']);
 				}
 				else{
-					echo "\n";
-					echo "Canceled!";
+					echo "--> Canceled!\n";
 				}
 
 			}
@@ -1257,7 +1273,7 @@ EOFB;
 			$this->_dieError( "Missing SSID");
 		}
 		if(!$pass){
-			if(!$this->flag_noconfirm){
+			if(!$this->flag_force){
 				$this->_printError("Missing Password");
 				echo "Use '-f', if you don't want to set a password.\n\n";
 				exit(1);					
@@ -1667,7 +1683,7 @@ EOFB;
 				}
 			}
 			elseif($this->os=='win'){
-//TODO: WINDOWS list Serials Ports
+//WINDOWS TODO: list Serials Ports
 			}
 		}
 
@@ -1791,7 +1807,7 @@ EOFB;
 		$version="EspBuddby v{$this->class_version}";
 		
 		$esptool_ve=$this->_getVersionEsptool();
-		$esptool_ve and $version .=" ( EspTool v{$mesptool_ve} )";
+		$esptool_ve and $version .=" ( EspTool v{$esptool_ve} )";
 		
 		return $version;
 	}
@@ -1837,16 +1853,19 @@ EOFB;
 		if($this->flag_noconfirm){
 			return true;
 		}
-		echo "Please Confirm : ";
-		$confirm=$this->_AskYesNo();
-		echo "\n";
+		$confirm=$this->_AskYesNo("Please Confirm");
+		//echo "\n";
 		return $confirm;
 	}
 	
 
 	// ---------------------------------------------------------------------------------------
-	private function _AskYesNo(){
-		$confirm=strtolower($this->_Ask("Yes,No",'',", ","? "));
+	private function _AskYesNo($question='Are you sure', $allow_noconfirm = true){
+		$force='';
+		if($this->flag_noconfirm and $allow_noconfirm){
+			$force='y';
+		}
+		$confirm=strtolower($this->_Ask("Yes,No",$force,", ","? ", $question));
 		if($confirm=='y'){
 			return true;
 		}	
@@ -1855,9 +1874,13 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
-	private function _Ask($str_choices='', $force='', $sep="\n ", $eol="\n"){
-		if($force){
+	private function _Ask($str_choices='', $force='', $sep="\n ", $eol="\n",$message=""){
+		if($force  and !$this->flag_verbose){
 			return $force;
+		}
+
+		if($message){
+			echo "$message : ";
 		}
 
 		if($str_choices){
@@ -1876,7 +1899,14 @@ EOFB;
 				}
 			}
 		}
-
+		if($force and $this->flag_verbose){
+			echo $force;
+			if($message){
+				echo "\n";
+			}
+			return $force;
+		}
+// WINDOWS TODO - check compatibility 
 		// Save existing tty configuration
 		$term = trim(`stty -g`);
 		system("stty -icanon");
@@ -1892,6 +1922,9 @@ EOFB;
 		}
 		// Reset the tty back to the original configuration
 		system("stty '" . $term . "'");
+		if($message){
+			echo "\n";
+		}
 		return $c;
 	}
 
@@ -1916,9 +1949,10 @@ EOFB;
 		$this->target	= $this->args['commands'][2];
 
 		//global flags
-		$this->flag_noconfirm	= (boolean) $this->args['flags']['f'];
+		$this->flag_noconfirm	= (boolean) $this->args['flags']['y'];
 		$this->flag_drymode 	= (boolean) $this->args['flags']['d'];
 		$this->flag_verbose		= (boolean) $this->args['flags']['v'];
+		$this->flag_force		= (boolean) $this->args['flags']['f'];
 
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
 		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
@@ -2113,15 +2147,17 @@ EOFB;
 		echo "\033[0m\n";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
-	private function _GithubFetchLatestVersion(){
-		if($versions=$this->_GithubFetchLatestVersions()){
-			return $versions[0];
+	private function _GithubFetchLatestTag($branch=''){
+		$branch or $branch=$this->class_gh_branch_main;
+
+		if($tags=$this->_GithubFetchLatestTags()){
+			return current($tags[$branch]);
 		}
 	}	
+
 	// ---------------------------------------------------------------------------------------
-	private function _GithubFetchLatestVersions(){
+	private function _GithubFetchLatestTags(){
 		$opts = array(
 			'http' => array(
 				'method' => 'GET',
@@ -2135,17 +2171,58 @@ EOFB;
 		$data	= file_get_contents($url,false,$context);
 		if($data){
 			$data=json_decode($data,true);
-			foreach( $data as $k => $v){
-				$out[$k]['tag']			=$v['name'];
-				$out[$k]['commit']		=$v['commit']['sha'];
-				$out[$k]['url_zip']		=$v['zipball_url'];
-				$out[$k]['url_gz']		=$v['tarball_url'];
-				$out[$k]['version']		=preg_replace('/^v/','',$v['name']);	
+			foreach( $data as $i => $v){
+				$k=$v['name'];
+				
+				$branch		="undefined";
+				if(preg_match('/^v/',$v['name'])){
+					$branch		=$this->class_gh_branch_main;
+				}
+				elseif(preg_match('/^d/',$v['name'])){
+					$branch		=$this->class_gh_branch_dev;
+				}
+				
+				$out[$branch][$k]['branch']		=$branch;
+				$out[$branch][$k]['tag']			=$v['name'];
+				$out[$branch][$k]['commit']		=$v['commit']['sha'];
+				$out[$branch][$k]['url_zip']		=$v['zipball_url'];
+				$out[$branch][$k]['url_gz']		=$v['tarball_url'];
+				$out[$branch][$k]['version']		=preg_replace('/^v|d/','',$v['name']);
 			}
 			return $out;
 		}
 
 	}	
+
+	// ---------------------------------------------------------------------------------------
+	private function _GitCheckoutTag($dir,$tag,$branch=""){
+		$branch and $git_branch= "-b $branch";
+		if(!$dir or !$tag){
+			return false;
+		}
+		if($this->flag_drymode){
+			$run="_echo";
+		}
+		else{
+			$run="_passthru";
+		}
+		//echo "$run $dir,	$tag,	$branch\nNOT YET IMPLEMENTED"; return true;
+
+		$this->$run("cd $dir
+git fetch --all --tags --prune
+git checkout tags/$tag $git_branch
+");
+		return TRUE;
+	}	
+
+	// ---------------------------------------------------------------------------------------
+	private function _passthru($arg){
+		passthru($arg);
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _echo($arg){
+		echo($arg);
+	}
 
 }
 ?>

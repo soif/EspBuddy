@@ -157,7 +157,6 @@ class EspBuddy {
 				'list_configs'	=> "",
 				'list_repos'	=> "",
 				'self'			=> "ACTION [options]",
-				'self'			=> "version|latest|avail|update [options]",
 				'help'			=> ""
 		),
 		'sonodiy'		=> array(
@@ -675,7 +674,11 @@ EOF;
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_self(){
-		if($this->target=='version'){
+
+		if($this->target=='help'){
+			$this->Command_help('self');
+		}
+		elseif($this->target=='version'){
 			echo "Current version: {$this->class_version}";
 		}
 		elseif($this->target=='latest'){

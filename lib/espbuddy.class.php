@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.2b';					// EspBuddy Version
+	public $class_version			= '1.89.3b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -150,14 +150,14 @@ class EspBuddy {
 				'reboot'		=> "[options]",
 				'gpios'			=> "[options]",
 				'ping'			=> "[options]",
-				'sonodiy'		=> "SONOFF_TASK [options]",
-				'self'			=> "version|latest|avail|update [options]",
+				'sonodiy'		=> "ACTION [options]",
 				'repo_version'	=> "REPO",
 				'repo_pull'		=> "REPO",
 				'list_hosts'	=> "",
 				'list_configs'	=> "",
 				'list_repos'	=> "",
-				'self'			=> "TASK [options]",
+				'self'			=> "ACTION [options]",
+				'self'			=> "version|latest|avail|update [options]",
 				'help'			=> ""
 		),
 		'sonodiy'		=> array(
@@ -286,7 +286,9 @@ class EspBuddy {
 				break;
 
 			default:
-				echo "Invalid Command! \n";
+				$this->_printError("Invalid Command");
+				echo "\n";
+				$this->_show_command_usage();
 				$this->_show_action_desc();
 				global $argv;
 				echo "* Use '{$this->bin} help' to list all options\n";
@@ -664,10 +666,8 @@ class EspBuddy {
 	--login=xxx  : login name (overrride host or per config login)
 	--pass=xxx   : password (overrride host or per config password)
 
----------------------------------------------------------------------------------
-
 EOF;
-			$this->_show_action_desc('sonodiy','SONOFF_TASKS');
+			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
 		}
 	}
 
@@ -752,11 +752,11 @@ EOF;
 				$this->Sonodiy_api($this->target,$device_ip, $device_id,$device_param1,$device_param2);	
 			}
 			else{
-				$error="Invalid Task: '{$this->target}'";
+				$error="Invalid Action: '{$this->target}'";
 			}
 		}
 		else{
-			$error="Missing a '{$this->action}' Task";
+			$error="Missing a '{$this->action}' Action";
 		}
 		if($error){
 			$this->_showActionUsage($error);
@@ -766,7 +766,7 @@ EOF;
 	}
 	// ---------------------------------------------------------------------------------------
 	public 	function _showActionUsage($error=""){
-		$error or $error="Invalid Task: '{$this->target}'";
+		$error or $error="Invalid Action: '{$this->target}'";
 		$this->_printError($error);
 		echo "\n";
 		$this->_show_command_usage($this->action);
@@ -805,6 +805,7 @@ Setup Instructions
   4) Run '{$this->bin} sonodiy test  IP ID' to toggle the relay on the device (verification)
   5) Run '{$this->bin} sonodiy flash IP ID' to upload another firmware (Tasmota by default)
   6) Enjoy!
+
 
 EOF;
 	}
@@ -1005,7 +1006,7 @@ EOF;
 		}
 
 		if($found_args){
-			echo "\nYou can now use: \"$found_args\" as arguments for sonodiy tasks!\nie:\n";
+			echo "\nYou can now use: \"$found_args\" as arguments for sonodiy Actions!\nie:\n";
 			echo "  {$this->bin} sonodiy test  $found_args\n";
 			echo "  {$this->bin} sonodiy flash $found_args\n";
 		}
@@ -1114,7 +1115,7 @@ EOFB;
 			}
 		}
 		else{
-			$this->_dieError("No method for task: '$task'");
+			$this->_dieError("No method for action: '$task'");
 		}
 	}
 
@@ -1350,10 +1351,10 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	public function _show_action_desc($action='root',$title=""){
 		if($action=='root'){
-			$name="Valid ACTIONS";
+			$name="Valid COMMANDS";
 		}
 		else{
-			$name="Valid '$action' TASKS";
+			$name="Valid '$action' Actions";
 		}
 		$title or $title="$name";
 		if($this->actions_desc[$action]){
@@ -1370,11 +1371,11 @@ EOFB;
 	private function _show_action_usage($action='root',$title=""){
 		if($action=='root'){
 			$pad_sub=12;
-			$name="Actions";
+			$name="Commands";
 		}
 		else{
 			$pad_sub=6;
-			$name="'$action' Tasks";
+			$name="'$action' Actions";
 			$sub="$action ";
 		}
 		$title or $title="$name Usage";
@@ -1389,13 +1390,13 @@ EOFB;
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _show_command_usage($action=''){
+	private function _show_command_usage($action='root'){
 		
 		if($action !='root'){
 			$usage="$action ". $this->actions_usage['root'][$action];
 		}
 		else{
-			$usage="ACTION [TARGET] [options]";
+			$usage="COMMAND [TARGET] [options]";
 		}
 		echo "* Usage             : {$this->bin} $usage\n";
 		echo "\n";

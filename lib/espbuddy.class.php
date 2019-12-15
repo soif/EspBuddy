@@ -1626,7 +1626,8 @@ EOFB;
 			$this->c_host['versions']['full']	=$version_full;
 			$version_full						="{$s}({$version_full})";
 		}
-		$esc_version_short	=str_replace('/','_',$esc_version_short);
+		//TODO check $esc_version_short
+		//$esc_version_short	=str_replace('/','_',$version_short);
 		$esc_version_full	=str_replace('/','_',$version_full);
 		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
 
@@ -2177,7 +2178,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTags(){
 		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
-		$data	= $this->_curl($url,$headers);
+		$data	= $this->_curl($url);
 
 		if($data){
 			$data=json_decode($data,true);

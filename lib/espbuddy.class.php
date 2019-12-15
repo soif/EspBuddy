@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.5b';					// EspBuddy Version
+	public $class_version			= '1.89.6b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -927,8 +927,9 @@ EOF;
 				$command="dns-sd -q $first_id.local";
 				echo "Resolving IP Address for the first device found ({$ids[0]}) using command:	$command\n";
 				$command=$this->_sondiy_osx_com2bash($command,4);
-				$line_ip=trim(shell_exec($command));
-				if($line_ip){
+				$lines_ip=trim(shell_exec($command));
+				if($lines_ip){
+					list($line_ip,$trash)=explode("\n" , $lines_ip);
 					list($trash,$raw_ip)=explode('IN' , $line_ip);
 					$ip=trim($raw_ip);
 					echo "--> Device IP Address is: $ip\n";

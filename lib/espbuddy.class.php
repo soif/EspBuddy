@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.7b';					// EspBuddy Version
+	public $class_version			= '1.89.8b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -180,7 +180,7 @@ class EspBuddy {
 			'latest'	=> '',
 			'log'		=> '[TAG]',
 			'avail'		=> '',
-			'update'	=> '[TAG|BRANCH]',
+			'update'	=> '[TAG|VERSION|BRANCH]',
 		)
 	);
 
@@ -710,9 +710,10 @@ EOF;
 				$arg=$this->class_gh_branch_dev;
 			}
 
-			$arg or $tag=current($tags[$this->class_gh_branch_main]);
+			$arg or $tag=current($tags[$this->class_gh_branch_main]); //latest tags
 				
 			$tag or	$tag=current($tags[$arg])
+				or	$tag=$this->_GithubVersionToTag($arg, true)
 				or	$tag=$tags[$this->class_gh_branch_main][$arg]
 				or	$tag=$tags[$this->class_gh_branch_dev][$arg]
 				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
@@ -2154,9 +2155,18 @@ EOFB;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _GithubVersionToTag($version=""){
+	private function _GithubVersionToTag($version="",$use_cached_tags=0){
 		$version or $version=$this->class_version;
-		if($branch_tags=$this->_GithubFetchLatestTags()){
+		if($use_cached_tags){
+			if(!$branch_tags=$this->_latest_tags){
+				$branch_tags=$this->_GithubFetchLatestTags();
+			}
+		}
+		else{
+			$branch_tags=$this->_GithubFetchLatestTags();
+		}
+
+		if($branch_tags){
 			foreach($branch_tags as $branch => $tags){
 				foreach($tags as $tag){
 					if($tag['version']==$version){
@@ -2176,6 +2186,7 @@ EOFB;
 		}
 	}	
 
+	private $_latest_tags;
 	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTags(){
 		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
@@ -2201,6 +2212,7 @@ EOFB;
 				$out[$branch][$k]['url_gz']		=$v['tarball_url'];
 				$out[$branch][$k]['version']		=preg_replace('/^v|d/','',$v['name']);
 			}
+			$this->_latest_tags=$out;
 			return $out;
 		}
 
@@ -2236,7 +2248,7 @@ EOFB;
 			$tag1=$gh['tag'];
 		}
 		if(!$tag2){
-			$gh=$this->_GithubVersionToTag();
+			$gh=$this->_GithubVersionToTag('',true);
 			$tag2=$gh['tag'];
 		}
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.6b';					// EspBuddy Version
+	public $class_version			= '1.89.7b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -723,7 +723,7 @@ EOF;
 			else{
 				if($ok=$this->_AskYesNo("Update Espbuddy from v{$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch)")){
 					echo "--> Updating to version {$tag['version']} ...\n";
-					$this->_GitCheckoutTag($this->espb_path, $tag['tag'], $tag['branch']);
+					$this->_GitSwitchToBranchTag($this->espb_path, $tag['tag'], $tag['branch']);
 				}
 				else{
 					echo "--> Canceled!\n";
@@ -2207,13 +2207,22 @@ EOFB;
 	}	
 
 	// ---------------------------------------------------------------------------------------
-	private function _GitCheckoutTag($dir,$tag,$branch=""){
-		$branch and $git_branch= "-b $branch";
-		if(!$dir or !$tag){
+	private function _GitSwitchToBranchTag($dir,$tag,$branch){ //,$origin=""
+		//$origin or $origin="origin";
+		if(!$dir or !$tag or !$branch){
 			return false;
 		}
 		$commands[]="git fetch --all --tags --prune";
-		$commands[]="git checkout tags/$tag $git_branch";
+		$commands[]="git checkout $tag";
+		$commands[]="git branch -D $branch";
+		$commands[]="git checkout -b $branch ";
+
+		//$commands[]="git branch -D $branch";
+		//$commands[]="git branch $branch $tag";
+		//$commands[]="git checkout $branch ";
+		//$commands[]="git checkout --track -b $branch $origin/$branch";
+		//$commands[]="git merge $tag";
+		//$commands[]="git checkout tags/$tag $git_branch";
 		return $this->_Git($commands, $dir);
 	}	
 

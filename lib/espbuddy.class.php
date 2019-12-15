@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.8b';					// EspBuddy Version
+	public $class_version			= '1.89.9b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -296,7 +296,8 @@ class EspBuddy {
 
 			default:
 				$this->action and $com=" '{$this->action}'";
-				$this->_printError("Invalid$com Command");
+				echo "\n";
+				$this->sh->PrintError("Invalid$com Command");		
 				echo "\n";
 				$this->_show_command_usage();
 				$this->_show_action_desc();
@@ -727,15 +728,15 @@ EOF;
 				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
 
 			if($tag['version']==$this->class_version and !$this->flag_force){
-				echo "You're alreay running this version!\n";
+				$this->sh->PrintAnswer("You're already running this version!");
 			}
 			else{
 				if($ok=$this->_AskYesNo("Update Espbuddy from v{$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch)")){
-					echo "--> Updating to version {$tag['version']} ...\n";
+					$this->sh->PrintAnswer("Updating to version {$tag['version']} ...");
 					$this->_GitSwitchToBranchTag($this->espb_path, $tag['tag'], $tag['branch']);
 				}
 				else{
-					echo "--> Canceled!\n";
+					$this->sh->PrintAnswer("Canceled!");
 				}
 
 			}
@@ -786,7 +787,8 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	public 	function _showActionUsage($error=""){
 		$error or $error="Invalid Action: '{$this->target}'";
-		$this->_printError($error);
+		echo "\n";
+		$this->sh->PrintError($error);
 		echo "\n";
 		$this->_show_command_usage($this->action);
 		$this->_show_action_desc($this->action);
@@ -798,7 +800,7 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_test($ip, $id){
 		$this->Sonodiy_ping($ip,5);
-		echo "Toggling Relay: ";
+		$this->sh->PrintAnswer("Toggling Relay: ",false);
 		if($r=$this->_sonodiy_api_toggle($ip,$id,0)){
 			echo "OK (did you heard it?)";
 		}
@@ -806,7 +808,7 @@ EOF;
 			echo "FAILED";
 		}
 		echo "\n";
-		echo "API response	:\n";
+		$this->sh->PrintAnswer("API response	: ");
 		print_r($this->_sonodiy_api_info($ip,$id));
 	}
 
@@ -836,7 +838,7 @@ EOF;
 		if(!$ip){
 			$this->_dieError("Missing IP");
 		}
-		echo "Sending $count pings to $ip : ";
+		$this->sh->PrintAnswer("Sending $count pings to $ip : ", false);
 		if($this->flag_verbose){
 			echo "\n";
 		}
@@ -900,7 +902,7 @@ EOF;
 				}
 				
 				if($ids){
-					echo "--> Devices Found:\n";
+					$this->sh->PrintAnswer("Devices Found:");
 					$pad=15;
 					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
 					echo str_repeat('-',45)."\n";
@@ -911,7 +913,7 @@ EOF;
 					$found_args="{$ips[0]} {$ids[0]}";	
 				}
 				else{
-					echo "--> Sorry, I did not found any device\n";
+					$this->sh->PrintAnswer("Sorry, I did not found any device!");
 				}
 			}
 		}
@@ -922,7 +924,7 @@ EOF;
 			$bash=$this->_sondiy_osx_com2bash($command,5);
 			$lines_ids=trim(shell_exec($bash));
 			if($lines_ids){
-				echo "--> Device IDs Found:\n";
+				$this->sh->PrintAnswer( "Device IDs Found:");
 				$lines=explode("\n",$lines_ids);
 				foreach($lines as $line){
 					list($trash,$raw_id)=explode($service.'.' , $line);
@@ -940,16 +942,16 @@ EOF;
 					list($line_ip,$trash)=explode("\n" , $lines_ip);
 					list($trash,$raw_ip)=explode('IN' , $line_ip);
 					$ip=trim($raw_ip);
-					echo "--> Device IP Address is: $ip\n";
+					$this->sh->PrintAnswer( "Device IP Address is: $ip");
 					$found_args="$ip {$ids[0]}";
 				}
 				else{
-					echo "--> Sorry, I could not resolve the IP Address\n";
+					$this->sh->PrintAnswer( "Sorry, I could not resolve the IP Address!");
 				}
 				// dns-sd -L  $first_id _ewelink._tcp local
 			}
 			else{
-				echo "--> Sorry, I did not found any device\n";
+				$this->sh->PrintAnswer( "Sorry, I did not found any device.");
 			}
 		}
 		elseif($this->os == "win"){ //windows
@@ -977,7 +979,7 @@ EOF;
 				}
 				
 				if($ids){
-					echo "--> Devices Found:\n";
+					$this->sh->PrintAnswer("Devices Found:");
 					$pad=15;
 					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
 					echo str_repeat('-',45)."\n";
@@ -995,7 +997,7 @@ EOF;
 				}
 				else{
 					if(preg_match('#add_service#',$first_line)){
-						echo "--> Sorry, I did not found any device\n";
+						$this->sh->PrintAnswer( "Sorry, I did not found any device!");
 					}
 					else{
 						$crashed=1;
@@ -1007,7 +1009,8 @@ EOF;
 			}
 
 			if($crashed){
-				$this->_printError("The python script has certainly crashed");
+				echo "\n";
+				$this->sh->PrintError("The python script has certainly crashed");
 				echo <<<EOF
 
 It seems that you dont have a working Python installation!
@@ -1094,7 +1097,8 @@ EOFB;
 			$curl_res	=$this->_last_curl_result;
 			
 			if(!$result){
-				$this->_printError("API failed with error code: {$curl_res['error']}");
+				echo "\n";
+				$this->sh->PrintError("API failed with error code: {$curl_res['error']}");
 				echo "\n";
 				echo "From : https://github.com/itead/Sonoff_Devices_DIY_Tools/blob/master/SONOFF%20DIY%20MODE%20Protocol%20Doc%20v1.4.md \n";
 				echo " {$curl_res['error']} : \"".$this->_itead_error_codes[$curl_res['error']]."\"\n";
@@ -1176,11 +1180,11 @@ EOFB;
 		$ok=$this->_AskConfirm();
 		
 		if(!$ok){
-			echo "--> Cancelling...\n";
+			$this->sh->PrintAnswer( "Cancelling...");
 			echo "\n";
 			exit(0);
 		}
-		echo "--> Uploading....\n";
+		$this->sh->PrintAnswer( "Uploading...");
 		$data=array(
 			'deviceid'	=> $id,
 			'data'		=> array(
@@ -1294,8 +1298,9 @@ EOFB;
 		}
 		if(!$pass){
 			if(!$this->flag_force){
-				$this->_printError("Missing Password");
-				echo "Use '-f', if you don't want to set a password.\n\n";
+				echo "\n";
+				$this->sh->PrintError("Missing Password");
+				echo "Use '-f', if you want to set a blank password.\n\n";
 				exit(1);					
 			}
 			else{
@@ -1559,7 +1564,7 @@ EOFB;
 		if(!$force_selected){
 			echo "\n";
 			if(!$this->_AskConfirm()){
-				echo("--> Cancelled!\n");
+				$this->sh->PrintAnswer("Cancelled!");
 				exit(0);
 			}
 		}
@@ -2079,7 +2084,6 @@ EOFB;
 		return $out;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function _ping ($host) {
 		//$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
@@ -2099,7 +2103,6 @@ EOFB;
 		return false;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepStart($mess, $command="", $do_end=1,$char="*"){
 		if($this->flag_verbose){
@@ -2110,9 +2113,12 @@ EOFB;
 		if($do_end){
 			$mess=str_pad($mess, 130, $char);
 		}
-		echo "\033[34m$mess";
+		$this->sh->EchoStyleStep();
+		echo $mess;
 		if($verbose and $command){
-			echo "\n\033[0m\033[37m-> $command\033[0m\n";
+			$this->sh->EchoStyleClose();
+			echo "\n";
+			$this->sh->PrintCommand("$command");
 		}
 		else{
 			$do_end and $this->_EchoStepEnd();
@@ -2122,14 +2128,15 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepEnd(){
-		echo "\033[0m\n";
+		$this->sh->EchoStyleClose();
+		echo "\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _dieError($mess,$list=''){
 		echo "\n";
-		echo "\033[31mFATAL ERROR: $mess !!!";
-		echo "\033[0m\n";
+		$this->sh->PrintError(' FATAL ERROR: '.$mess);
+/*
 		if($list){
 			echo "\n";
 			$this->command_list($list);
@@ -2137,14 +2144,8 @@ EOFB;
 		else{
 			echo "\n";
 		}
+*/
 		exit(1);
-	}
-
-	// ---------------------------------------------------------------------------------------
-	private function _printError($mess=''){
-		echo "\n";
-		echo "\033[31mERROR: $mess !!!";
-		echo "\033[0m\n";
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -2270,7 +2271,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _Git($git_command, $path_base=""){
 		$path_base or $path_base	= $this->orepo->GetPathBase();
-		$commands[]	= "  cd {$path_base} ";
+		$commands[]	= " cd {$path_base} ";
 
 		if(is_array($git_command)){
 			$commands=array_merge($commands,$git_command);
@@ -2278,7 +2279,7 @@ EOFB;
 		else{
 			$commands[]	= $git_command;
 		}
-		$command=implode(" \n  ", $commands);
+		$command=implode(" \n ", $commands);
 		$err=$this->_passthru($command);
 		return !$err;
 	}
@@ -2286,15 +2287,16 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _passthru($command){
 		if($this->flag_drymode){
-			echo($command);
-			echo "\n";
+			$this->sh->PrintCommand($command);
 			return 0;
 		}
 		else{
 			if($this->flag_verbose){
 				echo"$command\n";
 			}
+			$this->sh->EchoStyleCommand();
 			passthru($command, $return);
+			$this->sh->EchoStyleClose();
 			echo "\n";
 			return $return;
 		}

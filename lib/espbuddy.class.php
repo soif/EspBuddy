@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.4b';					// EspBuddy Version
+	public $class_version			= '1.89.5b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -57,12 +57,12 @@ class EspBuddy {
 	private $arg_from			= '';	// repo to migrate from
 
 	//selected configuration for the current host
-	private $c_host		=array();	//	current host
-	private $c_conf		=array();	//	current config
+	private $c_host		=array();		//	current host
+	private $c_conf		=array();		//	current config
 	//private $c_repo		=array();	//	current repository
-	private $c_serial	=array();	//	current serial port and rate
+	private $c_serial	=array();		//	current serial port and rate
 
-	private $orepo	;			//	repo_object
+	private $orepo	;					//	repo_object
 
 	// preferences -------------
 	private $prefs	=array(
@@ -134,7 +134,8 @@ class EspBuddy {
 		'self'		=> array(
 			'version'	=> "Show EspBuddy version",
 			'latest'	=> 'Show the lastest version available',
-			'avail'	=> 'Show all versions available',
+			'log'		=> '(DRAFT) Show EspBuddy history between current tag and TAG (latest if not set)',
+			'avail'		=> 'Show all versions available',
 			'update'	=> 'Update EspBuddy to the latest version',
 		)
 	);
@@ -177,6 +178,7 @@ class EspBuddy {
 		'self'		=> array(
 			'version'	=> '',
 			'latest'	=> '',
+			'log'		=> '[TAG]',
 			'avail'		=> '',
 			'update'	=> '[TAG|BRANCH]',
 		)
@@ -317,7 +319,7 @@ class EspBuddy {
 			$fn="Command_$command";
 			$this->$fn($this_id);
 		}
-		//if($c==1){echo "\n";}
+		echo "\n";
 	}
 
 
@@ -560,13 +562,13 @@ class EspBuddy {
 		elseif($type == "pull"){
 			$this->Command_repo('version');
 			echo("*** Pulling '$repo_key' git commits	: ");
-			$this->_DoGit('git pull');
+			$this->_Git('git pull');
 			$this->Command_repo('version');
 		}
 		elseif($type == 'checkout'){
 // TODO: Checkout Git
 			//$branch	= $this->c_host['checkout'] or $branch = 'master';
-			//$this->_DoGit("git checkout {$branch}");
+			//$this->_Git("git checkout {$branch}");
 		}
 		echo "\n";
 	}
@@ -680,11 +682,14 @@ EOF;
 			$this->Command_help('self');
 		}
 		elseif($this->target=='version'){
-			echo "Current version: {$this->class_version}";
+			echo "Current version: {$this->class_version}\n";
 		}
 		elseif($this->target=='latest'){
 			$tag=$this->_GithubFetchLatestTag();
-			echo "Latest version: {$tag['version']}";
+			echo "Latest version: {$tag['version']}\n";
+		}
+		elseif($this->target=='log'){
+			$this->_Git_GitHistory($this->espb_path,$this->args['commands'][3]);
 		}
 		elseif($this->target=='avail'){
 			$tags=$this->_GithubFetchLatestTags();
@@ -713,7 +718,7 @@ EOF;
 				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
 
 			if($tag['version']==$this->class_version and !$this->flag_force){
-				echo "You're alreay running this version!";
+				echo "You're alreay running this version!\n";
 			}
 			else{
 				if($ok=$this->_AskYesNo("Update Espbuddy from v{$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch)")){
@@ -1433,27 +1438,6 @@ EOFB;
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _DoGit($git_command){
-		$path_base	= $this->orepo->GetPathBase();
-		$commands[]	= "cd {$path_base} ";
-		$commands[]	= $git_command;
-		$command=implode(" ; \n   ", $commands);
-		//echo "\n";
-		//$this->_EchoStepStart("GIT: $git_command ",$command);
-		if(!$this->flag_drymode){
-			passthru($command, $r);
-			if($r){
-				return false;
-			}
-			else{
-				return true;
-			}
-		}
-		return true;
-	}
-
-
-	// ---------------------------------------------------------------------------------------
 	private function _DoSerial($id,$action='write_flash',$firmware_file=''){
 		$this->_AssignCurrentHostConfig($id);
 		$path_build=$this->orepo->GetPathBuild();
@@ -2130,7 +2114,6 @@ EOFB;
 		echo "\033[0m\n";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _dieError($mess,$list=''){
 		echo "\n";
@@ -2154,6 +2137,35 @@ EOFB;
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _curl($url,$headers=''){
+		$headers or $headers=array("User-Agent: EspBuddy"); //gh need this, else 403
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL			, $url);
+		curl_setopt($ch, CURLOPT_HEADER			, false);
+		//curl_setopt($ch, CURLOPT_SSLVERSION		, 3); //fix SSL on my old debian
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER	, true);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT	, 10);
+		curl_setopt($ch, CURLOPT_HTTPHEADER		, $headers); //array
+		$result = curl_exec($ch);
+		curl_close($ch);
+		return $result;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _GithubVersionToTag($version=""){
+		$version or $version=$this->class_version;
+		if($branch_tags=$this->_GithubFetchLatestTags()){
+			foreach($branch_tags as $branch => $tags){
+				foreach($tags as $tag){
+					if($tag['version']==$version){
+						return $tag;
+					}
+				}
+			}
+		}
+	}	
+
+	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTag($branch=''){
 		$branch or $branch=$this->class_gh_branch_main;
 
@@ -2164,17 +2176,9 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTags(){
-		$opts = array(
-			'http' => array(
-				'method' => 'GET',
-				'header' => array(
-						"User-Agent: {$this->app_name}"
-				)
-			)
-		);
-		$context = stream_context_create($opts);
 		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
-		$data	= file_get_contents($url,false,$context);
+		$data	= $this->_curl($url,$headers);
+
 		if($data){
 			$data=json_decode($data,true);
 			foreach( $data as $i => $v){
@@ -2189,9 +2193,9 @@ EOFB;
 				}
 				
 				$out[$branch][$k]['branch']		=$branch;
-				$out[$branch][$k]['tag']			=$v['name'];
+				$out[$branch][$k]['tag']		=$v['name'];
 				$out[$branch][$k]['commit']		=$v['commit']['sha'];
-				$out[$branch][$k]['url_zip']		=$v['zipball_url'];
+				$out[$branch][$k]['url_zip']	=$v['zipball_url'];
 				$out[$branch][$k]['url_gz']		=$v['tarball_url'];
 				$out[$branch][$k]['version']		=preg_replace('/^v|d/','',$v['name']);
 			}
@@ -2206,28 +2210,63 @@ EOFB;
 		if(!$dir or !$tag){
 			return false;
 		}
-		if($this->flag_drymode){
-			$run="_echo";
-		}
-		else{
-			$run="_passthru";
-		}
-		//echo "$run $dir,	$tag,	$branch\nNOT YET IMPLEMENTED"; return true;
-
-		$this->$run("cd $dir
-git fetch --all --tags --prune
-git checkout tags/$tag $git_branch
-");
-		return TRUE;
+		$commands[]="git fetch --all --tags --prune";
+		$commands[]="git checkout tags/$tag $git_branch";
+		return $this->_Git($commands, $dir);
 	}	
 
 	// ---------------------------------------------------------------------------------------
-	private function _passthru($arg){
-		passthru($arg);
-	}
+	private function _Git_GitHistory($dir,$tag1='',$tag2=''){
+		if(!$dir){
+			return false;
+		}
+		if(!$tag1){
+			$gh=$this->_GithubFetchLatestTag();
+			$tag1=$gh['tag'];
+		}
+		if(!$tag2){
+			$gh=$this->_GithubVersionToTag();
+			$tag2=$gh['tag'];
+		}
+
+		$commands[]="git fetch --all --tags --prune";
+		$commands[]="git log --pretty=format:\" -  %cd %Cblue%h %Creset%s\" --date=short {$tag1}...{$tag2}";
+		return $this->_Git($commands, $dir);
+	}	
+
+
+	
 	// ---------------------------------------------------------------------------------------
-	private function _echo($arg){
-		echo($arg);
+	private function _Git($git_command, $path_base=""){
+		$path_base or $path_base	= $this->orepo->GetPathBase();
+		$commands[]	= "  cd {$path_base} ";
+
+		if(is_array($git_command)){
+			$commands=array_merge($commands,$git_command);
+		}
+		else{
+			$commands[]	= $git_command;
+		}
+		$command=implode(" \n  ", $commands);
+		$err=$this->_passthru($command);
+		return !$err;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _passthru($command){
+		if($this->flag_drymode){
+			echo($command);
+			echo "\n";
+			return 0;
+		}
+		else{
+			if($this->flag_verbose){
+				echo"$command\n";
+			}
+			passthru($command, $return);
+			echo "\n";
+			return $return;
+		}
 	}
 
 }

@@ -25,7 +25,8 @@ class EspBuddy {
 	public $app_name				= 'EspBuddy';					// Application Name
 
 	private $cfg				= array();	// hold the configuration
-	private $espb_path			= '';	// Location of the EspBuddy root directory
+	private $espb_path			= '';		// Location of the EspBuddy root directory
+	private $espb_path_lib		= '';		// Location of the EspBuddy lib directory
 
 	// command lines arguments
 	private $args				= array();	// command line arguments
@@ -63,6 +64,7 @@ class EspBuddy {
 	private $c_serial	=array();		//	current serial port and rate
 
 	private $orepo	;					//	repo_object
+
 
 	// preferences -------------
 	private $prefs	=array(
@@ -190,8 +192,10 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
-		$this->espb_path=dirname(dirname(__FILE__)).'/';
+		$this->espb_path		=dirname(dirname(__FILE__)).'/';
+		$this->espb_path_lib	=$this->espb_path.'lib/';
 		$this->_SetRunningOS();
+
 	}
 
 
@@ -1690,7 +1694,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _RequireRepo($name){
 		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
-		$class_path	= dirname(__FILE__)."/espb_repo_{$name}.php";
+		$class_path	= $this->espb_path_lib."espb_repo_{$name}.php";
 		$class_name	= "EspBuddy_Repo_$name";
 		if(!$this->cfg['repos'][$name]){
 			$this->_dieError ("Unknown repository '$name' ");

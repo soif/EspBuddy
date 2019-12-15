@@ -1628,6 +1628,7 @@ EOFB;
 			$version_full						="{$s}({$version_full})";
 		}
 		//TODO check $esc_version_short
+		$esc_version_short="";
 		//$esc_version_short	=str_replace('/','_',$version_short);
 		$esc_version_full	=str_replace('/','_',$version_full);
 		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";

@@ -816,7 +816,6 @@ Setup Instructions
   5) Run '{$this->bin} sonodiy flash IP ID' to upload another firmware (Tasmota by default)
   6) Enjoy!
 
-
 EOF;
 	}
 

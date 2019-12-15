@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.1b';					// EspBuddy Version
+	public $class_version			= '1.89.2b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -1555,16 +1555,13 @@ EOFB;
 		}
 
 		// confirm -------
-		if(!$this->flag_noconfirm and !$force_selected){
-			echo "\n";
-			echo "Please Confirm : ";
-			$confirm=strtolower($this->_Ask("Yes,No",'',", ","? "));
-			echo "\n";
-			if($confirm=='n'){
-				die("--> Cancelled!\n\n");
+		if(!$force_selected){
+			if(!$this->_AskConfirm()){
+				echo("--> Cancelled!\n");
+				exit(0);
 			}
 		}
-			echo "\n";
+		echo "\n";
 		return $id;
 	}
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.3b';					// EspBuddy Version
+	public $class_version			= '1.89.4b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -146,10 +146,10 @@ class EspBuddy {
 				'build'			=> "[TARGET] [options]",
 				'backup'		=> "[TARGET] [options, auth_options]",
 				'monitor'		=> "[TARGET] [options]",
-				'version'		=> "[options]",
-				'reboot'		=> "[options]",
-				'gpios'			=> "[options]",
-				'ping'			=> "[options]",
+				'version'		=> "[TARGET] [options]",
+				'reboot'		=> "[TARGET] [options]",
+				'gpios'			=> "[TARGET] [options]",
+				'ping'			=> "[TARGET] [options]",
 				'sonodiy'		=> "ACTION [options]",
 				'repo_version'	=> "REPO",
 				'repo_pull'		=> "REPO",
@@ -290,12 +290,13 @@ class EspBuddy {
 				echo "\n";
 				$this->_show_command_usage();
 				$this->_show_action_desc();
-				global $argv;
+				//global $argv;
 				echo "* Use '{$this->bin} help' to list all options\n";
-				echo "\n";
+				//echo "\n";
 				break;
 		}
 		echo "\n";
+		exit(0);
 	}
 
 

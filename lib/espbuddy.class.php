@@ -28,6 +28,8 @@ class EspBuddy {
 	private $espb_path			= '';		// Location of the EspBuddy root directory
 	private $espb_path_lib		= '';		// Location of the EspBuddy lib directory
 
+	private $sh					;			//	shell object
+
 	// command lines arguments
 	private $args				= array();	// command line arguments
 	private $bin				= '';		// binary name of the invoked command
@@ -196,6 +198,8 @@ class EspBuddy {
 		$this->espb_path_lib	=$this->espb_path.'lib/';
 		$this->_SetRunningOS();
 
+		require_once($this->espb_path_lib."espb_shell.php");
+		$this->sh =new EspBuddy_Shell(); 
 	}
 
 

@@ -73,6 +73,10 @@ class EspBuddy_Shell {
 	*/
 
 	// ----------------------------------------------------------------------------
+	public function PrintQuestion($string, $new_line=true){
+		$this->_Print("$string", '','','bold',$new_line);
+	}
+	// ----------------------------------------------------------------------------
 	public function PrintAnswer($string, $new_line=true){
 		$this->_Print("--> $string", 'green','','',$new_line);
 	}
@@ -109,19 +113,16 @@ class EspBuddy_Shell {
 
 	// ----------------------------------------------------------------------------
 	private function _Print($string, $fg_color='', $bg_color="", $style="", $new_line=true){
-		echo $this->_Style($string, $fg_color, $style, $bg_color);
+		echo $this->_Style($string, $fg_color, $bg_color, $style);
 		if($new_line){
 			echo "\n";
 		}
 	}
 
 	// ----------------------------------------------------------------------------
-	private function _Style($string, $fg_color='', $style="", $bg_color=""){
-		if($fg_color or $style or $bg_color){
-			$f=$this->fg_colors[$fg_color]	or $f=$this->fg_colors['default'];
-			$b=$this->bg_colors[$bg_color]	or $b=$this->bg_colors['default'];
-			$s=$this->styles[$bg_color]		or $s=$this->bg_colors['default'];
-			$string		 =	$this->GetStyleOpen($fg_color, $style, $bg_color)
+	private function _Style($string, $fg_color='', $bg_color="", $style=""){
+		if( $fg_color or $bg_color or $style ){
+			$string		 =	$this->GetStyleOpen($fg_color, $bg_color, $style)
 							.$string
 							.$this->GetStyleClose();
 		}
@@ -129,11 +130,11 @@ class EspBuddy_Shell {
 	}
 
 	// ----------------------------------------------------------------------------
-	private function GetStyleOpen($fg_color='', $style="", $bg_color=""){
-		if($fg_color or $style or $bg_color){
+	private function GetStyleOpen($fg_color='', $bg_color="", $style=""){
+		if( $fg_color or $bg_color or $style ){
 			$f=$this->fg_colors[$fg_color]	or $f=$this->fg_colors['default'];
 			$b=$this->bg_colors[$bg_color]	or $b=$this->bg_colors['default'];
-			$s=$this->styles[$bg_color]		or $s=$this->bg_colors['default'];
+			$s=$this->styles[$style]		or $s=$this->styles['default'];
 			return "\033[{$s};{$f};{$b}m";
 		}
 	}

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.9b';					// EspBuddy Version
+	public $class_version			= '1.89.10b';					// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -731,7 +731,8 @@ EOF;
 				$this->sh->PrintAnswer("You're already running this version!");
 			}
 			else{
-				if($ok=$this->_AskYesNo("Update Espbuddy from v{$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch)")){
+				echo "Update Espbuddy from {$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch).\n";
+				if($ok=$this->_AskYesNo("This will replace your current '{$tag['branch']}' branch! Are you sure")){
 					$this->sh->PrintAnswer("Updating to version {$tag['version']} ...");
 					$this->_GitSwitchToBranchTag($this->espb_path, $tag['tag'], $tag['branch']);
 				}
@@ -1886,7 +1887,7 @@ EOFB;
 		}
 
 		if($message){
-			echo "$message : ";
+			$this->sh->PrintQuestion( "$message : ", false);
 		}
 
 		if($str_choices){
@@ -2136,6 +2137,7 @@ EOFB;
 	private function _dieError($mess,$list=''){
 		echo "\n";
 		$this->sh->PrintError(' FATAL ERROR: '.$mess);
+		echo "\n";
 /*
 		if($list){
 			echo "\n";

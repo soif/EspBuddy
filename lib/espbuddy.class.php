@@ -737,7 +737,7 @@ EOF;
 				$this->sh->PrintAnswer("You're already running this version!");
 			}
 			else{
-				echo "Update Espbuddy from {$this->class_version} to {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch).\n";
+				echo "Update {$this->app_name} from current version {$this->class_version} to version {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch).\n";
 				if($ok=$this->_AskYesNo("This will replace your current '{$tag['branch']}' branch! Are you sure")){
 					$this->sh->PrintAnswer("Updating to version {$tag['version']} ...");
 					$this->_GitSwitchToBranchTag($this->espb_path, $tag['tag'], $tag['branch']);
@@ -2158,7 +2158,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _curl($url,$headers=''){
-		$headers or $headers=array("User-Agent: EspBuddy"); //gh need this, else 403
+		$headers or $headers=array("User-Agent: {$this->app_name}"); //gh need this, else 403
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL			, $url);
 		curl_setopt($ch, CURLOPT_HEADER			, false);
@@ -2268,7 +2268,7 @@ EOFB;
 			$tag2=$this->_GithubVersionToTag($this->class_version);
 		}
 				
-		$this->sh->PrintAnswer("Logs between{$l} v{$tag1['version']} and{$c} v{$tag2['version']} :");
+		$this->sh->PrintAnswer("Logs between{$l} {$tag1['version']} ({$tag1['branch']}) and{$c} {$tag2['version']} ({$tag2['branch']}) versions:");
 		$commands[]="git fetch --all --tags --prune";
 		$commands[]="git log --pretty=format:\" -  %cd %Cblue%h %Creset%s\" --date=short {$tag1['commit']}...{$tag2['commit']}";
 		return $this->_Git($commands, $dir);

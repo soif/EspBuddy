@@ -67,6 +67,7 @@ Valid Actions are:
 - **list_hosts**      : List all available hosts
 - **list_configs**    : List all available configurations
 - **list_repos**      : List all available repositories
+- **self**            : EspBuddy maintenance tools
 - **help**            : Show full help
 
 
@@ -81,6 +82,8 @@ Examples:
 - `espbuddy.php version all` show versions of all defined targets
 - `espbuddy.php ping all` ping the all defined targets
 - `espbuddy.php sonodoy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
+
+See [more command examples](doc/command_examples.md) ...
 
 ## Contribute
 

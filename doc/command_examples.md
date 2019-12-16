@@ -11,11 +11,11 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v1.89b ( EspTool v2.6 )
+EspBuddby v2.00b1 ( EspTool v2.6 )
 
-* Usage             : espbuddy.php ACTION [TARGET] [options]
+* Usage             : espbuddy.php COMMAND [TARGET] [options]
 
-* Valid ACTIONS : 
+* Valid COMMANDS : 
   - upload          : Build and/or Upload current repo version to Device(s)
   - build           : Build firmware for the selected device
   - backup          : Download and archive settings from the remote device
@@ -30,30 +30,32 @@ EspBuddby v1.89b ( EspTool v2.6 )
   - list_hosts      : List all hosts defined in config.php
   - list_configs    : List all available configurations, defined in config.php
   - list_repos      : List all available repositories, defined in config.php
+  - self            : Get current, latest or update EspBuddy version
   - help            : Show full help
 
-* Actions Usage : 
+* Commands Usage : 
   - upload          : espbuddy.php upload       [TARGET] [options, auth_options, upload_options]
   - build           : espbuddy.php build        [TARGET] [options]
   - backup          : espbuddy.php backup       [TARGET] [options, auth_options]
   - monitor         : espbuddy.php monitor      [TARGET] [options]
-  - version         : espbuddy.php version      [options]
-  - reboot          : espbuddy.php reboot       [options]
-  - gpios           : espbuddy.php gpios        [options]
-  - ping            : espbuddy.php ping         [options]
-  - sonodiy         : espbuddy.php sonodiy      SONOFF_TASK [options]
+  - version         : espbuddy.php version      [TARGET] [options]
+  - reboot          : espbuddy.php reboot       [TARGET] [options]
+  - gpios           : espbuddy.php gpios        [TARGET] [options]
+  - ping            : espbuddy.php ping         [TARGET] [options]
+  - sonodiy         : espbuddy.php sonodiy      ACTION [options]
   - repo_version    : espbuddy.php repo_version REPO
   - repo_pull       : espbuddy.php repo_pull    REPO
   - list_hosts      : espbuddy.php list_hosts   
   - list_configs    : espbuddy.php list_configs 
   - list_repos      : espbuddy.php list_repos   
+  - self            : espbuddy.php self         ACTION [options]
   - help            : espbuddy.php help         
 
 ---------------------------------------------------------------------------------
 * OPTIONS :
-	-f  : don't confirm choosen host (when no host provided)
+	-y  : Automatically confirm Yes/No
 	-d  : Dry Run. Show commands but don't apply them
-	-v  : Verbose
+	-v  : Verbose mode
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -62,32 +64,15 @@ EspBuddby v1.89b ( EspTool v2.6 )
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
 
-	--port=xxx   : serial port to use (overrride main or per host serial port)
-	--rate=xxx   : serial port speed to use (overrride main or per host serial port)
-	--conf=xxx   : config to use (overrride per host config)
+	--port=xxx   : serial port to use (override main or per host serial port)
+	--rate=xxx   : serial port speed to use (override main or per host serial port)
+	--conf=xxx   : config to use (override per host config)
 	--firm=xxx   : full path to the firmware file to upload (override latest build one)
 	--from=REPO  : migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx  : login name (overrride host or per config login)
-	--pass=xxx   : password (overrride host or per config password)
-
----------------------------------------------------------------------------------
-* SONOFF_TASKS : 
-  - help            : Show Sonoff DIY Help
-  - scan            : Scan Sonoff devices to find their IP & deviceID
-  - test            : Toggle relay to verify communication
-  - flash           : Upload a Tasmota firmware (508KB max, DOUT mode)
-  - ping            : Check if device is Online
-  - info            : Get Device Info
-  - pulse           : Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)
-  - signal          : Get WiFi Signal Strength
-  - startup         : Set the Power On State (0=off, 1=on, 2=stay)
-  - switch          : Set Relay (0=off, 1=on)
-  - toggle          : Toggle Relay between ON and OFF
-  - unlock          : Unlock OTA mode
-  - wifi            : Set WiFi SSID and Password
-
+	--login=xxx  : login name (override host or per config login)
+	--pass=xxx   : password (override host or per config password)
 
 ```
 
@@ -103,13 +88,13 @@ Grab the remote version of the 'led2' host. *'led2' is an host defined from the 
 Selected Host      : led2
        + Host Name : led2.lo.lo
        + Host IP   : 10.1.209.2
-       + Serial    : 	at 115200 bauds
 
 Selected Config    : espurna_mh20
 
 Processing 1 host(s) : 
 
 ##### led2.lo.lo                    (10.1.209.2    ) ##### : espurna	1.13.4-dev
+
 
 ```
 
@@ -125,7 +110,6 @@ Upload the latest firmware to the 'led2' host, using an intermediate OTA firmwar
 Selected Host      : led2
        + Host Name : led2.lo.lo
        + Host IP   : 10.1.209.2
-       + Serial    : 	at 115200 bauds
 
 Selected Config    : espurna_mh20
 
@@ -135,27 +119,39 @@ Processing 1 host(s) :
 ** Using LATEST Firmware (Compiled on 14 Jan 2019 - 04:01::16 ) : Firmware-espurna_mh20-(fix_domoticz_rgb_idx,1.13.3,#a7c60f3).bin 
 
 ** Uploading Intermediate Uploader Firmware **************************************************************************************
-19:53:58 [DEBUG]: Options: {'esp_ip': '10.1.209.2', 'host_port': 46262, 'image': '/Users/moi/dev/EspBuddy/firmwares/espurna-1.12.3-espurna-core.bin', 'host_ip': '0.0.0.0', 'auth': 'fibonacci', 'esp_port': 8266, 'spiffs': False, 'debug': True, 'progress': True}
-19:53:58 [INFO]: Starting on 0.0.0.0:46262
-19:53:58 [INFO]: Upload size: 296480
-19:53:58 [INFO]: Sending invitation to: 10.1.209.2
-19:53:58 [INFO]: Waiting for device...
-
-19:54:08 [INFO]: Waiting for result...
-19:54:08 [INFO]: Result: OK
 
 ** Waiting for ESP to be back online 1 2 3 4 5 6 7 8 9 10 11 12 13 14  **********
 
 ** Uploading Final Firmware ******************************************************************************************************
-19:54:26 [DEBUG]: Options: {'esp_ip': '10.1.209.2', 'host_port': 15748, 'image': '/Users/moi/dev/EspBuddy_data/led2.lo.lo/Firmware.bin', 'host_ip': '0.0.0.0', 'auth': 'fibonacci', 'esp_port': 8266, 'spiffs': False, 'debug': True, 'progress': True}
-19:54:26 [INFO]: Starting on 0.0.0.0:15748
-19:54:26 [INFO]: Upload size: 528080
-19:54:26 [INFO]: Sending invitation to: 10.1.209.2
-Authenticating...OK
-19:54:26 [INFO]: Waiting for device...
 
-19:54:43 [INFO]: Waiting for result...
-19:54:43 [INFO]: Result: OK
+
+```
+
+----------
+
+
+
+### `# espbuddy.php self help`
+
+EspBuddy self maintenance tools.
+
+```plaintext
+* Usage             : espbuddy.php self ACTION [options]
+
+* Valid 'self' Actions : 
+  - version         : Show EspBuddy version
+  - latest          : Show the lastest version available on the 'master' branch
+  - avail           : Show all versions available
+  - log             : Show EspBuddy history between current version and VERSION (latest on master branch, if not set)
+  - update          : Update EspBuddy to the latest version
+
+* 'self' Actions Usage : 
+  - version         : espbuddy.php self version 
+  - latest          : espbuddy.php self latest 
+  - avail           : espbuddy.php self avail  
+  - log             : espbuddy.php self log    [VERSION]
+  - update          : espbuddy.php self update [TAG|VERSION|BRANCH]
+
 
 ```
 
@@ -171,13 +167,13 @@ Authenticating...OK
 Tasks for the 'sonodiy' command.
 
 ```plaintext
-* Usage             : espbuddy.php sonodiy SONOFF_TASK [options]
+* Usage             : espbuddy.php sonodiy ACTION [options]
 
-* Valid 'sonodiy' TASKS : 
+* Valid 'sonodiy' Actions : 
   - help            : Show Sonoff DIY Help
   - scan            : Scan Sonoff devices to find their IP & deviceID
   - test            : Toggle relay to verify communication
-  - flash           : Upload a Tasmota firmware (508KB max, DOUT mode)
+  - flash           : (EXPERIMENTAL: see issue #20 on GitHub) Upload a custom firmware (508KB max, DOUT mode)
   - ping            : Check if device is Online
   - info            : Get Device Info
   - pulse           : Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)
@@ -188,7 +184,7 @@ Tasks for the 'sonodiy' command.
   - unlock          : Unlock OTA mode
   - wifi            : Set WiFi SSID and Password
 
-* 'sonodiy' Tasks Usage : 
+* 'sonodiy' Actions Usage : 
   - help            : espbuddy.php sonodiy help   
   - scan            : espbuddy.php sonodiy scan   
   - test            : espbuddy.php sonodiy test   IP ID
@@ -223,17 +219,18 @@ Setup Instructions
 Show the IP Adresses and IDs of connected devices.
 
 ```plaintext
-Scanning network for Devices using command:	dns-sd -B _ewelink._tcp
---> Device IDs Found:
+--> Scanning network for Devices using command: dns-sd -B _ewelink._tcp
+Device IDs Found:
+   - 1000aba1ee
    - 1000aba1ee
 
-Resolving IP Address for the first device found (1000aba1ee) using command:	dns-sd -q eWeLink_1000aba1ee.local
---> Device IP Address is: 10.1.250.154
+--> Resolving IP Address for the first device found (1000aba1ee) using command: dns-sd -q eWeLink_1000aba1ee.local
+Device IP Address is: 10.1.250.154
 
-You can now use: "10.1.250.154 1000aba1ee" as arguments for sonodiy tasks!
-ie:
-  espbuddy.php sonodiy test  10.1.250.154 1000aba1ee
-  espbuddy.php sonodiy flash 10.1.250.154 1000aba1ee
+You can now use: 10.1.250.154 1000aba1ee as arguments for sonodiy Actions!
+Examples:
+ espbuddy.php sonodiy test  10.1.250.154 1000aba1ee
+ espbuddy.php sonodiy flash 10.1.250.154 1000aba1ee
 
 ```
 
@@ -246,12 +243,12 @@ ie:
 Test if we can successfully connect to the Sonoff Device.
 
 ```plaintext
-Sending 5 pings to 10.1.250.154 : OK!
-Toggling Relay: OK (did you heard it?)
-API response	:
+--> Sending 5 pings to 10.1.250.154 : OK!
+--> Toggling Relay: OK (did you heard it?)
+--> API response	: 
 Array
 (
-    [seq] => 155
+    [seq] => 172
     [error] => 0
     [data] => Array
         (
@@ -276,6 +273,8 @@ Show device information.
 
 ```plaintext
 
+DONE !
+
 --- Last Information Data Received: ---------
 Array
 (
@@ -286,6 +285,7 @@ Array
     [ssid] => iot
     [otaUnlock] => 1
 )
+
 
 ```
 

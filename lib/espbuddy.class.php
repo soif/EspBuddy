@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.89.10b';					// EspBuddy Version
+	public $class_version			= '1.90b1';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -138,7 +138,7 @@ class EspBuddy {
 		'self'		=> array(
 			'version'	=> "Show EspBuddy version",
 			'latest'	=> 'Show the lastest version available',
-			'log'		=> '(DRAFT) Show EspBuddy history between current tag and TAG (latest if not set)',
+			'log'		=> 'Show EspBuddy history between current version and VERSION (latest on master branch, if not set)',
 			'avail'		=> 'Show all versions available',
 			'update'	=> 'Update EspBuddy to the latest version',
 		)
@@ -182,7 +182,7 @@ class EspBuddy {
 		'self'		=> array(
 			'version'	=> '',
 			'latest'	=> '',
-			'log'		=> '[TAG]',
+			'log'		=> '[VERSION]',
 			'avail'		=> '',
 			'update'	=> '[TAG|VERSION|BRANCH]',
 		)
@@ -704,7 +704,7 @@ EOF;
 			$tags=$this->_GithubFetchLatestTags();
 			echo "Versions available : \n";
 			$p=10;
-			echo "    ". str_pad('TAG', $p). str_pad('Version', $p). str_pad('Branch', $p). str_pad('Commit', 20)."\n";
+			echo "   ". str_pad('Tag', $p). str_pad('Version', $p). str_pad('Branch', $p). str_pad('Commit', 20)."\n";
 			foreach ($tags as $branch => $rows){
 				foreach ($rows as $v){
 					$line=str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['branch'], $p). str_pad($v['commit'], $p)."\n";
@@ -728,7 +728,7 @@ EOF;
 			$arg or $tag=current($tags[$this->class_gh_branch_main]); //latest tags
 				
 			$tag or	$tag=current($tags[$arg])
-				or	$tag=$this->_GithubVersionToTag($arg, true)
+				or	$tag=$this->_GithubVersionToTag($arg)
 				or	$tag=$tags[$this->class_gh_branch_main][$arg]
 				or	$tag=$tags[$this->class_gh_branch_dev][$arg]
 				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
@@ -2172,14 +2172,9 @@ EOFB;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _GithubVersionToTag($version="",$use_cached_tags=0){
-		$version or $version=$this->class_version;
-		if($use_cached_tags){
-			if(!$branch_tags=$this->_latest_tags){
-				$branch_tags=$this->_GithubFetchLatestTags();
-			}
-		}
-		else{
+	private function _GithubVersionToTag($version=""){
+		//$version or $version=$this->class_version;
+		if(!$branch_tags=$this->_latest_tags){
 			$branch_tags=$this->_GithubFetchLatestTags();
 		}
 
@@ -2206,6 +2201,9 @@ EOFB;
 	private $_latest_tags;
 	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTags(){
+		if($this->_latest_tags){
+			return $this->_latest_tags;
+		}
 		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
 		$data	= $this->_curl($url);
 
@@ -2256,21 +2254,23 @@ EOFB;
 	}	
 
 	// ---------------------------------------------------------------------------------------
-	private function _Git_GitHistory($dir,$tag1='',$tag2=''){
+	private function _Git_GitHistory($dir,$vers1='',$vers2=''){
 		if(!$dir){
 			return false;
 		}
-		if(!$tag1){
-			$gh=$this->_GithubFetchLatestTag();
-			$tag1=$gh['tag'];
+		if(!$tag1=$this->_GithubVersionToTag($vers1)){
+			$l=" latest";
+			$tag1=$this->_GithubFetchLatestTag();
 		}
-		if(!$tag2){
-			$gh=$this->_GithubVersionToTag('',true);
-			$tag2=$gh['tag'];
+		if(!$tag2=$this->_GithubVersionToTag($vers2)){
+			//current version
+			$c=" current";
+			$tag2=$this->_GithubVersionToTag($this->class_version);
 		}
-
+				
+		$this->sh->PrintAnswer("Logs between{$l} v{$tag1['version']} and{$c} v{$tag2['version']} :");
 		$commands[]="git fetch --all --tags --prune";
-		$commands[]="git log --pretty=format:\" -  %cd %Cblue%h %Creset%s\" --date=short {$tag1}...{$tag2}";
+		$commands[]="git log --pretty=format:\" -  %cd %Cblue%h %Creset%s\" --date=short {$tag1['commit']}...{$tag2['commit']}";
 		return $this->_Git($commands, $dir);
 	}	
 

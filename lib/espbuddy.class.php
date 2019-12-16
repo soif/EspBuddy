@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.90b2';						// EspBuddy Version
+	public $class_version			= '2.00b';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -137,9 +137,9 @@ class EspBuddy {
 		),
 		'self'		=> array(
 			'version'	=> "Show EspBuddy version",
-			'latest'	=> 'Show the lastest version available',
-			'log'		=> 'Show EspBuddy history between current version and VERSION (latest on master branch, if not set)',
+			'latest'	=> "Show the lastest version available on the 'master' branch",
 			'avail'		=> 'Show all versions available',
+			'log'		=> 'Show EspBuddy history between current version and VERSION (latest on master branch, if not set)',
 			'update'	=> 'Update EspBuddy to the latest version',
 		)
 	);
@@ -182,8 +182,8 @@ class EspBuddy {
 		'self'		=> array(
 			'version'	=> '',
 			'latest'	=> '',
-			'log'		=> '[VERSION]',
 			'avail'		=> '',
+			'log'		=> '[VERSION]',
 			'update'	=> '[TAG|VERSION|BRANCH]',
 		)
 	);

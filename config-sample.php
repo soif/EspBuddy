@@ -9,6 +9,9 @@
 //path to the platformio binary
 $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 
+// Backup Directory where uploaded firmwares and download settings are stored 
+$cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
+
 
 
 // Global Preferences #############################################################################################################
@@ -31,12 +34,11 @@ $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 // ################################################################################################################################
 /* Here is where you set your own settings */
 
+
+// "sonodiy" command settings #####################################################################################################
 // URL of the Firmware to upload when using then "sonodiy flash" command (for Sonoff "DIY" devices only )
 // be sure to use a firmware < 508kB, but DON'T use the tasmota-minimal.bin (it wont allow to store settings)
 $cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-basic.bin"; 
-
-// Backup Directory where uploaded firmwares and download settings are stored 
-$cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
 
 
@@ -69,7 +71,8 @@ Define all configurations needed by your hosts, where:
 
 
 // ESPEasy Configurations --------------------------------------------------------------
-//date_default_timezone_set($cfg['prefs']['time_zone']);$my_build="{{git_version}}/".date("dM-H.i");
+//date_default_timezone_set($cfg['prefs']['time_zone']);
+//$my_build="{{git_version}}/".date("dM-H.i");
 //$my_espeasy_flags ='-DUSE_CUSTOM_H -DBUILD_DEV=\"'.$my_build.'\" -DMY_IP=\"{{host_ip}}\" -DMY_AP_IP={{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}} -DMY_NAME=\"{{host_name}}\" -DMY_UNIT={{host_ip4}}';
 
 $cfg['configs']['espeasy_1M']['repo']								="espeasy";
@@ -92,13 +95,13 @@ $cfg['configs']['espurna_mh20']['repo']								="espurna";
 $cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_mh20']['exports']['ESPURNA_BOARD']			="MAGICHOME_LED_CONTROLLER_20";
-//$cfg['configs']['espurna_mh20']['pass']								="MyEspurnaPassword";
+//$cfg['configs']['espurna_mh20']['pass']							="MyEspurnaPassword";
 
 $cfg['configs']['espurna_h801']['repo']								="espurna";
 $cfg['configs']['espurna_h801']['environment']						="esp8266-1m-ota";
 $cfg['configs']['espurna_h801']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
 $cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801";
-//$cfg['configs']['espurna_h801']['pass']								="MyEspurnaPassword";
+//$cfg['configs']['espurna_h801']['pass']							="MyEspurnaPassword";
 
 
 // Tasmota Configurations --------------------------------------------------------------

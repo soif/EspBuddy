@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.00b';						// EspBuddy Version
+	public $class_version			= '2.00b1';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -124,7 +124,7 @@ class EspBuddy {
 			'help'		=>	'Show Sonoff DIY Help',
 			'scan'		=>	'Scan Sonoff devices to find their IP & deviceID',
 			'test'		=>	'Toggle relay to verify communication',
-			'flash'		=>	'Upload a Tasmota firmware (508KB max, DOUT mode)',
+			'flash'		=>	'(EXPERIMENTAL: see issue #20 on GitHub) Upload a custom firmware (508KB max, DOUT mode)',
 			'ping'		=>	'Check if device is Online',
 			'info'		=>	'Get Device Info',
 			'pulse'		=>	'Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)',

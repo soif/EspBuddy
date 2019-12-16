@@ -24,7 +24,7 @@ It also gathers various tool commands to be used in batch mode.
 - Ping Remote Host
 - Sonoff DIY: scan network for devices in DIY mode
 - Sonoff DIY: total control using the Ithead factory API.
-- Sonoff DIY: replace the factory firmware with any other one (default to Tasmota) OTA.
+- Sonoff DIY: replace the factory firmware with any other one (default to Tasmota) OTA. (see [#20](https://github.com/soif/EspBuddy/issues/20) )
 - Sonoff DIY: cross-platform support (Mac, Win, Linux)
 
 ## Supported Firmwares

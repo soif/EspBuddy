@@ -295,6 +295,11 @@ class EspBuddy {
 				break;
 
 			default:
+				if(!$this->action){
+					$this->_BashAutoComplete('root');
+					$this->CommandLine();
+				}
+
 				$this->action and $com=" '{$this->action}'";
 				echo "\n";
 				$this->sh->PrintError("Invalid$com Command");		
@@ -2323,6 +2328,97 @@ EOFB;
 			return $return;
 		}
 	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _makeUsage($command, $action=''){
+		$usage				=$this->actions_usage['root'][$command];
+			$action and  $usage	=$this->actions_usage[$command][$action];
+		if( !$action and is_array($this->actions_usage[$command])  ){
+			$usage='';
+		}
+		if($usage ){
+			$out="$this->bin $command ";
+			$action and $out .="$action ";
+			$out.="$usage";
+			return $out;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	var $_bash_commands=array();
+	var $_bash_found	=0;
+	var $_bash_max		=2;
+	var $_bash_last_line='';
+
+	// ---------------------------------------------------------------------------------------
+	private function _BashAutoCompleteCallback($input, $index){
+		$info=readline_info();
+		$line=trim($info['line_buffer']);
+
+		if($line and $line != $this->_bash_last_line){
+			// if we call readline_list_history() it would break autocomplete, so....
+			readline_add_history($line);
+			$this->_bash_last_line=$line;
+		}
+
+		$words	=preg_split("#\s+#", $line);
+		$first	=current($words);
+		$last	=end($words);
+
+		if(count($words) <2 and $this->_bash_found){
+			$this->_bash_found=0;			
+		}
+
+		if($this->actions_desc['root'][$first]){
+			$this->_bash_found=1;
+			$this->_bash_commands[1]=$first;
+		}
+		if($this->_bash_found==1 and $this->actions_desc[$this->_bash_commands[1]][$last] ){
+			$this->_bash_found=2;
+			$this->_bash_commands[2]=$last;
+		}
+
+		if($this->_bash_found==2){
+			if($usage=$this->_makeUsage($this->_bash_commands[1], $this->_bash_commands[2] )){
+				echo "\nUsage: $usage";
+				return array();	
+			}
+		}
+		elseif($this->_bash_found==1){
+			if($usage=$this->_makeUsage($this->_bash_commands[1] )){
+				echo "\nUsage: $usage";
+				return array();
+			}
+			return array_keys($this->actions_desc[$this->_bash_commands[1]]);
+		}
+		elseif($this->_bash_found==0){
+			return array_keys($this->actions_desc['root']);
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _BashAutoCompleteReadCommandAndAction($function_to_callback, $query=''){
+		readline_completion_function(array('self', $function_to_callback));
+		$command_input = readline("###### ". $this->sh->StyleBold($query)." ");		
+		//TODO: if possible, add  $last_line="{$this->bin} $command_input"; to bash history
+		return $command_input;
+	}
+
+	//private $_autocomplete_list=array();
+	// ---------------------------------------------------------------------------------------
+	private function _BashAutoComplete($index1){
+		$this->_show_action_desc($index1);
+
+		global $argv;
+		$last_command	=preg_replace('#^(/[^/]+)+/#','',$argv[0]);
+		$input			= $this->_BashAutoCompleteReadCommandAndAction("_BashAutoCompleteCallback",$last_command);
+
+		$new_args=preg_split("/\s+/",trim($input));
+		array_unshift($new_args, $argv[0]);
+		$argv=$new_args;
+	}
+
+
 
 }
 ?>

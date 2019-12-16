@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '1.90b1';						// EspBuddy Version
+	public $class_version			= '1.90b2';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -879,7 +879,8 @@ EOF;
 
 		if($this->os == "lin"){
 			$command="avahi-browse -t _ewelink._tcp  --resolve";
-			echo "Scanning network for Devices using command:	$command\n";
+			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
+			$this->sh->PrintCommand($command);
 			$raw=trim(shell_exec($command));
 			$raw_example=<<<EOF
 +   eth0 IPv4 eWeLink_1000aba1ee                            _ewelink._tcp        local
@@ -909,7 +910,7 @@ EOF;
 				}
 				
 				if($ids){
-					$this->sh->PrintAnswer("Devices Found:");
+					$this->sh->PrintBold("Devices Found:");
 					$pad=15;
 					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
 					echo str_repeat('-',45)."\n";
@@ -920,18 +921,26 @@ EOF;
 					$found_args="{$ips[0]} {$ids[0]}";	
 				}
 				else{
-					$this->sh->PrintAnswer("Sorry, I did not found any device!");
+					$this->sh->PrintError("Sorry, I did not found any device!");
 				}
 			}
-		}
+			else{
+				$this->sh->PrintError("It seems that we miss the 'avahi-browse' command");
+				$this->sh->PrintAnswer("on Debian/ubuntu, please run:");
+				$this->sh->PrintCommand("sudo apt-get install avahi-utils ");
+				$this->sh->PrintAnswer("on RHEL/Centos, please run:");
+				$this->sh->PrintCommand("sudo yum install avahi-tools ");
+			}
+	}
 		elseif($this->os == "osx"){
 			$command="dns-sd -B $service";
 
-			echo "Scanning network for Devices using command:	$command\n";
+			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
+			$this->sh->PrintCommand($command);
 			$bash=$this->_sondiy_osx_com2bash($command,5);
 			$lines_ids=trim(shell_exec($bash));
 			if($lines_ids){
-				$this->sh->PrintAnswer( "Device IDs Found:");
+				$this->sh->PrintBold( "Device IDs Found:");
 				$lines=explode("\n",$lines_ids);
 				foreach($lines as $line){
 					list($trash,$raw_id)=explode($service.'.' , $line);
@@ -942,28 +951,30 @@ EOF;
 
 				$first_id='eWeLink_'.$ids[0];
 				$command="dns-sd -q $first_id.local";
-				echo "Resolving IP Address for the first device found ({$ids[0]}) using command:	$command\n";
+				$this->sh->PrintAnswer("Resolving IP Address for the first device found ({$ids[0]}) using command: ",false);
+				$this->sh->PrintCommand($command);
 				$command=$this->_sondiy_osx_com2bash($command,4);
 				$lines_ip=trim(shell_exec($command));
 				if($lines_ip){
 					list($line_ip,$trash)=explode("\n" , $lines_ip);
 					list($trash,$raw_ip)=explode('IN' , $line_ip);
 					$ip=trim($raw_ip);
-					$this->sh->PrintAnswer( "Device IP Address is: $ip");
+					$this->sh->PrintBold( "Device IP Address is: $ip");
 					$found_args="$ip {$ids[0]}";
 				}
 				else{
-					$this->sh->PrintAnswer( "Sorry, I could not resolve the IP Address!");
+					$this->sh->PrintError( "Sorry, I could not resolve the IP Address");
 				}
 				// dns-sd -L  $first_id _ewelink._tcp local
 			}
 			else{
-				$this->sh->PrintAnswer( "Sorry, I did not found any device.");
+				$this->sh->PrintError( "Sorry, I did not found any device");
 			}
 		}
 		elseif($this->os == "win"){ //windows
 			$command="python {$this->cfg['paths']['bin']}mdns.py";
-			echo "Scanning network for Devices using command:	$command\n";
+			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
+			$this->sh->PrintCommand($command);
 			$raw=trim(shell_exec($command));
 			$raw_example=<<<EOF
 inter add_service()
@@ -986,7 +997,7 @@ EOF;
 				}
 				
 				if($ids){
-					$this->sh->PrintAnswer("Devices Found:");
+					$this->sh->PrintBold("Devices Found:");
 					$pad=15;
 					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
 					echo str_repeat('-',45)."\n";
@@ -1004,7 +1015,7 @@ EOF;
 				}
 				else{
 					if(preg_match('#add_service#',$first_line)){
-						$this->sh->PrintAnswer( "Sorry, I did not found any device!");
+						$this->sh->PrintError( "Sorry, I did not found any device");
 					}
 					else{
 						$crashed=1;
@@ -1035,9 +1046,11 @@ EOF;
 		}
 
 		if($found_args){
-			echo "\nYou can now use: \"$found_args\" as arguments for sonodiy Actions!\nie:\n";
-			echo "  {$this->bin} sonodiy test  $found_args\n";
-			echo "  {$this->bin} sonodiy flash $found_args\n";
+			echo "\nYou can now use: ";
+			$this->sh->PrintBold($found_args, false);
+			echo " as arguments for sonodiy Actions!\nExamples:\n";
+			$this->sh->PrintCommand( " {$this->bin} sonodiy test  $found_args");
+			$this->sh->PrintCommand( " {$this->bin} sonodiy flash $found_args");
 		}
 		echo "\n";
 
@@ -1117,17 +1130,18 @@ EOFB;
 				if(is_array($result['data'])){
 					$info['data']=array_merge($result['data'],$info['data']);
 				}
+				$result and $this->sh->PrintBold("\nDONE !");
 				
 				if(!$result or $this->flag_drymode){
-					echo "--- URL requested ---------------------------\n";
-					echo "$curl_url\n";
+					echo "\n--- URL requested ---------------------------\n";
+					$this->sh->PrintCommand($curl_url);
 					echo "\n--- Request Sent: ---------------------------\n";
-					print_r($curl_req);
+					$this->sh->PrintCommand(print_r($curl_req,true));
 					echo "\n--- Response Received: ----------------------\n";
-					print_r($curl_res);
+					$this->sh->PrintCommand(print_r($curl_res,true));
 				}
 				echo "\n--- Last Information Data Received: ---------\n";
-				print_r($info['data']);
+				$this->sh->PrintCommand(print_r($info['data'],true));
 				echo "\n";
 			}
 			

@@ -73,6 +73,10 @@ class EspBuddy_Shell {
 	*/
 
 	// ----------------------------------------------------------------------------
+	public function PrintBold($string, $new_line=true){
+		$this->_Print("$string", '','','bold',$new_line);
+	}
+	// ----------------------------------------------------------------------------
 	public function PrintQuestion($string, $new_line=true){
 		$this->_Print("$string", '','','bold',$new_line);
 	}

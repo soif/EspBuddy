@@ -707,7 +707,13 @@ EOF;
 			echo "    ". str_pad('TAG', $p). str_pad('Version', $p). str_pad('Branch', $p). str_pad('Commit', 20)."\n";
 			foreach ($tags as $branch => $rows){
 				foreach ($rows as $v){
-					echo "  - ". str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['branch'], $p). str_pad($v['commit'], $p)."\n";					
+					$line=str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['branch'], $p). str_pad($v['commit'], $p)."\n";
+					if($v['version']==$this->class_version){
+						$this->sh->PrintBold(" = $line",false);
+					}
+					else{
+						echo " - $line";
+					}
 				}
 			}
 		}

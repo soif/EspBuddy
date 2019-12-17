@@ -1,5 +1,11 @@
 # Esp Buddy
 
+[![GitHub release](https://img.shields.io/github/tag/soif/EspBuddy)](https://GitHub.com/soif/EspBuddy/releases/)
+[![GitHub stars](https://img.shields.io/github/stars/soif/EspBuddy)](https://github.com/soif/EspBuddy/stargazers)
+![GitHub last commit](https://img.shields.io/github/last-commit/soif/EspBuddy)
+[![GitHub license](https://img.shields.io/github/license/soif/EspBuddy)](https://github.com/soif/EspBuddy/blob/master/LICENSE)
+[![Twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fsoif%2FEspBuddy)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fsoif%2FEspBuddy)
+
 - _Tired of typing very long commands to upload your custom firmwares?_
 - _Bored to manually upload your firmwares in two steps for 1MB devices?_
 - _Want to batch upload new firmwares to all your devices via OTA or backup all settings in one command?_

@@ -2419,6 +2419,44 @@ EOFB;
 	}
 
 
+	// ---------------------------------------------------------------------------------------
+	//TODO resolve MAC
+	function _IpAddressToMAC($ip){
+		if($this->os=='win'){
+			//TODO check on Windows
+			$command="arp -a | findstr \"$ip\" ";
+			$raw	=trim(shell_exec($command));
+			$raw_example=<<<EOF
+10.1.1.1              74-d4-35-1b-fd-72     dynamique
+10.1.10.1             00-50-56-01-01-01     dynamique
+10.1.11.1             0c-e8-6c-68-4c-7c     dynamique
+10.1.100.101          00-50-56-00-01-01     dynamique
+10.1.255.255          ff-ff-ff-ff-ff-ff     statique
+		  
+EOF;
+			if($raw){
+				$lines=preg_split("/[\n\r]+/", $raw);
+				$first_line=current($lines);
+				list($l_ip,$mac,$type)=preg_split("/\s+/", $first_line);
+				$mac=str_replace('-',':',$mac);	
+			}
+		}
+		else{
+			$command="arp -an | grep $ip | awk '{print \$4}' | head -1";
+			$mac=trim(shell_exec($command));
+		}
+		//validate mac address
+		if(preg_match("/^([a-z0-9]{1,2}:){5}[a-z0-9]{1,2}$/i",$mac)){
+			$parts=explode(':',$mac);
+			foreach($parts as $k => $v){
+				$parts[$k]=str_pad($v,'2','0',STR_PAD_RIGHT);
+			}
+			$pretty_mac=strtolower(implode(':',$parts));
+			return $pretty_mac;
+		}	
+	}
+	
+
 
 }
 ?>

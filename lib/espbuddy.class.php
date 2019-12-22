@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.02b1';						// EspBuddy Version
+	public $class_version			= '2.02b2';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -882,9 +882,11 @@ EOF;
 	public 	function Sonodiy_scan(){
 		$service="_ewelink._tcp";
 
+		$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
+
+		// --- linux ------------------------------
 		if($this->os == "lin"){
 			$command="avahi-browse -t _ewelink._tcp  --resolve";
-			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
 			$this->sh->PrintCommand($command);
 			$raw=trim(shell_exec($command));
 			$raw_example=<<<EOF
@@ -903,7 +905,7 @@ EOF;
 				$i=0;
 				foreach($lines as $line){
 					if(preg_match('#IPv4\s*?([^\s]+)#',$line,$match)){
-						$ids[$i]=$match[1];
+						$ids[$i]=str_replace("eWeLink_","",$match[1]);
 					}
 					if(preg_match('#address\s*?=\s*?\[([^\]]+)\]#',$line,$match)){
 						$ips[$i]=$match[1];
@@ -915,28 +917,20 @@ EOF;
 				}
 				
 				if($ids){
-					$this->sh->PrintBold("Devices Found:");
-					$pad=15;
-					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
-					echo str_repeat('-',45)."\n";
-					foreach($ids as $k => $id){
-						echo "".str_pad($id,$pad+8).str_pad($ips[$k],$pad).str_pad($ports[$k],$pad)."\n";
-					}
-					echo str_repeat('-',45)."\n";
-					$found_args="{$ips[0]} {$ids[0]}";	
+					//OK
 				}
 				else{
-					$this->sh->PrintError("Sorry, I did not found any device!");
+					$this->sh->PrintError("\nSorry, I did not found any device!");
 				}
 			}
 			else{
-				$this->sh->PrintError("It seems that we miss the 'avahi-browse' command");
+				$this->sh->PrintError("\nIt seems that we miss the 'avahi-browse' command");
 				$this->sh->PrintAnswer("on Debian/ubuntu, please run:");
-				$this->sh->PrintCommand("sudo apt-get install avahi-utils ");
+				$this->sh->PrintCommand("sudo apt-get install avahi-utils \n");
 				$this->sh->PrintAnswer("on RHEL/Centos, please run:");
 				$this->sh->PrintCommand("sudo yum install avahi-tools ");
 			}
-	}
+		} // --- OSX ------------------------------
 		elseif($this->os == "osx"){
 			$command="dns-sd -B $service";
 
@@ -944,83 +938,74 @@ EOF;
 			$this->sh->PrintCommand($command);
 			$bash=$this->_sondiy_osx_com2bash($command,5);
 			$lines_ids=trim(shell_exec($bash));
+			
 			if($lines_ids){
-				$this->sh->PrintBold( "Device IDs Found:");
 				$lines=explode("\n",$lines_ids);
 				foreach($lines as $line){
 					list($trash,$raw_id)=explode($service.'.' , $line);
 					$ids[]=trim(str_replace('eWeLink_','',$raw_id));
 				}
-				echo "   - ". implode("\n   - ",$ids);
-				echo "\n\n";
+				//$this->sh->PrintBold( "Device IDs Found:");
+				//echo "   - ". implode("\n   - ",$ids);
+				//echo "\n\n";
 
 				$first_id='eWeLink_'.$ids[0];
 				$command="dns-sd -q $first_id.local";
-				$this->sh->PrintAnswer("Resolving IP Address for the first device found ({$ids[0]}) using command: ",false);
+				$this->sh->PrintAnswer("Get IP Address of the first device found ({$ids[0]}) using command: ",false);
 				$this->sh->PrintCommand($command);
+				
 				$command=$this->_sondiy_osx_com2bash($command,4);
 				$lines_ip=trim(shell_exec($command));
 				if($lines_ip){
 					list($line_ip,$trash)=explode("\n" , $lines_ip);
 					list($trash,$raw_ip)=explode('IN' , $line_ip);
-					$ip=trim($raw_ip);
-					$this->sh->PrintBold( "Device IP Address is: $ip");
-					$found_args="$ip {$ids[0]}";
+					$ips[0]=trim($raw_ip);
 				}
 				else{
-					$this->sh->PrintError( "Sorry, I could not resolve the IP Address");
+					$this->sh->PrintError( "\nSorry, I could not get the IP Address");
 				}
 				// dns-sd -L  $first_id _ewelink._tcp local
 			}
 			else{
-				$this->sh->PrintError( "Sorry, I did not found any device");
+				$this->sh->PrintError( "\nSorry, I did not found any device");
 			}
 		}
-		elseif($this->os == "win"){ //windows
+		// --- Windows ------------------------------
+		elseif($this->os == "win"){
 			$command="python {$this->cfg['paths']['bin']}mdns.py";
-			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
 			$this->sh->PrintCommand($command);
 			$raw=trim(shell_exec($command));
 			$raw_example=<<<EOF
 inter add_service()
 1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
-1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
+1000a2a1ee  10.1.250.152  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
 1000aba1ee  10.1.250.154  8081  {b'type': b'diy_plug', b'data1': b'{"switch":"on","startup":"off","pulse":"off","sledOnline":"on","pulseWidth":1000,"rssi":-58}', b'id': b'1000aba1ee', b'apivers': b'1', b'seq': b'120', b'txtvers': b'1'}
 			
 EOF;
 			if($raw){
-				//echo $raw_example;
 				$lines=explode("\n",$raw);
 				$first_line=$lines[0];
 				unset($lines[0]);
 				foreach($lines as $line){
 					if(preg_match('#^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+.*?diy_plug#',$line,$match)){
-						$ids[$match[1]]		=$match[1];
-						$ips[$match[1]]		=$match[2];
-						$ports[$match[1]]	=$match[3];
+						$raw_ids[$match[1]]		=$match[1];
+						$raw_ips[$match[1]]		=$match[2];
+						$raw_ports[$match[1]]	=$match[3];
 					}
 				}
 				
-				if($ids){
-					$this->sh->PrintBold("Devices Found:");
-					$pad=15;
-					echo str_pad("ID",$pad+8).str_pad("IP",$pad).str_pad("PORT",$pad)."\n";
-					echo str_repeat('-',45)."\n";
-					$i=0;
-					foreach($ids as $k => $id){
-						echo "".str_pad($id,$pad+8).str_pad($ips[$k],$pad).str_pad($ports[$k],$pad)."\n";
-						//reassign to num array
-						$ids[$i]	=$ids[$k];
-						$ips[$i]	=$ips[$k];
-						$ports[$i]	=$ports[$k];
+				if($raw_ids){
+					//reassign to num array
+					foreach($raw_ids as $k => $id){
+						$ids[$i]	=$raw_ids[$k];
+						$ips[$i]	=$raw_ips[$k];
+						$ports[$i]	=$raw_ports[$k];
 						$i++;
 					}
-					echo str_repeat('-',45)."\n";
-					$found_args="{$ips[0]} {$ids[0]}";	
 				}
 				else{
 					if(preg_match('#add_service#',$first_line)){
-						$this->sh->PrintError( "Sorry, I did not found any device");
+						$this->sh->PrintError( "\nSorry, I did not found any device");
 					}
 					else{
 						$crashed=1;
@@ -1033,7 +1018,7 @@ EOF;
 
 			if($crashed){
 				echo "\n";
-				$this->sh->PrintError("The python script has certainly crashed");
+				$this->sh->PrintError("\nThe python script has certainly crashed");
 				echo <<<EOF
 
 It seems that you dont have a working Python installation!
@@ -1050,7 +1035,22 @@ EOF;
 			}
 		}
 
-		if($found_args){
+		if($ips and $ids){
+			$found_args="{$ips[0]} {$ids[0]}";
+			$c1=15;	$c2=20;	$c3=22;
+			$ct=$c1+$c2+$c3+1;
+			echo "\n";
+			$this->sh->PrintBold("Devices Found:\n");
+			echo str_repeat('=',$ct)."\n";
+			echo str_pad("| ID", 			$c1).	str_pad(" | IP Address", 	$c2).	str_pad(" | MAC Address",	$c3)."|\n" ;
+			echo str_repeat('=',$ct)."\n";
+			foreach($ids as $i => $id){
+				$ip=$ips[$i];
+				$ip and $found_mac=$this->_IpAddressToMAC($ip);
+				echo str_pad("| {$id} ",	$c1).	str_pad(" | {$ip}", 	$c2).	str_pad(" | $found_mac", 	$c3)."|\n" ;
+			}
+			echo str_repeat('-',$ct)."\n";
+
 			echo "\nYou can now use: ";
 			$this->sh->PrintBold($found_args, false);
 			echo " as arguments for sonodiy Actions!\nExamples:\n";
@@ -1200,7 +1200,7 @@ EOFB;
 			$this->_dieError("Size is more than 508 kB. Please use a smaller firmware");
 		}
 		elseif($size_k < 100 ){
-			$this->_dieError("Size is less than 108 kB, this seems strange");
+			$this->_dieError("Size is less than 100 kB, this seems strange");
 		}
 		echo "\n";
 		$ok=$this->_AskConfirm();
@@ -2422,6 +2422,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	//TODO resolve MAC
 	function _IpAddressToMAC($ip){
+		$this->_ping($ip);	//put in ARP cache
 		if($this->os=='win'){
 			//TODO check on Windows
 			$command="arp -a | findstr \"$ip\" ";

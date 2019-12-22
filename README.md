@@ -83,11 +83,12 @@ Examples:
 - `espbuddy.php upload relay1` upload to target 'relay1'
 - `espbuddy.php upload all -b` upload to all defined targets, while building the firmware first
 - `espbuddy.php upload relay1 -w` upload using serial to target 'relay1'
+- `espbuddy.php upload relay1 -web` build 'relay1', then using serial port, erase first and upload
 - `espbuddy.php backup all` backup settings ofall defined targets
 - `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
 - `espbuddy.php version all` show versions of all defined targets
 - `espbuddy.php ping all` ping the all defined targets
-- `espbuddy.php sonodoy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
+- `espbuddy.php sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
 
 See [more command examples](doc/command_examples.md) ...
 

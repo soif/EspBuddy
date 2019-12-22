@@ -40,7 +40,7 @@ _Courtenesy of [this blog article](https://www.jeffgeerling.com/blog/2018/instal
   * Edit the **php.ini** file in a text editor (e.g. Notepad++, Atom, or Sublime Text).
 Change the following settings in the file and save the file:
 
-    * Uncomment the line that reads ; `extension_dir = "ext"` (remove the `;` so the line is just extension_dir = "ext").
+    * Uncomment the line that reads `;extension_dir = "ext"` (remove the `;` so the line is just `extension_dir = "ext"`).
 
     * In the section where there are a bunch of extension= lines, uncomment the following lines:
 

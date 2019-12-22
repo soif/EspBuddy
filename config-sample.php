@@ -12,6 +12,8 @@ $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 // Backup Directory where uploaded firmwares and download settings are stored 
 $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
+//for Windows OS, the default tmp dir is at (edit and uncomment the following:)
+//$cfg['paths']['dir_backup']					="/Users/<YOUR_USER_NAME>/AppData/Local/EspBuddy/"; //(WITH a trailing slash)
 
 
 // Global Preferences #############################################################################################################

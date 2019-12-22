@@ -44,7 +44,7 @@ Works with :
 
 ## Requirements
 
-- Linux or OSX Operating System (+ Windows for some method only)
+- Linux or OSX Operating System (+ [Windows](doc/install_windows.md) for some method only)
 - php5 or newer
 - PlatformIO __needed only for compiling__
 

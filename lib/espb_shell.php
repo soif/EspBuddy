@@ -141,9 +141,9 @@ class EspBuddy_Shell {
 	// ----------------------------------------------------------------------------
 	private function GetStyleOpen($fg_color='', $bg_color="", $style=""){
 		if( $fg_color or $bg_color or $style ){
-			$f=$this->fg_colors[$fg_color]	or $f=$this->fg_colors['default'];
-			$b=$this->bg_colors[$bg_color]	or $b=$this->bg_colors['default'];
-			$s=$this->styles[$style]		or $s=$this->styles['default'];
+			$fg_color	and $f=$this->fg_colors[$fg_color]	or $f=$this->fg_colors['default'];
+			$bg_color	and $b=$this->bg_colors[$bg_color]	or $b=$this->bg_colors['default'];
+			$style		and $s=$this->styles[$style]		or $s=$this->styles['default'];
 			return "\033[{$s};{$f};{$b}m";
 		}
 	}

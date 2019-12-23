@@ -2316,7 +2316,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _Git($git_command, $path_base=""){
 		$path_base or $path_base	= $this->orepo->GetPathBase();
-		$commands[]	= " cd {$path_base} ";
+		$commands[]	= " cd {$path_base}";
 
 		if(is_array($git_command)){
 			$commands=array_merge($commands,$git_command);
@@ -2324,20 +2324,31 @@ EOFB;
 		else{
 			$commands[]	= $git_command;
 		}
-		$command=implode(" \n ", $commands);
+		
+		$sep=" \n ";
+		if($this->os=='win'){
+			$sep=" && ";	// windows only (!!!) execute the first line so we have to put all on one single line
+		}
+		$command=implode($sep, $commands);
+		
 		$err=$this->_passthru($command);
 		return !$err;
 	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _passthru($command){
+		$print_command=$command;
+		if($this->os=='win'){
+			$print_command=str_replace(" && "," \n ",$command);
+		}
+		
 		if($this->flag_drymode){
-			$this->sh->PrintCommand($command);
+			$this->sh->PrintCommand($print_command);
 			return 0;
 		}
 		else{
 			if($this->flag_verbose){
-				echo"$command\n";
+				echo "$print_command\n";
 			}
 			$this->sh->EchoStyleCommand();
 			passthru($command, $return);

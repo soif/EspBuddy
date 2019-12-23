@@ -16,17 +16,17 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.03b1';						// EspBuddy Version
-	public $class_gh_owner			= 'soif';						// Github Owner
-	public $class_gh_repo			= 'EspBuddy';					// Github Repository
-	public $class_gh_branch_main	= 'master';						// Github Master Branch
-	public $class_gh_branch_dev		= 'develop';					// Github Develop Branch
-	public $class_gh_api_url		= 'https://api.github.com';		// Github API URL
-	public $app_name				= 'EspBuddy';					// Application Name
-
-	private $cfg				= array();	// hold the configuration
+	public $espb_version			= '2.03b2';						// EspBuddy Version
+	public $espb_gh_owner			= 'soif';						// Github Owner
+	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
+	public $espb_gh_branch_main		= 'master';						// Github Master Branch
+	public $espb_gh_branch_dev		= 'develop';					// Github Develop Branch
+	public $espb_gh_api_url			= 'https://api.github.com';		// Github API URL
+	public $espb_name				= 'EspBuddy';					// Application Name
 	private $espb_path			= '';		// Location of the EspBuddy root directory
 	private $espb_path_lib		= '';		// Location of the EspBuddy lib directory
+
+	private $cfg				= array();	// hold the configuration
 
 	private $sh					;			//	shell object
 
@@ -699,7 +699,7 @@ EOF;
 			$this->Command_help('self');
 		}
 		elseif($this->target=='version'){
-			echo "Current version: {$this->class_version}\n";
+			echo "Current version: {$this->espb_version}\n";
 		}
 		elseif($this->target=='latest'){
 			$tag=$this->_GithubFetchLatestTag();
@@ -716,7 +716,7 @@ EOF;
 			foreach ($tags as $branch => $rows){
 				foreach ($rows as $v){
 					$line=str_pad($v['tag'], $p). str_pad($v['version'], $p). str_pad($v['branch'], $p). str_pad($v['commit'], $p)."\n";
-					if($v['version']==$this->class_version){
+					if($v['version']==$this->espb_version){
 						$this->sh->PrintBold(" = $line",false);
 					}
 					else{
@@ -730,22 +730,22 @@ EOF;
 
 			$arg=$this->args['commands'][3];
 			if($arg=='dev'){
-				$arg=$this->class_gh_branch_dev;
+				$arg=$this->espb_gh_branch_dev;
 			}
 
-			$arg or $tag=current($tags[$this->class_gh_branch_main]); //latest tags
+			$arg or $tag=current($tags[$this->espb_gh_branch_main]); //latest tags
 				
 			$tag or	$tag=current($tags[$arg])
 				or	$tag=$this->_GithubVersionToTag($arg)
-				or	$tag=$tags[$this->class_gh_branch_main][$arg]
-				or	$tag=$tags[$this->class_gh_branch_dev][$arg]
+				or	$tag=$tags[$this->espb_gh_branch_main][$arg]
+				or	$tag=$tags[$this->espb_gh_branch_dev][$arg]
 				or	$this->_dieError("Can't find a tag or branch named '$arg' ");
 
-			if($tag['version']==$this->class_version and !$this->flag_force){
+			if($tag['version']==$this->espb_version and !$this->flag_force){
 				$this->sh->PrintAnswer("You're already running this version!");
 			}
 			else{
-				echo "Update {$this->app_name} from current version {$this->class_version} to version {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch).\n";
+				echo "Update {$this->espb_name} from current version {$this->espb_version} to version {$tag['version']} (tag '{$tag['tag']}' on '{$tag['branch']}' branch).\n";
 				if($ok=$this->_AskYesNo("This will replace your current '{$tag['branch']}' branch! Are you sure")){
 					$this->sh->PrintAnswer("Updating to version {$tag['version']} ...");
 					$this->_GitSwitchToBranchTag($this->espb_path, $tag['tag'], $tag['branch']);
@@ -1839,7 +1839,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _getVersionBuddyLong(){
-		$version="EspBuddby v{$this->class_version}";
+		$version="EspBuddby v{$this->espb_version}";
 		
 		$esptool_ve=$this->_getVersionEsptool();
 		$esptool_ve and $version .=" ( EspTool v{$esptool_ve} )";
@@ -2185,7 +2185,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _curl($url,$headers=''){
-		$headers or $headers=array("User-Agent: {$this->app_name}"); //gh need this, else 403
+		$headers or $headers=array("User-Agent: {$this->espb_name}"); //gh need this, else 403
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL			, $url);
 		curl_setopt($ch, CURLOPT_HEADER			, false);
@@ -2210,7 +2210,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _GithubVersionToTag($version=""){
-		//$version or $version=$this->class_version;
+		//$version or $version=$this->espb_version;
 		if(!$branch_tags=$this->_latest_tags){
 			$branch_tags=$this->_GithubFetchLatestTags();
 		}
@@ -2228,7 +2228,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _GithubFetchLatestTag($branch=''){
-		$branch or $branch=$this->class_gh_branch_main;
+		$branch or $branch=$this->espb_gh_branch_main;
 
 		if($tags=$this->_GithubFetchLatestTags()){
 			return current($tags[$branch]);
@@ -2241,7 +2241,7 @@ EOFB;
 		if($this->_latest_tags){
 			return $this->_latest_tags;
 		}
-		$url	= "{$this->class_gh_api_url}/repos/{$this->class_gh_owner}/{$this->class_gh_repo}/tags";
+		$url	= "{$this->espb_gh_api_url}/repos/{$this->espb_gh_owner}/{$this->espb_gh_repo}/tags";
 		$data	= $this->_curl($url);
 
 		if($data){
@@ -2251,10 +2251,10 @@ EOFB;
 				
 				$branch		="undefined";
 				if(preg_match('/^v/',$v['name'])){
-					$branch		=$this->class_gh_branch_main;
+					$branch		=$this->espb_gh_branch_main;
 				}
 				elseif(preg_match('/^d/',$v['name'])){
-					$branch		=$this->class_gh_branch_dev;
+					$branch		=$this->espb_gh_branch_dev;
 				}
 				
 				$out[$branch][$k]['branch']		=$branch;
@@ -2302,7 +2302,7 @@ EOFB;
 		if(!$tag2=$this->_GithubVersionToTag($vers2)){
 			//current version
 			$c=" current";
-			$tag2=$this->_GithubVersionToTag($this->class_version);
+			$tag2=$this->_GithubVersionToTag($this->espb_version);
 		}
 				
 		$this->sh->PrintAnswer("Logs between{$l} {$tag1['version']} ({$tag1['branch']}) and{$c} {$tag2['version']} ({$tag2['branch']}) versions:");

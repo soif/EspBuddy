@@ -297,8 +297,9 @@ class EspBuddy {
 
 			default:
 				if(!$this->action){
-					$this->_BashAutoComplete('root');
-					$this->CommandLine();
+					if($this->_BashAutoComplete('root')){
+						$this->CommandLine();
+					}
 				}
 
 				$this->action and $com=" '{$this->action}'";
@@ -2430,8 +2431,14 @@ EOFB;
 	//private $_autocomplete_list=array();
 	// ---------------------------------------------------------------------------------------
 	private function _BashAutoComplete($index1){
-		$this->_show_action_desc($index1);
 
+		// TODO fix Linux NOT proposing the second action (work well in OSX and WIndows)
+		if($this->os=='lin'){
+			return false;
+		}
+
+		$this->_show_action_desc($index1);
+		
 		global $argv;
 		$last_command	=preg_replace('#^(/[^/]+)+/#','',$argv[0]);
 		$input			= $this->_BashAutoCompleteReadCommandAndAction("_BashAutoCompleteCallback",$last_command);
@@ -2439,6 +2446,7 @@ EOFB;
 		$new_args=preg_split("/\s+/",trim($input));
 		array_unshift($new_args, $argv[0]);
 		$argv=$new_args;
+		return true;
 	}
 
 

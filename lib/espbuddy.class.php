@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.02b3';						// EspBuddy Version
+	public $class_version			= '2.02b4';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -998,6 +998,7 @@ EOF;
 				
 				if($raw_ids){
 					//reassign to num array
+					$i=0;
 					foreach($raw_ids as $k => $id){
 						$ids[$i]	=$raw_ids[$k];
 						$ips[$i]	=$raw_ips[$k];

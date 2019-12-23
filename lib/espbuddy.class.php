@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.02b2';						// EspBuddy Version
+	public $class_version			= '2.02b3';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -41,6 +41,7 @@ class EspBuddy {
 	private $flag_drymode		= false;
 	private $flag_verbose		= false;
 	private $flag_force			= false;
+	private $flag_debug			= false;
 	
 	private $flag_build			= false;
 	private $flag_serial		= false;
@@ -665,6 +666,7 @@ class EspBuddy {
 	-y  : Automatically confirm Yes/No
 	-d  : Dry Run. Show commands but don't apply them
 	-v  : Verbose mode
+	-D  : Debug mode (shows PHP errors)
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -1985,6 +1987,7 @@ EOFB;
 		$this->flag_drymode 	= (boolean) $this->args['flags']['d'];
 		$this->flag_verbose		= (boolean) $this->args['flags']['v'];
 		$this->flag_force		= (boolean) $this->args['flags']['f'];
+		$this->flag_debug		= (boolean) $this->args['flags']['D'];
 
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
 		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
@@ -2000,6 +2003,10 @@ EOFB;
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 		$this->arg_from			= $this->args['vars']['from'];
+
+		if($this->flag_debug){
+			error_reporting(E_ALL & ~E_NOTICE);
+		}
 	}
 
 

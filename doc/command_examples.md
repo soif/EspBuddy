@@ -11,7 +11,7 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.00b1 ( EspTool v2.6 )
+EspBuddby v2.02b5 ( EspTool v2.6 )
 
 * Usage             : espbuddy.php COMMAND [TARGET] [options]
 
@@ -56,6 +56,7 @@ EspBuddby v2.00b1 ( EspTool v2.6 )
 	-y  : Automatically confirm Yes/No
 	-d  : Dry Run. Show commands but don't apply them
 	-v  : Verbose mode
+	-D  : Debug mode (shows PHP errors)
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -190,14 +191,14 @@ Tasks for the 'sonodiy' command.
   - test            : espbuddy.php sonodiy test   IP ID
   - flash           : espbuddy.php sonodiy flash  IP ID [URL] [SHA256SUM]
   - ping            : espbuddy.php sonodiy ping   IP [COUNT]
-  - info            : espbuddy.php sonodiy info   
-  - pulse           : espbuddy.php sonodiy pulse  [MODE] [WIDTH]
-  - signal          : espbuddy.php sonodiy signal 
-  - startup         : espbuddy.php sonodiy startup [STATE]
-  - switch          : espbuddy.php sonodiy switch [STATE]
-  - toggle          : espbuddy.php sonodiy toggle STATE
-  - unlock          : espbuddy.php sonodiy unlock 
-  - wifi            : espbuddy.php sonodiy wifi   SSID [PASSWORD]
+  - info            : espbuddy.php sonodiy info   IP ID
+  - pulse           : espbuddy.php sonodiy pulse  IP ID [MODE] [WIDTH]
+  - signal          : espbuddy.php sonodiy signal IP ID
+  - startup         : espbuddy.php sonodiy startup IP ID [STATE]
+  - switch          : espbuddy.php sonodiy switch IP ID [STATE]
+  - toggle          : espbuddy.php sonodiy toggle IP ID
+  - unlock          : espbuddy.php sonodiy unlock IP ID
+  - wifi            : espbuddy.php sonodiy wifi   IP ID SSID [PASSWORD]
 
 ---------------------------------------------------------------------------------
 Setup Instructions
@@ -219,13 +220,16 @@ Setup Instructions
 Show the IP Adresses and IDs of connected devices.
 
 ```plaintext
---> Scanning network for Devices using command: dns-sd -B _ewelink._tcp
-Device IDs Found:
-   - 1000aba1ee
-   - 1000aba1ee
+--> Scanning network for Devices using command: --> Scanning network for Devices using command: dns-sd -B _ewelink._tcp
+--> Get IP Address of the first device found (1000aba1ee) using command: dns-sd -q eWeLink_1000aba1ee.local
 
---> Resolving IP Address for the first device found (1000aba1ee) using command: dns-sd -q eWeLink_1000aba1ee.local
-Device IP Address is: 10.1.250.154
+Devices Found:
+
+==========================================================
+| ID            | IP Address        | MAC Address        |
+==========================================================
+| 1000aba1ee    | 10.1.250.154      | d8:f1:5b:c7:e9:db  |
+----------------------------------------------------------
 
 You can now use: 10.1.250.154 1000aba1ee as arguments for sonodiy Actions!
 Examples:
@@ -248,7 +252,7 @@ Test if we can successfully connect to the Sonoff Device.
 --> API response	: 
 Array
 (
-    [seq] => 172
+    [seq] => 182
     [error] => 0
     [data] => Array
         (

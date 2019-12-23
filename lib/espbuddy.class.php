@@ -937,7 +937,6 @@ EOF;
 		elseif($this->os == "osx"){
 			$command="dns-sd -B $service";
 
-			$this->sh->PrintAnswer("Scanning network for Devices using command: ",false);
 			$this->sh->PrintCommand($command);
 			$bash=$this->_sondiy_osx_com2bash($command,5);
 			$lines_ids=trim(shell_exec($bash));

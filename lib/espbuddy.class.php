@@ -2193,6 +2193,13 @@ EOFB;
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER	, true);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT	, 10);
 		curl_setopt($ch, CURLOPT_HTTPHEADER		, $headers); //array
+		if($this->os=='win'){
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER			, false); 
+			// else 
+			//curl_setopt($ch, CURLOPT_CAINFO,  getcwd().'/cert/cacert.pem');
+			//or in php.ini
+			// curl.cainfo = "C:\Users\admin\cer\cacert.pem"
+		}
 		if($this->flag_debug){
 			curl_setopt($ch, CURLOPT_VERBOSE, true);
 		}

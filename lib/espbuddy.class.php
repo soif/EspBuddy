@@ -2193,6 +2193,9 @@ EOFB;
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER	, true);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT	, 10);
 		curl_setopt($ch, CURLOPT_HTTPHEADER		, $headers); //array
+		if($this->flag_debug){
+			curl_setopt($ch, CURLOPT_VERBOSE, true);
+		}
 		$result = curl_exec($ch);
 		curl_close($ch);
 		return $result;

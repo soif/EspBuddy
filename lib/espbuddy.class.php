@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.02';						// EspBuddy Version
+	public $class_version			= '2.03b1';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -2278,7 +2278,7 @@ EOFB;
 			return false;
 		}
 		$commands[]="git fetch --all --tags --prune";
-		$commands[]="git checkout $tag";
+		$commands[]="git checkout -f $tag";
 		$commands[]="git branch -D $branch";
 		$commands[]="git checkout -b $branch ";
 

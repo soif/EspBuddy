@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.03b3';						// EspBuddy Version
+	public $espb_version			= '2.03b4';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -582,7 +582,7 @@ class EspBuddy {
 			$this->Command_repo('version');
 		}
 		elseif($type == 'checkout'){
-// TODO: Checkout Git
+			// TODO: Checkout Git
 			//$branch	= $this->c_host['checkout'] or $branch = 'master';
 			//$this->_Git("git checkout {$branch}");
 		}
@@ -1243,7 +1243,7 @@ EOFB;
 			)
 		);
 		if($width){
-//TODO Check that $width is a multiples of 500
+			//TODO Check that $width is a multiples of 500
 			$data['data']['pulseWidth']=$width;
 		}
 		return $this->_sondiy_curl($ip,'pulse',$data);
@@ -1718,7 +1718,7 @@ EOFB;
 				}
 			}
 			elseif($this->os=='win'){
-//WINDOWS TODO: list Serials Ports
+				//TODO: Windows: list Serials Ports
 			}
 		}
 
@@ -1909,6 +1909,7 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
+	//TODO: Windows: make _Ask() work!
 	private function _Ask($str_choices='', $force='', $sep="\n ", $eol="\n",$message=""){
 		if($force  and !$this->flag_verbose){
 			return $force;
@@ -2442,7 +2443,7 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _BashAutoComplete($index1){
 
-		// TODO fix Linux NOT proposing the second action (work well in OSX and WIndows)
+		// TODO: Linux: fix NOT proposing the second action (work well in OSX and WIndows)
 		if($this->os=='lin'){
 			return false;
 		}

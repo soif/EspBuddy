@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $class_version			= '2.02b4';						// EspBuddy Version
+	public $class_version			= '2.02b5';						// EspBuddy Version
 	public $class_gh_owner			= 'soif';						// Github Owner
 	public $class_gh_repo			= 'EspBuddy';					// Github Repository
 	public $class_gh_branch_main	= 'master';						// Github Master Branch
@@ -2417,7 +2417,12 @@ EOFB;
 	// ---------------------------------------------------------------------------------------
 	private function _BashAutoCompleteReadCommandAndAction($function_to_callback, $query=''){
 		readline_completion_function(array('self', $function_to_callback));
-		$command_input = readline("###### ". $this->sh->StyleBold($query)." ");		
+
+		if($this->os=='osx'){
+			$query=$this->sh->StyleBold($query);
+		}
+		$command_input = readline("###### ". $query." ");		
+
 		//TODO: if possible, add  $last_line="{$this->bin} $command_input"; to bash history
 		return $command_input;
 	}

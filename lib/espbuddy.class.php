@@ -2438,11 +2438,9 @@ EOFB;
 
 
 	// ---------------------------------------------------------------------------------------
-	//TODO resolve MAC
 	function _IpAddressToMAC($ip){
 		$this->_ping($ip);	//put in ARP cache
 		if($this->os=='win'){
-			//TODO check on Windows
 			$command="arp -a | findstr \"$ip\" ";
 			$raw	=trim(shell_exec($command));
 			$raw_example=<<<EOF

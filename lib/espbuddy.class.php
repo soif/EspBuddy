@@ -1058,6 +1058,7 @@ EOF;
 			$this->sh->PrintBold($found_args, false);
 			echo " as arguments for sonodiy Actions!\nExamples:\n";
 			$this->sh->PrintCommand( " {$this->bin} sonodiy test  $found_args");
+			$this->sh->PrintCommand( " {$this->bin} sonodiy unlock  $found_args");
 			$this->sh->PrintCommand( " {$this->bin} sonodiy flash $found_args");
 		}
 		echo "\n";

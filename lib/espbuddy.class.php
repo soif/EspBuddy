@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.04b1';						// EspBuddy Version
+	public $espb_version			= '2.04b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -1184,7 +1184,23 @@ EOFB;
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _sonodiy_api_flash($ip, $id,$url,$sha256=''){
+	private function _sonodiy_api_flash($ip, $id,$url,$sha256='',$verify_unlocked=true){
+
+		if($verify_unlocked){
+			$this->sh->PrintAnswer( "Checking if the OTA method is unlocked : ", false);
+			$info=$this->_sonodiy_api_info($ip, $id);
+			if($info['data']['otaUnlock'] != 1){
+				echo "NO\n";
+				$this->sh->PrintError( "The OTA method is not Unlocked");
+				echo "Please send the following command, and try again.\n";
+				$this->sh->PrintCommand( " {$this->bin} sonodiy unlock $ip $id -v");
+				echo "\n";
+				exit(1);
+			}
+			echo "OK\n";
+			echo "\n";
+		}
+
 		$url or $url=$this->cfg['sonodiy']['firmware_url'];
 		// 508KB max, DOUT mode
 		if(!$url){
@@ -1210,6 +1226,8 @@ EOFB;
 			$this->_dieError("Size is less than 100 kB, this seems strange");
 		}
 		echo "\n";
+		
+		
 		$ok=$this->_AskConfirm();
 		
 		if(!$ok){
@@ -1227,7 +1245,7 @@ EOFB;
 		);
 		if($r=$this->_sondiy_curl($ip,'ota_flash',$data)){
 			$this->_WaitPingable($ip, 60, true);
-			$this->_WaitPingable($ip, 3);
+			$this->_WaitPingable($ip, 5);
 			echo "Finished!\n";
 			return $r;
 		}

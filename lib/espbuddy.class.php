@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.03';						// EspBuddy Version
+	public $espb_version			= '2.04b1';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -1201,6 +1201,9 @@ EOFB;
 		echo " - Size   : {$size_k_round} kB ($size bytes)\n";
 		if($size_k >= 508 ){
 			$this->_dieError("Size is more than 508 kB. Please use a smaller firmware");
+		}
+		elseif($size_k == 0 ){
+			$this->_dieError("I can not download a firmware at : $url\n Please verify the url, and try again");
 		}
 		elseif($size_k < 100 ){
 			$this->_dieError("Size is less than 100 kB, this seems strange");

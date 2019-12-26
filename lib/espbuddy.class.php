@@ -125,7 +125,7 @@ class EspBuddy {
 			'help'		=>	'Show Sonoff DIY Help',
 			'scan'		=>	'Scan Sonoff devices to find their IP & deviceID',
 			'test'		=>	'Toggle relay to verify communication',
-			'flash'		=>	'(EXPERIMENTAL: see issue #20 on GitHub) Upload a custom firmware (508KB max, DOUT mode)',
+			'flash'		=>	'Upload a custom firmware (508KB max, DOUT mode). Use -P to proxy an external firmware URL',
 			'ping'		=>	'Check if device is Online',
 			'info'		=>	'Get Device Info',
 			'pulse'		=>	'Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)',
@@ -169,7 +169,7 @@ class EspBuddy {
 			'help'		=>	'',
 			'scan'		=>	'',
 			'test'		=>	'IP ID',
-			'flash'		=>	'IP ID [URL] [SHA256SUM]',
+			'flash'		=>	'IP ID [URL] [SHA256SUM] [-P] [-f]',
 			'ping'		=>  "IP [COUNT]",
 			'info'		=>	'IP ID',
 			'pulse'		=>	'IP ID [MODE] [WIDTH]',
@@ -653,15 +653,31 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	var $proxy_pid;
-	var $proxy_port	=8000;
+	private function _getMyIpAddress(){
+		//TODO verify if its ALWAYS working on all OS, with wifi, DNS, MDNS, etc...
+		return getHostByName(getHostName());
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _getProxyPID(){
+		//TODO move to TMP
+		return $this->proxy_pid;
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _setProxyPID($pid){
+		//TODO move to TMP
+		$this->proxy_pid=$pid;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	var $proxy_pid	=0;
+	var $proxy_port	=8765;
 	var $proxy_bg	=false;
 	public function Command_proxy($action="start", $port=0 ){
 		$port or $port=$this->proxy_port;
 		$bg=$this->proxy_bg or $bg=$this->flag_background;
 
 		if($action=='start'){
-			$ip=getHostByName(getHostName());
+			$ip=$this->_getMyIpAddress();
 			$this->sh->PrintAnswer("Launching Proxy server at IP $ip , on port $port , using : ",false);
 
 			$command="php -S 0.0.0.0:$port {$this->espb_path_lib}proxy.php";
@@ -681,6 +697,7 @@ class EspBuddy {
 			}
 			$this->sh->PrintCommand($command);
 			$pid=trim(shell_exec($command));
+			$this->_setProxyPID($pid);
 
 			echo("Launched Proxy Server, with pid: $pid \n");
 			if($this->flag_background){
@@ -688,13 +705,12 @@ class EspBuddy {
 				$this->sh->PrintCommand("kill -9 $pid");
 			}
 
-			$this->proxy_pid=$pid;
 			return $pid;
 		}
 		elseif($action=='stop'){
 			$this->sh->PrintAnswer("Stopping Proxy server using : ",false);
-			if($this->proxy_pid){
-				$command="kill -9 {$this->proxy_pid}";
+			if($pid=$this->_getProxyPID()){
+				$command="kill -9 $pid";
 				$this->sh->PrintCommand($command);
 				passthru($command);
 			}
@@ -1199,14 +1215,14 @@ EOFB;
 				$this->sh->PrintCommand($curl_url);
 				echo "\n--- Request Sent: ---------------------------\n";
 				$this->sh->PrintCommand(print_r($curl_req,true));
-				echo "\n--- Command result ---------------------------\n";
+				echo "--- Command result ---------------------------\n";
 				$this->sh->PrintCommand(print_r($curl_res,true));
 
 				$info=$this->_sonodiy_api_info($ip,$id);
 				if(is_array($result['data'])){
 					//$info['data']=array_merge($info['data'],$result['data']);
 				}
-				echo "\n--- Last Information Data: -------------------\n";
+				echo "--- Last Information Data: -------------------\n";
 				$this->sh->PrintCommand(print_r($info['data'],true));
 				echo "\n";
 			}
@@ -1242,11 +1258,12 @@ EOFB;
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_flash($ip, $id,$url,$sha256='',$verify_unlocked=true){
-
+		//$verify_unlocked=false;
+		
 		if($verify_unlocked){
 			$this->sh->PrintAnswer( "Checking if the OTA method is unlocked : ", false);
 			$info=$this->_sonodiy_api_info($ip, $id);
-			if($info['data']['otaUnlock'] != 1){
+			if($info['data']['otaUnlock'] != 1 and !$this->flag_drymode){
 				echo "NO\n";
 				$this->sh->PrintError( "The OTA method is not Unlocked");
 				echo "Please send the following command, and try again.\n";
@@ -1254,6 +1271,9 @@ EOFB;
 				echo "\n";
 				exit(1);
 			}
+			if($this->flag_noconfirm){
+				sleep(1); // let some time for the ESP to be ready for next command
+			}	
 			echo "OK\n";
 			echo "\n";
 		}
@@ -1261,7 +1281,7 @@ EOFB;
 		$url or $url=$this->cfg['sonodiy']['firmware_url'];
 		// 508KB max, DOUT mode
 		if(!$url){
-			$this->_dieError( "Missing Firmaware URL");
+			$this->_dieError( "Missing Firmware URL");
 		}
 
 		$data	=file_get_contents($url);
@@ -1282,13 +1302,48 @@ EOFB;
 		elseif($size_k < 100 ){
 			$this->_dieError("Size is less than 100 kB, this seems strange");
 		}
+
+		if($this->flag_proxy){
+			if(!$this->_getProxyPID()){
+				if(!$this->flag_force){
+					$this->proxy_bg=true;
+					echo "\n";
+					$this->Command_proxy('start');
+					sleep(1); //let him some time to start
+				}
+			}
+			$ip=$this->_getMyIpAddress();					
+			$my_proxy	="http://$ip:{$this->proxy_port}";
+			$url		="$my_proxy/$url";
+			$data		=file_get_contents($url);
+			$p_sha256	=hash('sha256',$data);
+			$size		=strlen(bin2hex($data))/2;
+			$size_k		=$size/1024;
+			$size_k_round=ceil($size_k);
+			echo "\n";
+			echo "Firmware to upload USING PROXY : \n";
+			echo " - New URL    : $url\n";
+			echo " - New sha256 : $p_sha256\n";
+			echo " - New size   : {$size_k_round} kB ($size bytes)\n";
+			if($sha256 != $p_sha256){
+				if(!$this->flag_force){
+					$this->Command_proxy('stop');
+				}
+				$this->_dieError("The direct firmware and the proxied firmware do not match! Something went wrong!");
+			}
+		}
+
 		echo "\n";
-		
-		
 		$ok=$this->_AskConfirm();
+		echo "\n";
 		
 		if(!$ok){
 			$this->sh->PrintAnswer( "Cancelling...");
+			if($this->flag_proxy){
+				if(!$this->flag_force){
+					$this->Command_proxy('stop');
+				}
+			}
 			echo "\n";
 			exit(0);
 		}
@@ -1303,7 +1358,15 @@ EOFB;
 		if($r=$this->_sondiy_curl($ip,'ota_flash',$data)){
 			$this->_WaitPingable($ip, 60, true);
 			$this->_WaitPingable($ip, 5);
-			echo "Finished!\n";
+			if($this->flag_proxy){
+				if(!$this->flag_force){
+					echo "\n";
+					sleep(4); // just in case
+					$this->Command_proxy('stop');
+				}
+			}
+			echo "\n";
+			echo "Flashed the new firmware!\n";
 			return $r;
 		}
 	}
@@ -2076,6 +2139,7 @@ EOFB;
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
+		$this->flag_proxy		= (boolean) $this->args['flags']['P'];
 		$this->flag_background	= (boolean) $this->args['flags']['B'];
 
 		$this->arg_serial_port	= $this->args['vars']['port'];

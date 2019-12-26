@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.04';						// EspBuddy Version
+	public $espb_version			= '2.05b1';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -272,6 +272,9 @@ class EspBuddy {
 
 			case 'sonodiy':
 				$this->Command_sonodiy();
+				break;
+			case 'proxy':
+				$this->Command_proxy();
 				break;
 			case 'repo_version':
 				$this->Command_repo('version');
@@ -649,6 +652,59 @@ class EspBuddy {
 		echo "\n";
 	}
 
+	// ---------------------------------------------------------------------------------------
+	var $proxy_pid;
+	var $proxy_port	=8000;
+	var $proxy_bg	=false;
+	public function Command_proxy($action="start", $port=0 ){
+		$port or $port=$this->proxy_port;
+		$bg=$this->proxy_bg or $bg=$this->flag_background;
+
+		if($action=='start'){
+			$ip=getHostByName(getHostName());
+			$this->sh->PrintAnswer("Launching Proxy server at IP $ip , on port $port , using : ",false);
+
+			$command="php -S 0.0.0.0:$port {$this->espb_path_lib}proxy.php";
+			
+			if($bg){
+				if($this->os=='win'){
+					echo "FAILED\n";
+					$this->sh->PrintError("Launching the Proxy in background is not fully implemented in Windows");
+					echo("Try ro run the following command in a SEPARATE console: ");
+					$this->sh->PrintCommand("{$this->bin} proxy start");
+					echo("Then retry the flash command, adding the '-f' flag.\n");
+					exit(1);
+				}
+				else{
+					$command="nohup php -S 0.0.0.0:$port {$this->espb_path_lib}proxy.php > /dev/null 2> /dev/null & echo $!";
+				}
+			}
+			$this->sh->PrintCommand($command);
+			$pid=trim(shell_exec($command));
+
+			echo("Launched Proxy Server, with pid: $pid \n");
+			if($this->flag_background){
+				echo("Use This command to stop it: ");
+				$this->sh->PrintCommand("kill -9 $pid");
+			}
+
+			$this->proxy_pid=$pid;
+			return $pid;
+		}
+		elseif($action=='stop'){
+			$this->sh->PrintAnswer("Stopping Proxy server using : ",false);
+			if($this->proxy_pid){
+				$command="kill -9 {$this->proxy_pid}";
+				$this->sh->PrintCommand($command);
+				passthru($command);
+			}
+			else{
+				echo "FAILED\n";
+				$this->sh->PrintError("Sorry I don't know the last PID of the Proxy server");
+				echo "You will have to find it by yourself , and kill it manually.\n";
+			}
+		}
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_help($action='root'){
@@ -2020,6 +2076,7 @@ EOFB;
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
+		$this->flag_background	= (boolean) $this->args['flags']['B'];
 
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];

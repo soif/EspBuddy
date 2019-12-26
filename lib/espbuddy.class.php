@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.05b1';						// EspBuddy Version
+	public $espb_version			= '2.05b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -1367,6 +1367,20 @@ EOFB;
 			}
 			echo "\n";
 			echo "Flashed the new firmware!\n";
+
+			$this->sh->PrintCommand("
+	PLEASE NOTE If the firmware has been ignored by the device API:
+
+- If you're using a LOCAL firmware URL, try again, it should work (successfully tested)!
+
+- If you're using an EXTERNAL firmware URL (ie the one included in the config-sample.php), it seems that it is blindly ignored.
+Please try the same command, but adding the -P flag at the end. This would create a proxy to try to fool the API, with a local URL.
+The proxy is working (tested), but unfortunately I have no more device to test if the sonof API accept it, or also ignore It.
+If this workaround method works or not for you, PLEASE do report in the Github issue #20 at:
+https://github.com/soif/EspBuddy/issues/20
+
+			"); 
+
 			return $r;
 		}
 	}

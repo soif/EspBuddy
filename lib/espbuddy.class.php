@@ -1134,22 +1134,23 @@ EOFB;
 				echo "\n";
 			}
 
-			if($this->flag_verbose){
+			if($this->flag_verbose or $this->flag_drymode){
+
+				if($result){
+					$this->sh->PrintBold("\nDONE !");
+				}
+				echo "\n--- URL requested ---------------------------\n";
+				$this->sh->PrintCommand($curl_url);
+				echo "\n--- Request Sent: ---------------------------\n";
+				$this->sh->PrintCommand(print_r($curl_req,true));
+				echo "\n--- Command result ---------------------------\n";
+				$this->sh->PrintCommand(print_r($curl_res,true));
+
 				$info=$this->_sonodiy_api_info($ip,$id);
 				if(is_array($result['data'])){
-					$info['data']=array_merge($result['data'],$info['data']);
+					//$info['data']=array_merge($info['data'],$result['data']);
 				}
-				$result and $this->sh->PrintBold("\nDONE !");
-				
-				if(!$result or $this->flag_drymode){
-					echo "\n--- URL requested ---------------------------\n";
-					$this->sh->PrintCommand($curl_url);
-					echo "\n--- Request Sent: ---------------------------\n";
-					$this->sh->PrintCommand(print_r($curl_req,true));
-					echo "\n--- Response Received: ----------------------\n";
-					$this->sh->PrintCommand(print_r($curl_res,true));
-				}
-				echo "\n--- Last Information Data Received: ---------\n";
+				echo "\n--- Last Information Data: -------------------\n";
 				$this->sh->PrintCommand(print_r($info['data'],true));
 				echo "\n";
 			}

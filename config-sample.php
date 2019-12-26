@@ -40,7 +40,11 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 // "sonodiy" command settings #####################################################################################################
 // URL of the Firmware to upload when using then "sonodiy flash" command (for Sonoff "DIY" devices only )
 // be sure to use a firmware < 508kB, but DON'T use the tasmota-minimal.bin (it wont allow to store settings)
-$cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-lite.bin"; 
+
+// unfortunately (!!!!!) The sonoff API son't seem to work with An External URL, at least not this one:
+//$cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-lite.bin"; 
+// so please only use an URL to a LAN webserver (see issue #20)
+$cfg['sonodiy']['firmware_url']="http://<INTERNAL_SERVER_IP_OR_HOSTNAME>/tasmota-lite.bin"; 
 
 
 

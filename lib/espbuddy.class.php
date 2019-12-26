@@ -1385,7 +1385,7 @@ EOFB;
 	private function _sondiy_curl($ip, $endpoint, $data){
 		//https://github.com/itead/Sonoff_Devices_DIY_Tools/blob/master/SONOFF%20DIY%20MODE%20Protocol%20Doc%20v1.4.md
 
-		$json=json_encode($data);
+		$json=json_encode($data, JSON_UNESCAPED_SLASHES); // php >=5.4
 		$url="http://$ip:8081/zeroconf/$endpoint";
 		
 		$this->_last_curl_request	=$data;

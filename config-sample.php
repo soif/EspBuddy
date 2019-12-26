@@ -43,7 +43,7 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
 // unfortunately (!!!!!) The sonoff API son't seem to work with An External URL, at least not this one:
 //$cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-lite.bin"; 
-// so please only use an URL to a LAN webserver (see issue #20)
+// so please only use an URL to a LAN webserver (see Git issue #20)
 $cfg['sonodiy']['firmware_url']="http://<INTERNAL_SERVER_IP_OR_HOSTNAME>/tasmota-lite.bin"; 
 
 

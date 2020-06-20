@@ -20,8 +20,8 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
-	protected $version_file 	= "sonoff/sonoff.ino";					// file to parse to get the version
-	protected $version_regex 	= '|#define\s+VERSION\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
+	protected $version_file 	= "tasmota/tasmota_version.h";					// file to parse to get the version
+	protected $version_regex 	= '|const\s+uint32_t\s+VERSION\s*=\s*([^\s;]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload

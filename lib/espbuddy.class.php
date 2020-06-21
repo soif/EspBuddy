@@ -361,7 +361,7 @@ class EspBuddy {
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
-			$firmware_created="{$path_build}.pio/build/{$this->c_conf['environment']}/firmware.bin";
+			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
 			if(!$r and file_exists($firmware_created)){
 				touch($firmware_created,$start_compil);
 			}
@@ -1955,7 +1955,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$cur_firmware=$firm_dir.basename($new_firmware);
 		}
 		else{
-			$new_firmware="{$path_build}.pio/build/{$this->c_conf['environment']}/firmware.bin";
+			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
 		}
 
 		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";

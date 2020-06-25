@@ -20,6 +20,7 @@ class EspBuddy_Repo {
 
 	// location relative to the base repository path
 	protected $dir_build 		= ""; // (Trailing Slash) directory where the compiler must start
+	protected $dir_firmware 	= ""; // (Trailing Slash) directory where the firmware is built
 	protected $version_file 	= ""; // file to parse to get the version
 	protected $version_regex 	= ""; // regex used to extract the version in the version_file
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
@@ -42,6 +43,7 @@ class EspBuddy_Repo {
 	protected $version			= "";	// extracted version
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
+	private $path_firmware		= "";	// path to the directory where the firmware is built
 
 
 //	private $git_version		= "";	// latest commit
@@ -176,6 +178,11 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetPathBuild(){
 		return $this->path_build;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetPathFirmware(){
+		return $this->path_firmware;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -344,6 +351,7 @@ class EspBuddy_Repo {
 	private function _Init($path_to_repo){
 		$this->path_base	= $path_to_repo;
 		$this->path_build	= $this->path_base . $this->dir_build;
+		$this->path_firmware= $this->path_build . $this->dir_firmware;
 		$this->path_version	= $this->path_base . $this->version_file;
 		$this->_ParseVersion();
 	}

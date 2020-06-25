@@ -20,6 +20,7 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 
 	// location relative to the base repository path
 	protected $dir_build 		= "code/"; 								// (Trailing Slash) directory where the compiler must start
+	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
 	protected $version_file 	= "code/espurna/config/version.h";		// file to parse to get the version
 	protected $version_regex 	= '|APP_VERSION\s+"([^"]+)"|s'; 		// regex used to extract the version in the version_file
 	protected $version_regnum = 1; 										// captured parenthesis number where the version is extracted using the regex

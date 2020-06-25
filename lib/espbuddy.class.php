@@ -361,13 +361,14 @@ class EspBuddy {
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
-			$firmware_created="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$firmware_created	=reset(glob($this->orepo->GetPathFirmware()."{$this->c_conf['environment']}/*.bin"));
+	
 			if(!$r and file_exists($firmware_created)){
 				touch($firmware_created,$start_compil);
 			}
 		}
 		if(!$r){
-			if($this->_rotateFirmware()){
+			if($this->_rotateFirmware($firmware_created, true)){
 				if($commands_post=$this->orepo->GetPostBuildCommands($this->c_host, $this->cfg)){
 					$command=implode(" ; \n   ", $commands_post);
 					echo "\n";
@@ -1639,7 +1640,7 @@ https://github.com/soif/EspBuddy/issues/20
 	// ---------------------------------------------------------------------------------------
 	private function _DoSerial($id,$action='write_flash',$firmware_file=''){
 		$this->_AssignCurrentHostConfig($id);
-		$path_build=$this->orepo->GetPathBuild();
+		//$path_build=$this->orepo->GetPathBuild();
 
 		if(!$this->c_host['serial_port']){
 			return $this->_dieError ("No Serial Port choosen");
@@ -1918,19 +1919,17 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _rotateFirmware($new_firmware=''){
+	private function _rotateFirmware($new_firmware,$do_rename=false){
 		$command_backup=array();
 		$back_dir		= $this->c_host['path_dir_backup'];
 		$firm_dir		= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
-		$cur_firmware	="$firm_dir{$this->c_host['firmware_name']}.bin";
 		$cur_firm_link	="$back_dir{$this->prefs['firm_name']}.bin";
 		$prev_firm_link	="$back_dir{$this->prefs['firm_name']}_previous.bin";
-		$path_build=$this->orepo->GetPathBuild();
 		if(!is_dir($firm_dir)){
 			@mkdir($firm_dir, 0777, true);
 		}
 		if($this->prefs['keep_previous']){
-			$echo1="Keep the previous firmware, and a";
+			$echo1="Keep the previous firmware, ";
 			//if(file_exists($cur_firm_link)){
 				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";
 			//}
@@ -1946,27 +1945,26 @@ https://github.com/soif/EspBuddy/issues/20
 			}
 		}
 		else{
-			$echo1="A";
+			$echo1="";
 			if($cur_firm=@readlink($cur_firm_link)){
 				$command_backup[] = "rm -f \"$cur_firm\"";
 			}
 		}
-		if($new_firmware){
-			$cur_firmware=$firm_dir.basename($new_firmware);
+		if($do_rename){
+			$cur_firmware="$firm_dir{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".basename($new_firmware);
 		}
 		else{
-			$new_firmware="{$path_build}.pioenvs/{$this->c_conf['environment']}/firmware.bin";
+			$cur_firmware=$firm_dir.basename($new_firmware);
 		}
 
 		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";
 		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
 		$this->c_host['path_firmware']=$cur_firmware;
 
-
 		if(count($command_backup)){
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
-			$this->_EchoStepStart("{$echo1}rchive the new firmawre : {$this->c_host['firmware_name']} ", $command);
+			$this->_EchoStepStart("{$echo1}Archive and Set the new firmware to : ".basename($cur_firmware)." ", $command);
 			if(! $this->flag_drymode){
 				passthru($command, $r);
 				return !$r;

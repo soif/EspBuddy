@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.12b1';						// EspBuddy Version
+	public $espb_version			= '2.12b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -1642,6 +1642,13 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->os = $os;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	function _prefixPythonPath(){
+		if($this->cfg['paths']['dir_python']){
+			$prefix='export PATH="'. $this->cfg['paths']['dir_python'].':$PATH" ;'. "\n";
+		}
+		return $prefix;
+	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _DoSerial($id,$action='write_flash',$firmware_file=''){
@@ -1656,7 +1663,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$arg_rate=" -b {$this->c_host['serial_rate']}" and
 			$echo_rate=", Rate: {$this->c_host['serial_rate']} bauds";
 
-		$command="{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
+		$command=$this->_prefixPythonPath()."{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
 
 		switch ($action) {
 			case 'write_flash':
@@ -2637,7 +2644,7 @@ https://github.com/soif/EspBuddy/issues/20
 10.1.11.1             0c-e8-6c-68-4c-7c     dynamique
 10.1.100.101          00-50-56-00-01-01     dynamique
 10.1.255.255          ff-ff-ff-ff-ff-ff     statique
-		  
+
 EOF;
 			if($raw){
 				$lines=preg_split("/[\n\r]+/", $raw);

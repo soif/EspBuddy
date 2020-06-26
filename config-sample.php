@@ -9,7 +9,11 @@
 //path to the platformio binary
 $cfg['paths']['bin_pio']						="/usr/local/bin/pio";
 
+//Directory where is python (force Esptool to use the right python version, ie on OSX)
+$cfg['paths']['dir_python']						="/Users/soif/.platformio/penv/bin/";
+
 // Backup Directory where uploaded firmwares and download settings are stored 
+//$cfg['paths']['dir_backup']					="/Users/soif/EspBuddy_data/"; //(WITH a trailing slash)
 $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
 //for Windows OS, the default tmp dir is at (edit and uncomment the following:)
@@ -45,6 +49,7 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 // You can try this URL , by adding the -P flag at the end of the flash command.
 // This should proxy the external URL, to a local URL, and may be fool the sonoff API
 $cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-lite.bin"; 
+
 // If It does not work,  please only use an URL to a LAN webserver (see Git issue #20)
 //$cfg['sonodiy']['firmware_url']="http://<INTERNAL_SERVER_IP_OR_HOSTNAME>/tasmota-lite.bin"; 
 

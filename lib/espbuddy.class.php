@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.11';						// EspBuddy Version
+	public $espb_version			= '2.12b1';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -48,6 +48,7 @@ class EspBuddy {
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
+	private $flag_monitor		= false;
 	
 	private $flag_json			= false;
 
@@ -432,6 +433,10 @@ class EspBuddy {
 				$this->_WaitReboot(5);
 			}
 			$this->_DoSerial($id,'write_flash', $firmware);
+			
+			if($this->flag_monitor){
+				$this->Command_monitor($id);
+			}
 		}
 
 		// .OTA mode ------------------
@@ -748,6 +753,7 @@ class EspBuddy {
 	-e           : In Wire Mode, erase flash first, then upload
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
+	-m           : Switch to serial monitor after upload
 
 	--port=xxx   : serial port to use (override main or per host serial port)
 	--rate=xxx   : serial port speed to use (override main or per host serial port)
@@ -2150,6 +2156,8 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->flag_serial		= (boolean) $this->args['flags']['w'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
+		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
+
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
 		$this->flag_proxy		= (boolean) $this->args['flags']['P'];
 		$this->flag_background	= (boolean) $this->args['flags']['B'];

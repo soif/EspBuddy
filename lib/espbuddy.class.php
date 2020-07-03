@@ -420,11 +420,11 @@ class EspBuddy {
 
 		echo "\n";
 		$firm_source=readlink($firmware) or $firm_source=$firmware;
-		$date		=date("d M Y - H:i::s", filemtime($firm_source));
+		$date		=date("d M Y - H:i:s", filemtime($firm_source));
 		$firm_size	=filesize($firm_source);
 		$firm_source=basename($firm_source);
 
-		$this->_EchoStepStart("Using $echo_name Firmware (Compiled on $date ) : $firm_source","");
+		$this->_EchoStepStart("Use $echo_name Firmware: $firm_source   (Compiled on $date )","");
 
 		// .wire mode ------------------
 		if($this->flag_serial){

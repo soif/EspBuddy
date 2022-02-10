@@ -22,6 +22,7 @@ It also gathers various tool commands to be used in batch mode.
 - Use configuration presets for devices
 - Optional compilation using platformio
 - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
+- Send commands (single or list) to remote devices
 - Fetch versions of remote devices
 - Archive current firmware & previous firmware per target
 - Backup current settings & previous settings per target
@@ -63,6 +64,7 @@ Valid Actions are:
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
+- **send**            : Send Command(s)
 - **version**         : Show Device(s) Version
 - **reboot**          : Reboot remote devive
 - **gpios**           : Test (On/Off) each GPIOs
@@ -86,6 +88,7 @@ Examples:
 - `espbuddy.php upload relay1 -web` build 'relay1', then using serial port, erase first and upload
 - `espbuddy.php backup all` backup settings ofall defined targets
 - `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
+- `espbuddy.php send relay1 SetOption13 1` Send the "SetOption13 1" command to 'relay1'
 - `espbuddy.php version all` show versions of all defined targets
 - `espbuddy.php ping all` ping the all defined targets
 - `espbuddy.php sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode

@@ -252,9 +252,58 @@ class EspBuddy_Repo {
 		return $this->flash_sizes[$k];
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommands($host_arr, $commands_list){
+		$commands	=$this->_CleanTxtListToArray($commands_list);
+
+		echo "#### Not Implemented ####\n";
+		print_r($commands);
+		echo "Please override me (by extending this method in the sub repo class)!\n";		
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommand($host_arr, $command){
+		echo "#### Not Implemented ####\n";
+		echo $command;
+		echo "Please override me (by extending this method in the sub repo class)!\n";		
+	}
+	
+
 
 
 	// ##### Protected ########################################################################
+
+	// ---------------------------------------------------------------------------------------
+	protected function _CleanTxtListToArray($commands_list){
+		$commands_list	=$this->_CleanTxtList($commands_list);
+		$commands		=$this->_TxtListToarray($commands_list);
+		return $commands;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _CleanTxtList($str){
+		
+		//remove comments
+		$str=preg_replace('|\s*#.*$|m','',$str);
+		
+		//remove blank lines
+		$str=preg_replace('#^\s*[\n\r]+#m','',$str);
+		return $str;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _TxtListToarray($str){
+		$lines=preg_split('#[\n\r]+#',$str);
+		if(is_array($lines)){
+			foreach($lines as $line){
+				$line=trim($line);
+				list($k,$v)=preg_split('#\s+#',$line,2);
+				$arr[$k]=$v;
+			}
+			return $arr;
+		}
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	protected function _TriggerUrl($url,$login="",$pass=""){

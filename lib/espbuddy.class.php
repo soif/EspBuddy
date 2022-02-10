@@ -33,8 +33,10 @@ class EspBuddy {
 	// command lines arguments
 	private $args				= array();	// command line arguments
 	private $bin				= '';		// binary name of the invoked command
-	private $action				= '';		// command line action
-	private $target				= '';		// command line target
+	private $action				= '';		// command line action 	(1st Arg)
+	private $target				= '';		// command line target	(2nd Arg)
+	private $opt1				= '';		// command line command	(3rd Arg)
+	private $opt2				= '';		// command line command value	(4th Arg)
 
 	// command lines flags
 	private $flag_noconfirm		= false;
@@ -109,6 +111,7 @@ class EspBuddy {
 			'build'			=> "Build firmware for the selected device",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
+			'send'			=> "Send commands to device",
 			'version'		=> "Show remote device version",
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
@@ -153,6 +156,7 @@ class EspBuddy {
 			'build'			=> "[TARGET] [options]",
 			'backup'		=> "[TARGET] [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
+			'send'			=> "[TARGET] CMD_SET|COMMAND [options]",
 			'version'		=> "[TARGET] [options]",
 			'reboot'		=> "[TARGET] [options]",
 			'gpios'			=> "[TARGET] [options]",
@@ -255,6 +259,9 @@ class EspBuddy {
 			case 'monitor':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
+			case 'send':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
 			case 'backup':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
@@ -329,17 +336,23 @@ class EspBuddy {
 		}
 		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
+		if(!$this->flag_json){
+			echo "Processing $c host(s)$in_drymode : \n\n";
+		}
 
-		echo "Processing $c host(s)$in_drymode : \n\n";
 
 		foreach($hosts as $this_id => $host){
 			$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
-			echo "\033[35m##### $name ##### : \033[0m";
+			if(!$this->flag_json){
+				echo "\033[35m##### $name ##### : \033[0m";
+			}
 			//if($c==1){echo "\n";}
 			$fn="Command_$command";
 			$this->$fn($this_id);
 		}
-		echo "\n";
+		if(!$this->flag_json){
+			echo "\n";
+		}
 	}
 
 
@@ -549,6 +562,83 @@ class EspBuddy {
 		return true;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function Command_send($id){
+		$this->_AssignCurrentHostConfig($id);
+
+		$repo		=$this->cfg['commands'][$this->opt1]['repo'] or $repo=$this->c_conf['repo'];
+		$commands	=$this->cfg['commands'][$this->opt1]['list'];
+		//when exists in config
+		if($commands){
+			// add host command
+			// $this->c_host['commands'] and $commands .="\n".$this->c_host['commands'];
+
+		}
+		else{
+			// consider as a single command
+			$commands="{$this->opt1} {$this->opt2}";
+			$is_single=true;
+		}
+
+
+		if(!$repo){
+			return $this->_dieError ("repo is not set neither in commands set, nor in target's config");
+		}
+		if(!$commands){
+			return $this->_dieError ("No commands founds. Please either specify a valid gobal command set, or specify 'commands' in the target configuration. ");
+		}
+
+		$commands=$this->_ParseCommands($commands,$id);
+		if(!$this->flag_json){
+			echo "\n";
+			$this->_EchoStepStart("Sending commands ","");
+
+			if($this->flag_verbose){
+				echo "COMMANDS LIST:\n$commands\n\n";
+			}
+		}
+		if(! $is_single){
+			if(! $this->_AskYesNo()){
+				return false;
+			}	
+		}
+
+		if(!$this->flag_drymode){
+			
+			$this->orepo=$this->_RequireRepo($repo);
+			
+			$r=$this->orepo->RemoteSendCommands($this->c_host,$commands);
+			if(is_array($r)){
+				if($this->flag_json){
+					echo json_encode($r,JSON_PRETTY_PRINT);
+				}
+				else{
+					$this->_Prettyfy($r);
+				}
+			
+				//$txt=json_encode($r,JSON_PRETTY_PRINT);
+				//echo $txt;
+			}
+			elseif($r){
+				//echo $r;
+			}
+			elseif(!$r){
+				return $this->_dieError ("Failed to send commands");
+			}
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ParseCommands($str, $id=''){
+		//remove blank lines
+		$str=preg_replace('#^\s*[\n\r]+#m','',$str);
+		if($id){
+			$str=$this->_ReplaceTags($str,$id);
+		}
+		$str=trim($str);
+		return $str;
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
@@ -1742,20 +1832,23 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		else{
 			$this->_AssignCurrentHostConfig($id);
-			//echo "\n";
-			echo "Selected Host      : $id\n";
-			$host	=$this->c_host;
-			echo "       + Host Name : {$host['hostname']}\n";
-			echo "       + Host IP   : {$host['ip']}\n";
-			if($host['serial_port']){
-				echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
-			}
-			echo "\nSelected Config    : {$this->c_host['config']}\n";
-			if($this->flag_verbose){
-				echo "\033[37m";
-				echo "       Parameters : \n";
-				$this->_Prettyfy($this->cfg['configs'][$host['config']]);
-				echo "\033[0m";
+			if(!$this->flag_json){
+				//echo "\n";
+				echo "Selected Host      : $id\n";
+				$host	=$this->c_host;
+				echo "       + Host Name : {$host['hostname']}\n";
+				echo "       + Host IP   : {$host['ip']}\n";
+				if($host['serial_port']){
+					echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+				}
+				echo "\nSelected Config    : {$this->c_host['config']}\n";
+				if($this->flag_verbose){
+					echo "\033[37m";
+					echo "        Parameters : \n";
+					$this->_Prettyfy($this->cfg['configs'][$host['config']]);
+					echo "\033[0m";
+				}
+
 			}
 		}
 
@@ -1767,7 +1860,9 @@ https://github.com/soif/EspBuddy/issues/20
 				exit(0);
 			}
 		}
-		echo "\n";
+		if(!$this->flag_json){
+			echo "\n";
+		}
 		return $id;
 	}
 
@@ -2115,7 +2210,7 @@ https://github.com/soif/EspBuddy/issues/20
 		system("stty -icanon");
 		//wait answer
 		while ($c = fread(STDIN, 1)) {
-	    	$c=strtolower($c);
+			$c=strtolower($c);
 			if($choices and !in_array($c,$choices)){
 				echo " ";
 				continue;
@@ -2150,6 +2245,8 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->bin 		= basename($this->args['commands'][0]);
 		$this->action	= $this->args['commands'][1];
 		$this->target	= $this->args['commands'][2];
+		$this->opt1		= $this->args['commands'][3];
+		$this->opt2		= $this->args['commands'][4];
 
 		//global flags
 		$this->flag_noconfirm	= (boolean) $this->args['flags']['y'];
@@ -2225,21 +2322,21 @@ https://github.com/soif/EspBuddy/issues/20
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0){
-	    $tabs = "     ";
-	    for($i=0;$i<$level; $i++){
-	        $tabs .= "     ";
-	    }
-	    $tabs .= "  - ";
-	    foreach($arr as $key=>$val){
-	        if( is_array($val) ) {
-	            print ($tabs . $key . " : " . "\n");
-	            $this->_Prettyfy($val, $level + 1);
-	        } else {
-	            if($val && $val !== 0){
-	                print ($tabs . str_pad($key,22) . " : " . $val . "\n");
-	            }
-	        }
-	    }
+		$tabs = "     "; //initial margin
+		for($i=0;$i<$level; $i++){
+			$tabs .= "     ";
+		}
+		$tabs .= "  - ";
+		foreach($arr as $key=>$val){
+			if( is_array($val) ) {
+				print ($tabs . $key . " : " . "\n");
+				$this->_Prettyfy($val, $level + 1);
+			} else {
+				if($val && $val !== 0){
+					print ($tabs . str_pad($key,22) . " : " . $val . "\n");
+				}
+			}
+		}
 	}
 
 

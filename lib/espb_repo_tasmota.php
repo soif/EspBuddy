@@ -73,6 +73,78 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 		}
 		echo " Failed\n";			
 	}
-	
+
+
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommands($host_arr, $commands_list){
+		$commands	=$this->_CleanTxtListToArray($commands_list);
+
+		// convert into backlog
+		$max_backlog			=30;
+		$delay_between_reboot	=3;
+
+		if(is_array($commands)){
+			$count=count($commands);
+			if($count==1){
+				$txt_command=key($commands)." ".reset($commands);				
+				//echo "Sending: $txt_command\n";
+				$result= $this->RemoteSendCommand($host_arr, $txt_command);
+				return $result;
+			}
+			elseif($count){
+				echo "Processing $count commands...\n";
+				$start=0;
+				$part=array_slice($commands,$start,$max_backlog);
+				$step=1;
+				while($part){
+					if($start){
+						echo "\n...Waiting reboot for $delay_between_reboot sec.";
+						sleep($delay_between_reboot);
+						echo "\n\n";
+					}
+					echo "# ";
+					if($count > $max_backlog){
+						echo "[$step] ";
+					}
+					$echo_start=$start+1;
+					echo "Sending (max $max_backlog) commands from line $echo_start :\n\n";
+					
+					$backlog=$this->_CommandsToBacklog($part);
+					echo "$backlog\n";
+					
+					$this->RemoteSendCommand($host_arr, $backlog);
+					
+					$start=$start + $max_backlog;
+					$part=array_slice($commands,$start,$max_backlog);
+					$step++;
+				}
+				return true;
+			}	
+		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommand($host_arr, $command){
+			$url="http://{$host_arr['ip']}/cm?user={$host_arr['user']}&password={$host_arr['pass']}&cmnd=".rawurlencode($command);
+			//echo "$url\n";		
+			if ($json=$this->_FetchPage($url)){
+				return json_decode($json,true);
+			}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _CommandsToBacklog($commands){
+		if(is_array($commands)){
+			$str="backlog ";
+			foreach($commands as $k => $v){
+				$str.="$k $v;";
+			}
+			$str=substr($str, 0, -1); // remove last ';'
+			return $str;
+		}
+	}
+
 }
 ?>

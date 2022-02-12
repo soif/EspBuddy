@@ -18,6 +18,8 @@ require_once(dirname(__FILE__).'/espb_repo.php');
 
 class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 
+	protected $name 			= "Espurna"; 							// Firmware's Name
+
 	// location relative to the base repository path
 	protected $dir_build 		= "code/"; 								// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built

@@ -18,6 +18,8 @@ require_once(dirname(__FILE__).'/espb_repo.php');
 
 class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
+	protected $name 			= "Tasmota"; 							// Firmware's Name
+
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pioenvs/"; 						// (Trailing Slash) directory where the firmware is built

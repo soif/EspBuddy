@@ -18,6 +18,8 @@ You should have received a copy of the GNU General Public License along with thi
 
 class EspBuddy_Repo {
 
+	protected $name 			= ""; 							// Firmware's Name
+
 	// location relative to the base repository path
 	protected $dir_build 		= ""; // (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ""; // (Trailing Slash) directory where the firmware is built
@@ -202,14 +204,12 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
-		echo "Not Implemented\n";
-		return false;
+		$this->_EchoNotImplemented();
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteReboot($host_arr){
-		echo "Not Implemented\n";
-		return false;
+		$this->_EchoNotImplemented();
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -242,8 +242,7 @@ class EspBuddy_Repo {
 			return true;
 		}
 		else{
-			echo "Not Implemented\n";
-			return false;
+			$this->_EchoNotImplemented();
 		}
 	}
 
@@ -254,22 +253,15 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommands($host_arr, $commands_list){
-		$commands	=$this->_CleanTxtListToArray($commands_list);
-
-		echo "#### Not Implemented ####\n";
-		print_r($commands);
-		echo "Please override me (by extending this method in the sub repo class)!\n";		
+		$commands_txt	=$this->_CleanTxtList($commands_list);
+		$this->_EchoNotImplemented("While sending Commands: $commands_txt :\n");
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommand($host_arr, $command){
-		echo "#### Not Implemented ####\n";
-		echo $command;
-		echo "Please override me (by extending this method in the sub repo class)!\n";		
+		$this->_EchoNotImplemented("While sending Command: $command :\n");
 	}
 	
-
-
 
 	// ##### Protected ########################################################################
 
@@ -316,7 +308,7 @@ class EspBuddy_Repo {
 			$http['header'] = array("Authorization: Basic $auth");
 		}
 		$opts = array('http' => $http);
-		return @file_get_contents($url, null, stream_context_create($opts));
+		return @file_get_contents($url, false, stream_context_create($opts));
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -411,6 +403,19 @@ class EspBuddy_Repo {
 			preg_match($reg, file_get_contents($file),$matches);
 			$this->version=trim($matches[$reg_n]);
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _EchoNotImplemented($add_txt=""){
+		if($add_txt){
+			echo $add_txt;
+		}
+		echo "\n#### ERROR: Not Implemented in repo: {$this->name} ####\n";
+
+		$back=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2);
+		$method=$back[1]['class'].'->'.$back[1]['function'];
+		echo "     (Coders, please create the $method method!)\n";
+				
 	}
 
 }

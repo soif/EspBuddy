@@ -96,6 +96,13 @@ class EspBuddy_Shell {
 	}
 
 	// ----------------------------------------------------------------------------
+	public function PrintColorGrey($string, $new_line=true){
+		$color='grey';
+		$this->_Print("$string", $color,'','',$new_line);
+	}
+
+	
+	// ----------------------------------------------------------------------------
 	public function EchoStyleCommand(){
 		echo $this->GetStyleOpen('grey2');
 	}
@@ -104,6 +111,12 @@ class EspBuddy_Shell {
 	public function EchoStyleStep(){
 		echo $this->GetStyleOpen('blue');
 	}
+
+	// ----------------------------------------------------------------------------
+	public function EchoStyleHost(){
+		echo $this->GetStyleOpen('purple');
+	}
+
 
 	// ----------------------------------------------------------------------------
 	public function EchoStyleClose(){

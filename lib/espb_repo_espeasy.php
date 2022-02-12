@@ -18,6 +18,8 @@ require_once(dirname(__FILE__).'/espb_repo.php');
 
 class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 
+	protected $name 			= "ESPeasy"; 							// Firmware's Name
+
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
@@ -93,6 +95,61 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		$commands[]	="rm -f \"{$host_arr['path_firmware']}2\" "; // remove bin2 not properly removed by the crc script					
 		return $commands;		
 	}
+
+
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommands($host_arr, $commands_list){
+		$commands	=$this->_CleanTxtListToArray($commands_list);
+
+		if(is_array($commands)){
+			$count=count($commands);
+			if($count==1){
+				$txt_command=key($commands)." ".reset($commands);				
+				
+				//echo "Sending ONE command: $txt_command\n";
+				return $this->RemoteSendCommand($host_arr, $txt_command);								
+			}
+			elseif($count){
+				$is_ok=true;
+				echo "Processing $count commands...\n";
+				
+				foreach ($commands as $key => $value) {
+					echo " $key	";
+					if($this->RemoteSendCommand($host_arr, $key)){
+						echo "	OK\n";
+					}
+					else {
+						echo "	Failed\n";
+						$is_ok=false;
+					}
+					usleep(0.5 * 1000000);
+				}
+
+				if($is_ok){
+					return true;
+				}
+			}	
+		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommand($host_arr, $command){
+			$url="http://{$host_arr['ip']}/control?cmd=".$command;
+			//echo "$url\n";		
+			if ($json=$this->_FetchPage($url)){
+				return json_decode($json,true);
+			}
+
+			if($this->last_http_code==200){
+				return true;
+			}
+		}
+
+
+
+
 
 
 	// ####### Privates ##########################################################################

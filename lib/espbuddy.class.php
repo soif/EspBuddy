@@ -339,14 +339,28 @@ class EspBuddy {
 		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
 		if(!$this->flag_json){
-			echo "Processing $c host(s)$in_drymode : \n\n";
+			echo "\n";
+			if($c > 1){
+				echo "Processing $c host(s)$in_drymode : \n";
+			}
+			else{
+				//echo "Processing host$in_drymode : ".key($hosts)."\n\n";
+				if($in_drymode){
+					echo "Processing$in_drymode\n";
+				}
+				else{
+					echo "\n";
+				}
+			}
 		}
 
 
 		foreach($hosts as $this_id => $host){
-			$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
 			if(!$this->flag_json){
-				echo "\033[35m##### $name ##### : \033[0m";
+				if($c > 1){
+					$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
+					$this->_EchoHost($name);			
+				}
 			}
 			//if($c==1){echo "\n";}
 			$fn="Command_$command";
@@ -608,6 +622,9 @@ class EspBuddy {
 			if(! $this->_AskYesNo()){
 				return false;
 			}	
+			if(!$this->flag_json){
+				echo "\n";
+			}	
 		}
 
 		if(!$this->flag_drymode){
@@ -620,7 +637,7 @@ class EspBuddy {
 					echo json_encode($r,JSON_PRETTY_PRINT);
 				}
 				else{
-					$this->_Prettyfy($r);
+					$this->_PrettyfyNoTabs($r);
 				}
 			
 				//$txt=json_encode($r,JSON_PRETTY_PRINT);
@@ -1874,13 +1891,14 @@ https://github.com/soif/EspBuddy/issues/20
 				if($host['serial_port']){
 					echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 				}
-				echo "\nSelected Config    : {$this->c_host['config']}\n";
-				if($this->flag_verbose){
-					echo "\033[37m";
-					echo "        Parameters : \n";
-					$this->_Prettyfy($this->cfg['configs'][$host['config']]);
-					echo "\033[0m";
+				if ($this->c_host['config']){
+					echo "\nSelected Config    : {$this->c_host['config']}\n";
+					if($this->flag_verbose){
+						$this->sh->PrintColorGrey(" Config Parameters :" );
+						$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
+					}	
 				}
+				
 
 			}
 		}
@@ -1892,9 +1910,10 @@ https://github.com/soif/EspBuddy/issues/20
 				$this->sh->PrintAnswer("Cancelled!");
 				exit(0);
 			}
-		}
-		if(!$this->flag_json){
-			echo "\n";
+
+			if(!$this->flag_json){
+				echo "\n";
+			}
 		}
 		return $id;
 	}
@@ -2353,22 +2372,43 @@ https://github.com/soif/EspBuddy/issues/20
 		return $_ARG;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _PrettyfyWithTabs($arr){
+		return $this->_Prettyfy($arr, 0, "       ");
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _PrettyfyNoTabs($arr){
+		return $this->_Prettyfy($arr,0,"");
+	}
+
 
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
-	private function _Prettyfy($arr, $level=0){
-		$tabs = "     "; //initial margin
+	private function _Prettyfy($arr, $level=0,$left_prefix=""){
+		//$tabs = "     "; //initial margin
+		$tabs=$left_prefix; //initial margin
+
+		$step_tabs= "    ";
+		$l_step=strlen($step_tabs);
+		$len_pad=$l_step * 7 + 1; 
+
 		for($i=0;$i<$level; $i++){
-			$tabs .= "     ";
+			$tabs .= $step_tabs;
 		}
-		$tabs .= "  - ";
+		$tabs .= "- ";
 		foreach($arr as $key=>$val){
 			if( is_array($val) ) {
-				print ($tabs . $key . " : " . "\n");
-				$this->_Prettyfy($val, $level + 1);
+				$pad='=';
+				$len_pad2=$len_pad +33;
+				if($level){
+					$pad='.';
+					$len_pad2=$len_pad +6;
+				}
+				print ($tabs . str_pad($key." ",$len_pad2, $pad) . "\n");
+				$this->_Prettyfy($val, $level + 1, $left_prefix);
 			} else {
 				if($val && $val !== 0){
-					print ($tabs . str_pad($key,22) . " : " . $val . "\n");
+					print ($tabs . str_pad($key,$len_pad) . " : " . $val . "\n");
 				}
 			}
 		}
@@ -2461,6 +2501,14 @@ https://github.com/soif/EspBuddy/issues/20
 		else{
 			$do_end and $this->_EchoStepEnd();
 		}
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _EchoHost($mess){
+		$mess=str_pad("#### ".$mess." ", 130, '#');
+		$this->sh->EchoStyleHost();
+		echo $mess;
+		$this->sh->EchoStyleClose();
+		echo "\n";
 	}
 
 

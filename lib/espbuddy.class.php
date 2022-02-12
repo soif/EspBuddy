@@ -58,6 +58,7 @@ class EspBuddy {
 	private $arg_serial_port	= '';
 	private $arg_serial_rate	= 0;
 	private $arg_config			= '';
+	private $arg_repo			= '';
 	private $arg_firmware		= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
@@ -75,6 +76,7 @@ class EspBuddy {
 	// preferences -------------
 	private $prefs	=array(
 		'config'		=>	'',				// default config to use
+		'repo'			=>	'',				// default repo to use
 		'serial_port'	=>	'',				// default serial Port (empty = autoselect)
 		'serial_rate'	=>	'boot',			// default serial rate
 		'time_zone'		=>	'Europe/Paris',	// Time Zone
@@ -478,7 +480,7 @@ class EspBuddy {
 				echo "\n";
 				sleep(1); // let him reboot
 				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
-					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec. Please retry with the -s option");
+					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec.");
 				}
 				sleep(2); // give it some more time to be ready
 
@@ -582,7 +584,7 @@ class EspBuddy {
 
 
 		if(!$repo){
-			return $this->_dieError ("repo is not set neither in commands set, nor in target's config");
+			return $this->_dieError (" 'repo' is not set (neither in commands set, nor in target's config, nor as argument)");
 		}
 		if(!$commands){
 			return $this->_dieError ("No commands founds. Please either specify a valid gobal command set, or specify 'commands' in the target configuration. ");
@@ -594,7 +596,12 @@ class EspBuddy {
 			$this->_EchoStepStart("Sending commands ","");
 
 			if($this->flag_verbose){
-				echo "COMMANDS LIST:\n$commands\n\n";
+				if($is_single){
+					echo "COMMAND: $commands\n\n";
+				}
+				else{
+					echo "COMMANDS LIST:\n$commands\n\n";
+				}
 			}
 		}
 		if(! $is_single){
@@ -623,7 +630,7 @@ class EspBuddy {
 				//echo $r;
 			}
 			elseif(!$r){
-				return $this->_dieError ("Failed to send commands");
+				return $this->_dieError ("Command has returned NO result");
 			}
 		}
 		return true;
@@ -848,6 +855,7 @@ class EspBuddy {
 	--port=xxx   : serial port to use (override main or per host serial port)
 	--rate=xxx   : serial port speed to use (override main or per host serial port)
 	--conf=xxx   : config to use (override per host config)
+	--repo=xxx   : repo to use (override per host config)
 	--firm=xxx   : full path to the firmware file to upload (override latest build one)
 	--from=REPO  : migrate from REPO to the selected config
 
@@ -1791,6 +1799,25 @@ https://github.com/soif/EspBuddy/issues/20
 		return $ret;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _CreateHost($host){
+		$tmp=array();
+		$tmp['is_created']=true;
+		if(preg_match('#^\d+\.\d+\.\d+\.\d+$#',$host)){
+			$tmp['ip']=$host;
+			$tmp['hostname']=gethostbyaddr($tmp['ip']);	
+		}
+		else{
+			$tmp['hostname']=$host;
+			$tmp['ip']=gethostbyname($tmp['hostname']);
+		}
+		$id=$tmp['hostname'];
+
+		//save to hosts
+		$this->cfg['hosts'][$id]=$tmp;
+				
+		return $id;
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function ChooseTarget(){
@@ -1800,7 +1827,13 @@ https://github.com/soif/EspBuddy/issues/20
 				$choosen='a';
 			}
 			elseif(!$this->cfg['hosts'][$host]){
-				$this->_dieError('Invalid Host','hosts');
+				$allows_host_creation=true;
+				if($allows_host_creation){	
+					$id=$this->_CreateHost($host);
+				}
+				else{
+					$this->_dieError('Invalid Host','hosts');
+				}
 			}
 			else{
 				$id=$host;
@@ -1887,9 +1920,10 @@ https://github.com/soif/EspBuddy/issues/20
 
 		// current config ------------
 		$this->c_conf	=	$this->cfg['configs'][$this->c_host['config']];
-		if(!is_array($this->c_conf)){
+		if(!is_array($this->c_conf) and !$this->c_host['is_created']){
 			return $this->_dieError ("Unknown configuration '{$this->c_host['config']}' ",'configs');
 		}
+		$this->c_conf['repo']			= $this->_ChooseValueToUse('repo');
 
 		// current repo ---------------
 		//$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
@@ -2269,6 +2303,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->arg_serial_port	= $this->args['vars']['port'];
 		$this->arg_serial_rate	= $this->args['vars']['rate'];
 		$this->arg_config		= $this->args['vars']['conf'];
+		$this->arg_repo			= $this->args['vars']['repo'];
 		$this->arg_firmware		= $this->args['vars']['firm'];
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];

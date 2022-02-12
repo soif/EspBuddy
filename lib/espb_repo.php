@@ -378,8 +378,9 @@ class EspBuddy_Repo {
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		
 		if(curl_errno($ch) or $status !=200 ){
 			$result='';
-			$this->SettLastStatus($status);
 		}
+		$this->SettLastStatus($status);
+		//print_r(curl_getinfo($ch));
 		curl_close($ch);
 		return $result;
 	}

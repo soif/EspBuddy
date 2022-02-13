@@ -556,8 +556,8 @@ class EspBuddy {
 				return true;
 			}
 			else{
-				$this->orepo->EchoLastError();
-				echo "\n";
+				$this->_EchoError($this->orepo->GetLastError());
+				return false;
 			}
 		}
 	}
@@ -644,10 +644,12 @@ class EspBuddy {
 				//echo $txt;
 			}
 			elseif($r){
-				//echo $r;
+				echo "$r";
 			}
 			elseif(!$r){
-				return $this->_dieError ("Command has returned NO result");
+				$last_err=$this->_EchoError($this->orepo->GetLastError()) or $last_err='No Result';
+				$this->_EchoError($last_err);
+				return false;
 			}
 		}
 		return true;
@@ -667,15 +669,24 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_AssignCurrentHostConfig($id);
-		echo "{$this->c_conf['repo']}\t".$this->orepo->RemoteGetVersion($this->c_host) . "\n";
+		if($version=$this->orepo->RemoteGetVersion($this->c_host)){
+			echo "*** Remote '$id' ({$this->c_conf['repo']}) Version is	: $version \n";
+			return true;
+		}
+		else{
+			$this->_EchoError($this->orepo->GetLastError());
+		}
 	}
 
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_reboot($id){
 		$this->_AssignCurrentHostConfig($id);
-		echo "{$this->c_conf['repo']}\t";
-		$this->orepo->RemoteReboot($this->c_host);
+		//echo "{$this->c_conf['repo']}\t";
+		if($this->orepo->RemoteReboot($this->c_host)){
+			return true;
+		}
+		$this->_EchoError($this->orepo->GetLastError());
 	}
 
 
@@ -2516,6 +2527,15 @@ https://github.com/soif/EspBuddy/issues/20
 	private function _EchoStepEnd(){
 		$this->sh->EchoStyleClose();
 		echo "\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _EchoError($mess){
+		if($mess){
+			echo "\n";
+			$this->sh->PrintError(' ERROR: '.$mess);
+			echo "\n";	
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------

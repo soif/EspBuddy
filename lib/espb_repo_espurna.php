@@ -28,6 +28,12 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	protected $version_regnum = 1; 										// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
+	protected $api_urls=array(
+		'backup'	=>	'/config',			// relative url to the URl where we can perform the backup
+		'version'	=>	'/config',				// relative url to the URl where we can parse the remote version
+	);
+
+	protected $default_login 		= 'admin';							// Login name to use when not set
 
 	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){
@@ -36,26 +42,30 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
-		$url="http://{$host_arr['ip']}/config";
-		$json=$this->_FetchPage($url,'admin',$host_arr['pass']);
-
-		$out="";
-		if($json and $arr=json_decode($json,true) and is_array($arr)){
-			$out=trim($arr['version']);
+		if($json=$this->_RemoteGetVersionJson($host_arr)){
+			return trim($json['version']);
 		}
+		return false;
+
+
+		$html=$this->_RemoteGetVersionRaw($host_arr);
+				
+		$out="";
+		if(preg_match('#app_version">([^<]+)#i',$html,$m)){
+			
+			// debug @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+			echo "<hr><pre>\n"; print_r($m);echo "\n</pre>\n\n";exit;
+			
+			$out=$m[1];
+		}		
 		return $out;
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
-		return (int) $this->_DownloadFile("http://{$host_arr['ip']}/config", 'config.json', $dest_path, 'admin', $host_arr['pass']);
+		return $this->_RemoteBackupSettings($host_arr, $dest_path, 'config.json');
 	}
 
-	// ---------------------------------------------------------------------------------------
-	public function RemoteReboot($host_arr){
-		echo "No Reboot URL in Espurna!\n";
-		return false;
-	}
 
 }
 ?>

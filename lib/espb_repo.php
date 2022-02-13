@@ -26,7 +26,6 @@ class EspBuddy_Repo {
 	protected $version_file 	= ""; // file to parse to get the version
 	protected $version_regex 	= ""; // regex used to extract the version in the version_file
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
-
 	protected $firststep_firmware = ''; // when uploading in 2steps mode, first upload this intermediate firmware
 	protected $flash_sizes 	  = array(	//maximum flash sizes
 		'512K'	=>	524288,		// 512 * 1024
@@ -34,14 +33,20 @@ class EspBuddy_Repo {
 		'2M'	=>	2097152,	// 2048 * 1024
 		'4M'	=>	4194304		// 4096 * 1024
 	);
-
+	protected $api_urls=array(
+		'version'	=>	'',			// relative url to the URl where we can parse the remote version
+		'reboot'	=>	'',			// relative url to the Reboot Command
+		'gpio_on'	=>	'',			// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+		'gpio_off'	=>	'',			// relative url to switch gpio OFF : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+		'command'	=>	'',			// relative url to send a command
+	);
+	protected $api_prefix 		= 'http://';	// scheme to use : http:// , https://
+	protected $default_login 	= '';			// Login name to use when not set
+	
+	
+	// internal properties -----------------------------------
 	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
 	protected $last_http_status = '';	// last HTTP status
-
-	protected $url_gpio_on 		= '';	// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
-	protected $url_gpio_off 	= '';	// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
-
-	// internal properties -----------------------------------
 	protected $version			= "";	// extracted version
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
@@ -159,10 +164,11 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function EchoLastError(){
+	public function GetLastError(){
 		if($this->last_http_code >=400 ){
-			echo "\033[31m HTTP Error {$this->last_http_code} => {$this->last_http_status} \033[0m";
-			return true;
+			//echo "\033[31m HTTP Error {$this->last_http_code} => {$this->last_http_status} \033[0m";
+			//return true;
+			return "{$this->last_http_code} => {$this->last_http_status}";
 		}
 	}
 
@@ -199,40 +205,60 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
-		return "Not Implemented";
+		if($this->api_urls['version']){
+			if($arr=$this->_RemoteGetVersionJson($host_arr)){
+				return $arr;
+			}
+		}
+		$this->_EchoNotImplemented();
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
-		$this->_EchoNotImplemented();
+		if($this->api_urls['backup']){
+			return $this->_RemoteBackupSettings($host_arr, $dest_path,'backup');			
+		}
+		else{
+			$this->_EchoNotImplemented();
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteReboot($host_arr){
-		$this->_EchoNotImplemented();
+		if($this->api_urls['reboot']){
+			echo "Rebooting...";
+			$url=$this->_MakeApiUrl($host_arr,$this->api_urls['reboot']);
+			if($this->_FetchPage($url, $host_arr['login'], $host_arr['pass'])){
+				echo " OK\n";
+				return true;
+			}
+			echo " Failed\n";
+		}
+		else{
+			$this->_EchoNotImplemented();
+		}
 	}
+
+
+
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteTestAllGpios($host_arr){
-		$url_host		='http://'.$host_arr['ip'];
 		$first_gpio 	= 0;
 		$last_gpio		= 16;
 		$delay_state 	= 100;	// ms
 		$delay_gpio 	= 800;	// ms
 
-		if($this->url_gpio_on or $this->url_gpio_off){
+		if($this->api_urls['gpio_on'] or $this->api_urls['gpio_off']){
 			for($i=$first_gpio; $i <= $last_gpio ; $i++){
 				echo "$i";
-				if($this->url_gpio_on){
-					$url=$url_host.str_replace('{{gpio}}', $i, $this->url_gpio_on);
-					$this->_TriggerUrl($url, $host_arr['login'], $host_arr['pass']);
-					//echo " $url\n";
+				if($this->api_urls['gpio_on']){
+					$this->_SendGpioOn($host_arr,$i);
 					usleep($delay_state * 1000);
 				}
-				if($this->url_gpio_off){
-					$url=$url_host.str_replace('{{gpio}}', $i, $this->url_gpio_off);
-					$this->_TriggerUrl($url, $host_arr['login'], $host_arr['pass']);
-					//echo " $url\n";
+				if($this->api_urls['gpio_off']){
+					$this->_SendGpioOff($host_arr,$i);
 					usleep($delay_state * 1000);
 				}
 				usleep($delay_gpio * 1000);
@@ -246,6 +272,8 @@ class EspBuddy_Repo {
 		}
 	}
 
+
+
 	// ---------------------------------------------------------------------------------------
 	public function GetFlashSize($k){
 		return $this->flash_sizes[$k];
@@ -253,17 +281,94 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommands($host_arr, $commands_list){
-		$commands_txt	=$this->_CleanTxtList($commands_list);
-		$this->_EchoNotImplemented("While sending Commands: $commands_txt :\n");
+		if($this->api_urls['command']){
+			$commands_txt	=$this->_CleanTxtList($commands_list);
+			$this->_EchoNotImplemented("While sending Commands: $commands_txt :\n");
+		}
+		else{
+			$this->_EchoNotImplemented();
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommand($host_arr, $command){
-		$this->_EchoNotImplemented("While sending Command: $command :\n");
+		if($this->api_urls['command']){
+			$url=$this->_MakeApiUrl($host_arr, $this->api_urls['command'], $command);
+
+			//echo "$url\n";		
+			if ($json=$this->_FetchPage($url)){
+				return json_decode($json,true);
+			}
+	
+			if($this->last_http_code==200){
+				return true;
+			}
+		}
+		else{
+			$this->_EchoNotImplemented("While sending Command: $command :\n");
+		}
 	}
+
 	
 
 	// ##### Protected ########################################################################
+	// ---------------------------------------------------------------------------------------
+	protected function _RemoteGetVersionRaw($host_arr){
+		if($this->api_urls['version']){
+			$url=$this->_MakeApiUrl($host_arr, $this->api_urls['version']);
+			return $this->_FetchPage($url, $host_arr['login'], $host_arr['pass']);
+		}
+	}
+
+
+
+	// ---------------------------------------------------------------------------------------
+	protected function _RemoteGetVersionJson($host_arr){
+		if($this->api_urls['version']){
+			if($json=$this->_RemoteGetVersionRaw($host_arr) ){
+				if($json and $arr=json_decode($json,true) and is_array($arr)){
+					return $arr;
+				}
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _RemoteBackupSettings( $host_arr, $dest_path, $file_name='config',$url_key='backup'){
+		$url=$this->api_urls[$url_key] or $url=$url_key;
+		$url=$this->_MakeApiUrl($host_arr,$url);
+		return (int) $this->_DownloadFile($url, $file_name, $dest_path, $host_arr['login'], $host_arr['pass']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpioOn($host_arr,$pin){
+		return $this->_SendGpio($host_arr, $pin, $this->api_urls['gpio_on']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpioOff($host_arr,$pin){
+		return $this->_SendGpio($host_arr, $pin, $this->api_urls['gpio_off']);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpio($host_arr, $pin, $gpio_url){
+		$url=$this->_MakeApiUrl($host_arr,$gpio_url);
+		$url=str_replace('{{gpio}}', $pin, $url);
+		//echo "\n $url \n";
+		return $this->_FetchPage($url, $host_arr['login'], $host_arr['pass']);
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	protected function _MakeApiUrl($host_arr, $url,$suffix=''){
+		$host_arr['login'] or $host_arr['login']=$this->default_login;
+
+		$url=$this->api_prefix.$host_arr['ip'].$url;
+		$url=str_replace('{{login}}',	$host_arr['login'], $url);
+		$url=str_replace('{{pass}}',	$host_arr['pass'], $url);
+		$url .=$suffix;
+		return $url;
+	}
 
 	// ---------------------------------------------------------------------------------------
 	protected function _CleanTxtListToArray($commands_list){
@@ -296,21 +401,22 @@ class EspBuddy_Repo {
 		}
 	}
 
-
+/*
 	// ---------------------------------------------------------------------------------------
-	protected function _TriggerUrl($url,$login="",$pass=""){
+	protected function _TriggerUrl($url,$auth_login="",$auth_pass=""){
 		$http			=array();
 		$http['method']	='GET';
 		$http['timeout']=0.5;
 
-		if($login and $pass){
-			$auth = base64_encode("$login:$pass");
+		$auth_login or $auth_login=$this->default_login;
+		if($auth_login and $auth_pass){
+			$auth = base64_encode("$auth_login:$auth_pass");
 			$http['header'] = array("Authorization: Basic $auth");
 		}
 		$opts = array('http' => $http);
 		return @file_get_contents($url, false, stream_context_create($opts));
 	}
-
+*/
 	// ---------------------------------------------------------------------------------------
 	protected function _DownloadFile($url, $file_name, $dest_path, $auth_login='', $auth_pass=''){
 		$tmp_file	= $dest_path.'temp_file';
@@ -331,6 +437,7 @@ class EspBuddy_Repo {
 		//curl_setopt($ch, CURLOPT_URL, $url);
 		//curl_setopt($ch, CURLOPT_VERBOSE, 1);
 		//curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$auth_login or $auth_login=$this->default_login;
 		if($auth_login and $auth_pass){
 			curl_setopt($ch, CURLOPT_USERPWD, "$auth_login:$auth_pass");
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
@@ -345,8 +452,9 @@ class EspBuddy_Repo {
 
 		if(curl_errno($ch) or $status !=200 ){
 			$error=true;
-			$this->SettLastStatus($status);
 		}
+		$this->SettLastStatus($status);
+		//print_r(curl_getinfo($ch));
 		curl_close($ch);
 		@fclose($fp);
 
@@ -362,17 +470,21 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	protected function _FetchPage($url, $auth_login='', $auth_pass=''){
+
 		$this->SettLastStatus(0);
 
 		$ch = curl_init($url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+		$auth_login or $auth_login=$this->default_login;
 		if($auth_login and $auth_pass){
 			curl_setopt($ch, CURLOPT_USERPWD, "$auth_login:$auth_pass");
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 		}
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Dont verify SSL
 		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+		curl_setopt($ch, CURLOPT_ENCODING, '');
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		$result	= curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		

@@ -28,8 +28,15 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
-	
-	private $default_login		='admin';
+
+	protected $api_urls=array(
+		'backup'	=>	'/dl',			// relative url to the URl where we can perform the backup
+		'command'	=>	'/cm?user={{login}}&password={{pass}}&cmnd=',						// relative url to send a command
+		'reboot'	=>	'/?rst=',			// relative url to the Reboot Command
+		'version'	=>	'/in',			// relative url to the URl where we can parse the remote version
+	);
+
+	protected $default_login 	= 'admin';					// Login name to use when not set
 
 	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){
@@ -48,11 +55,9 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
-		$host_arr['login'] or $host_arr['login']=$this->default_login;
-		$url="http://{$host_arr['ip']}/in";
-		$html=$this->_FetchPage($url, $host_arr['login'], $host_arr['pass']);
+		$html=$this->_RemoteGetVersionRaw($host_arr);
 		$out="";
-		if(preg_match('#Sonoff-Tasmota\s+([^\s]+)\s+by\s+Theo\s+Arends#i',$html,$m)){
+		if(preg_match('#Tasmota\s+([^\s]+)\s+by\s+Theo\s+Arends#i',$html,$m)){
 			$out=$m[1];
 		}		
 		return $out;
@@ -60,20 +65,7 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
-		$host_arr['login'] or $host_arr['login']=$this->default_login;
-		return (int) $this->_DownloadFile("http://{$host_arr['ip']}/dl", 'config.dmp', $dest_path, $host_arr['login'], $host_arr['pass']);
-	}
-
-	// ---------------------------------------------------------------------------------------
-	public function RemoteReboot($host_arr){
-		$host_arr['login'] or $host_arr['login']=$this->default_login;
-		$url="http://{$host_arr['ip']}/rb";
-		echo "Rebooting...";
-		if($this->_TriggerUrl($url, $host_arr['login'], $host_arr['pass'])){
-			echo " OK\n";
-			return true;
-		}
-		echo " Failed\n";			
+		return $this->_RemoteBackupSettings($host_arr, $dest_path, 'config.dmp');
 	}
 
 
@@ -127,14 +119,6 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	}
 
-	// ---------------------------------------------------------------------------------------
-	public function RemoteSendCommand($host_arr, $command){
-			$url="http://{$host_arr['ip']}/cm?user={$host_arr['user']}&password={$host_arr['pass']}&cmnd=".rawurlencode($command);
-			//echo "$url\n";		
-			if ($json=$this->_FetchPage($url)){
-				return json_decode($json,true);
-			}
-	}
 
 	// ---------------------------------------------------------------------------------------
 	protected function _CommandsToBacklog($commands){

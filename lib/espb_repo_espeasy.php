@@ -23,7 +23,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
-	protected $version_file 	= "src/ESPEasy_buildinfo.h";			// file to parse to get the version
+	protected $version_file 	= "src/src/CustomBuild/ESPEasy_buildinfo.h";			// file to parse to get the version
 	protected $version_regex 	= '|#define\s+BUILD\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
@@ -34,8 +34,16 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		'4M'	=>	3145728		// 4M - 1M   SPIFS
 	);
 
-	protected $url_gpio_on 		= '/control?cmd=gpio,{{gpio}},1';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
-	protected $url_gpio_off 	= '/control?cmd=gpio,{{gpio}},0';		// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+	protected $api_urls=array(
+		'backup'	=>	'/',									// relative url to the URl where we can perform the backup
+		'command'	=>	'/control?cmd=',						// relative url to send a command
+		'gpio_on'	=>	'/control?cmd=gpio,{{gpio}},1',			// relative url to switch gpio ON : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+		'gpio_off'	=>	'/control?cmd=gpio,{{gpio}},0',			// relative url to switch gpio OFF : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
+		'reboot'	=>	'/?cmd=reboot',							// relative url to the Reboot Command
+		'version'	=>	'/json',								// relative url to the URl where we can parse the remote version
+	);
+
+	protected $default_login 	= 'admin';					// Login name to use when not set
 
 	private $bin_crc2 	= 'crc2.py';
 
@@ -48,25 +56,27 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
 		//$this->_PreAuthenticate($host_cfg);
-
-		$url="http://{$host_arr['ip']}/json";
-		$json=@file_get_contents($url);
-		$out="";
-		if($json and $arr=json_decode($json,true) and is_array($arr)){
-			$out=trim($arr['System']['Build']);
+		if($json=$this->_RemoteGetVersionJson($host_arr)){
+			return trim($json['System']['Build']);
 		}
-		return $out;
 	}
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
-		$this->_PreAuthenticate($host_arr);
+		//$this->_PreAuthenticate($host_arr);
 
 		$files=array('config.dat','security.dat','notification.dat','rules1.txt','rules2.txt','rules3.txt','rules4.txt',);
-		$url="http://{$host_arr['ip']}";				
-		foreach($files as $i => $file){
-			if(! $this->_DownloadFile("$url/$file",	$file,	$dest_path)){
-				break;
+		$url=$this->_MakeApiUrl($host_arr,$this->api_urls['backup']);
+		$i=0;
+		foreach($files as $file){
+			echo "- $file		";
+			if($this->_DownloadFile($url.$file,	$file,	$dest_path, $host_arr['login'], $host_arr['pass'])){
+				echo "OK\n";
+				$i++;
+			}
+			else{
+				echo "Failed\n";
+				//break;
 			}
 		} 
 
@@ -76,18 +86,6 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function RemoteReboot($host_arr){
-		echo "Rebooting...";
-		$this->_PreAuthenticate($host_arr);
-		if($this->_TriggerUrl("http://{$host_arr['ip']}/?cmd=reboot")){
-			echo " OK\n";
-			return true;
-		}
-		echo " Failed\n";			
-	}
-
-
-	// ---------------------------------------------------------------------------------------
 	public function GetPostBuildCommands($host_arr,$cfg){
 		$bin_crc2	=$cfg['paths']['bin'].$this->bin_crc2;
 		$commands[]	="python \"$bin_crc2\" \"{$host_arr['path_firmware']}\" ";					
@@ -95,8 +93,6 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		$commands[]	="rm -f \"{$host_arr['path_firmware']}2\" "; // remove bin2 not properly removed by the crc script					
 		return $commands;		
 	}
-
-
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommands($host_arr, $commands_list){
@@ -134,33 +130,19 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 
 	}
 
-	// ---------------------------------------------------------------------------------------
-	public function RemoteSendCommand($host_arr, $command){
-			$url="http://{$host_arr['ip']}/control?cmd=".$command;
-			//echo "$url\n";		
-			if ($json=$this->_FetchPage($url)){
-				return json_decode($json,true);
-			}
-
-			if($this->last_http_code==200){
-				return true;
-			}
-		}
-
-
-
-
-
 
 	// ####### Privates ##########################################################################
-
+/*
 	// ---------------------------------------------------------------------------------------
 	private function _PreAuthenticate($host_arr){
 		// pre authenticate
 		if($host_arr['pass']){
-			file_get_contents("http://{$host_arr['ip']}/login?password={$host_arr['pass']}");
+			$url=$this->_MakeApiUrl($host_arr,"/login?password={$host_arr['pass']}");
+			file_get_contents($url);
 		}
 	}
-	
+*/	
+
+
 }
 ?>

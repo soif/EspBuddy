@@ -41,6 +41,7 @@ Works with :
 - [**ESPeasy**](https://github.com/letscontrolit/ESPEasy/)
 - [**Espurna**](https://github.com/xoseperez/espurna)
 - [**Tasmota**](https://github.com/arendst/Sonoff-Tasmota/)
+- [**Wled**](https://github.com/Aircoookie/WLED/)
 - should virtually work with any ESP8266 firmware: *just add a small **espb_repo_xxx** class to describe it.*
 
 ## Requirements

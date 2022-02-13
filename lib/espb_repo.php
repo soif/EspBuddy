@@ -250,26 +250,19 @@ class EspBuddy_Repo {
 		$delay_state 	= 100;	// ms
 		$delay_gpio 	= 800;	// ms
 
-		if($this->api_urls['gpio_on'] or $this->api_urls['gpio_off']){
-			for($i=$first_gpio; $i <= $last_gpio ; $i++){
-				echo "$i";
-				if($this->api_urls['gpio_on']){
-					$this->_SendGpioOn($host_arr,$i);
-					usleep($delay_state * 1000);
-				}
-				if($this->api_urls['gpio_off']){
-					$this->_SendGpioOff($host_arr,$i);
-					usleep($delay_state * 1000);
-				}
-				usleep($delay_gpio * 1000);
-				echo " ";
-			}
-			echo "\n";
-			return true;
+		for($i=$first_gpio; $i <= $last_gpio ; $i++){
+			echo "$i";
+			$this->_SendGpioOn($host_arr,$i);
+			usleep($delay_state * 1000);
+			
+			$this->_SendGpioOff($host_arr,$i);
+			usleep($delay_state * 1000);
+			
+			usleep($delay_gpio * 1000);
+			echo " ";
 		}
-		else{
-			$this->_EchoNotImplemented();
-		}
+		echo "\n";
+		return true;
 	}
 
 
@@ -352,6 +345,10 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	protected function _SendGpio($host_arr, $pin, $gpio_url){
+		if(!$gpio_url){
+			$this->_EchoNotImplemented();
+			return false;
+		}
 		$url=$this->_MakeApiUrl($host_arr,$gpio_url);
 		$url=str_replace('{{gpio}}', $pin, $url);
 		//echo "\n $url \n";

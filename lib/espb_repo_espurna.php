@@ -29,7 +29,8 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
 	protected $api_urls=array(
-		'backup'	=>	'/config',			// relative url to the URl where we can perform the backup
+		'command'	=>	'DUMMY',				// relative url to send a command : it must exist , so we set it to a dummy value (not used))
+		'backup'	=>	'/config',				// relative url to the URl where we can perform the backup
 		'version'	=>	'/config',				// relative url to the URl where we can parse the remote version
 	);
 
@@ -51,11 +52,7 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 		$html=$this->_RemoteGetVersionRaw($host_arr);
 				
 		$out="";
-		if(preg_match('#app_version">([^<]+)#i',$html,$m)){
-			
-			// debug @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-			echo "<hr><pre>\n"; print_r($m);echo "\n</pre>\n\n";exit;
-			
+		if(preg_match('#app_version">([^<]+)#i',$html,$m)){			
 			$out=$m[1];
 		}		
 		return $out;
@@ -65,6 +62,69 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	public function RemoteBackupSettings($host_arr, $dest_path){
 		return $this->_RemoteBackupSettings($host_arr, $dest_path, 'config.json');
 	}
+
+	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommand($host_arr, $txt_command){
+		$raw=$this->_TelnetSendCommand($host_arr,$txt_command);
+		return $this->_ExtractEspuraTelnetData($raw);
+	}
+
+
+
+
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpioOn($host_arr,$pin){
+		return $this->_SendGpio($host_arr, $pin, 1);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpioOff($host_arr,$pin){
+		return $this->_SendGpio($host_arr, $pin, 0);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _SendGpio($host_arr, $pin, $value){
+		$txt_command="gpio $pin $value";
+		$raw=$this->_TelnetSendCommand($host_arr,$txt_command);
+		return $this->_ExtractEspuraTelnetData($raw);
+	}
+
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _ExtractEspuraTelnetData($arr){
+		if($arr){
+			$started=0;
+			$out=false;
+			foreach($arr as $line){
+				//echo $line."\n";
+				if($started){
+					//end of commandline results
+					if( preg_match('#^\[\d+\]\s+\+OK#',$line) ){
+						break;
+					}
+					// error
+					if( preg_match('#ERROR\sunknown\scommand#i',$line) ){
+						break;
+					}
+				}
+				if($started){
+					$tmp=$line;
+					$tmp=preg_replace('#^\[\d+\]\s+#','',$tmp);
+					$out[]=$tmp;
+				}
+				if(preg_match('#^\[\d+\]\s+\[TELNET\]#',$line)){
+					$started=1;
+				}
+			}
+			if(is_array($out) and count($out)==1){
+				$out=reset($out);
+			}
+			return $out;
+		}
+	}
+
 
 
 }

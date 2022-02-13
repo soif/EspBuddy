@@ -339,14 +339,23 @@ class EspBuddy_Repo {
 
 	// ##### Protected ########################################################################
 	// ---------------------------------------------------------------------------------------
+	protected function _TelnetSendCommand($host_arr, $txt_command, $sleep=1){
+		if($txt_command){
+			$telnet="{ echo \"$txt_command\"; sleep $sleep; } | telnet {$host_arr['ip']} 2>&1";
+			exec($telnet, $r_array);
+			return $r_array;
+		}
+	}
+
+
+
+	// ---------------------------------------------------------------------------------------
 	protected function _RemoteGetVersionRaw($host_arr){
 		if($this->api_urls['version']){
 			$url=$this->_MakeApiUrl($host_arr, $this->api_urls['version']);
 			return $this->_FetchPage($url, $host_arr['login'], $host_arr['pass']);
 		}
 	}
-
-
 
 	// ---------------------------------------------------------------------------------------
 	protected function _RemoteGetVersionJson($host_arr){

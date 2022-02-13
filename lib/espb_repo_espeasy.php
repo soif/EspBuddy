@@ -94,41 +94,6 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		return $commands;		
 	}
 
-	// ---------------------------------------------------------------------------------------
-	public function RemoteSendCommands($host_arr, $commands_list){
-		$commands	=$this->_CleanTxtListToArray($commands_list);
-
-		if(is_array($commands)){
-			$count=count($commands);
-			if($count==1){
-				$txt_command=key($commands)." ".reset($commands);				
-				
-				//echo "Sending ONE command: $txt_command\n";
-				return $this->RemoteSendCommand($host_arr, $txt_command);								
-			}
-			elseif($count){
-				$is_ok=true;
-				echo "Processing $count commands...\n";
-				
-				foreach ($commands as $key => $value) {
-					echo " $key	";
-					if($this->RemoteSendCommand($host_arr, $key)){
-						echo "	OK\n";
-					}
-					else {
-						echo "	Failed\n";
-						$is_ok=false;
-					}
-					usleep(0.5 * 1000000);
-				}
-
-				if($is_ok){
-					return true;
-				}
-			}	
-		}
-
-	}
 
 
 	// ####### Privates ##########################################################################

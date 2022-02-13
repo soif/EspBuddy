@@ -272,16 +272,49 @@ class EspBuddy_Repo {
 		return $this->flash_sizes[$k];
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommands($host_arr, $commands_list){
 		if($this->api_urls['command']){
-			$commands_txt	=$this->_CleanTxtList($commands_list);
-			$this->_EchoNotImplemented("While sending Commands: $commands_txt :\n");
+			$commands	=$this->_CleanTxtListToArray($commands_list);
+
+			if(is_array($commands)){
+				$count=count($commands);
+				if($count==1){
+					$txt_command=key($commands)." ".reset($commands);
+					
+					//echo "Sending ONE command: $txt_command\n";
+					return $this->RemoteSendCommand($host_arr, $txt_command);
+				}
+				elseif($count){
+					$is_ok=true;
+					echo "Processing $count commands...\n";
+					
+					foreach ($commands as $key => $value) {
+						$com=$key;
+						!empty($value) and $com .=" $value";
+						echo " $com	";
+						if($this->RemoteSendCommand($host_arr, $com)){
+							echo "	OK\n";
+						}
+						else {
+							echo "	Failed\n";
+							$is_ok=false;
+						}
+						usleep(0.5 * 1000000);
+					}
+
+					if($is_ok){
+						return true;
+					}
+				}	
+			}
 		}
 		else{
 			$this->_EchoNotImplemented();
 		}
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommand($host_arr, $command){

@@ -66,6 +66,7 @@ Valid Actions are:
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
 - **send**            : Send Command(s)
+- **status**          : Show Device(s) Information
 - **version**         : Show Device(s) Version
 - **reboot**          : Reboot remote devive
 - **gpios**           : Test (On/Off) each GPIOs

@@ -114,6 +114,7 @@ class EspBuddy {
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
 			'send'			=> "Send commands to device",
+			'status'		=> "Show Device's Information",
 			'version'		=> "Show remote device version",
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
@@ -159,6 +160,7 @@ class EspBuddy {
 			'backup'		=> "[TARGET] [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
 			'send'			=> "[TARGET] CMD_SET|COMMAND [options]",
+			'status'		=> "[TARGET] [options]",
 			'version'		=> "[TARGET] [options]",
 			'reboot'		=> "[TARGET] [options]",
 			'gpios'			=> "[TARGET] [options]",
@@ -265,6 +267,9 @@ class EspBuddy {
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 			case 'backup':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
+			case 'status':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 			case 'version':
@@ -665,6 +670,43 @@ class EspBuddy {
 		$str=trim($str);
 		return $str;
 	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_status($id){
+		$this->_AssignCurrentHostConfig($id);
+
+		if(!$this->flag_verbose and !$this->flag_json){
+			$this->_EchoCurrentHost();
+			$this->_EchoCurrentConfig();
+			echo "\n";
+		}
+
+		$r=$this->orepo->RemoteGetStatus($this->c_host);
+		if(is_array($r)){
+			if($this->flag_json){
+				echo json_encode($r,JSON_PRETTY_PRINT);
+			}
+			else{
+				echo "\n";
+				$this->_PrettyfyNoTabs($r);
+			}
+			return true;
+		}
+		elseif($r){
+			echo "\n";
+			echo "$r";
+			return true;
+		}
+		elseif(!$r){
+			$last_err=$this->_EchoError($this->orepo->GetLastError()) or $last_err='No Result';
+			$this->_EchoError($last_err);
+			return false;
+		}
+
+	}
+
+
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
@@ -1894,23 +1936,11 @@ https://github.com/soif/EspBuddy/issues/20
 		else{
 			$this->_AssignCurrentHostConfig($id);
 			if(!$this->flag_json){
-				//echo "\n";
-				echo "Selected Host      : $id\n";
-				$host	=$this->c_host;
-				echo "       + Host Name : {$host['hostname']}\n";
-				echo "       + Host IP   : {$host['ip']}\n";
-				if($host['serial_port']){
-					echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+				if($this->flag_verbose){
+					$this->_EchoCurrentHost();
+					$this->_EchoCurrentConfig();	
+					echo "\n";
 				}
-				if ($this->c_host['config']){
-					echo "\nSelected Config    : {$this->c_host['config']}\n";
-					if($this->flag_verbose){
-						$this->sh->PrintColorGrey(" Config Parameters :" );
-						$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
-					}	
-				}
-				
-
 			}
 		}
 
@@ -1929,6 +1959,29 @@ https://github.com/soif/EspBuddy/issues/20
 		return $id;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _EchoCurrentHost(){
+		$host	=$this->c_host;
+		
+		//echo "\n";
+		echo "Selected Host      : {$host['id']}\n";
+		echo "       + Host Name : {$host['hostname']}\n";
+		echo "       + Host IP   : {$host['ip']}\n";
+		if($host['serial_port']){
+			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+		}
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _EchoCurrentConfig(){
+		if ($this->c_host['config']){
+			$host	=$this->c_host;
+			echo "\nSelected Config    : {$this->c_host['config']}\n";
+			if($this->flag_verbose){
+				$this->sh->PrintColorGrey(" Config Parameters :" );
+				$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
+			}	
+		}
+	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _AssignCurrentHostConfig($id){
@@ -1936,6 +1989,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->_FillHostnameOrIp($id);
 
 		$this->c_host					= $this->cfg['hosts'][$id];
+		$this->c_host['id']				= $id;
 		$this->c_host['config']			= $this->_ChooseValueToUse('config');
 		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
 		$this->c_host['login']			= $this->_ChooseValueToUse('login');

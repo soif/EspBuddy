@@ -511,7 +511,7 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	protected function _FetchPage($url, $auth_login='', $auth_pass=''){
+	protected function _FetchPage($url, $auth_login='', $auth_pass='',$post_data=''){
 
 		$this->SettLastStatus(0);
 
@@ -522,12 +522,20 @@ class EspBuddy_Repo {
 			curl_setopt($ch, CURLOPT_USERPWD, "$auth_login:$auth_pass");
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 		}
+		if($post_data){
+			curl_setopt( $ch, CURLOPT_POSTFIELDS, $post_data );
+			if( is_array(json_decode($post_data,true)) ){
+				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+			}
+		}
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Dont verify SSL
 		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-		curl_setopt($ch, CURLOPT_ENCODING, '');
+		curl_setopt($ch, CURLOPT_ENCODING, '');	// auto decompress
 		curl_setopt($ch, CURLOPT_HEADER, 0);
+
+
 		$result	= curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		
 		if(curl_errno($ch) or $status !=200 ){
@@ -538,7 +546,6 @@ class EspBuddy_Repo {
 		curl_close($ch);
 		return $result;
 	}
-
 
 
 	// ##### Privates #########################################################################

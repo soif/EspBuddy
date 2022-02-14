@@ -28,8 +28,8 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
 	protected $api_urls=array(
 		'backup'	=>	'/cfg.json?download',			// relative url to the URl where we can parse the remote version
-		'backup2'	=>	'/json?download',			// relative url to the URl where we can parse the remote version
-		'version'	=>	'/json/info',			// relative url to the URl where we can parse the remote version
+		'backup2'	=>	'/json?download',				// relative url to the URl where we can parse the remote version
+		'version'	=>	'/json',						// relative url to the URl where we can parse the remote version
 	);
 
 	protected $default_login 		= 'admin';							// Login name to use when not set
@@ -42,7 +42,7 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
 		if($json=$this->_RemoteGetVersionJson($host_arr)){
-			return trim($json['ver']);
+			return trim($json['info']['ver']);
 		}
 	}
 	// ---------------------------------------------------------------------------------------

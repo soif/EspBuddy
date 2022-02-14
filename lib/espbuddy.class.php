@@ -155,16 +155,16 @@ class EspBuddy {
 	// Command Usages Texts ------------------------------------------------------------------------
 	private	$actions_usage=array(
 		'root'=>array(
-			'upload'		=> "[TARGET] [options, auth_options, upload_options]",
-			'build'			=> "[TARGET] [options]",
-			'backup'		=> "[TARGET] [options, auth_options]",
+			'upload'		=> "TARGET [options, auth_options, upload_options]",
+			'build'			=> "TARGET [options]",
+			'backup'		=> "TARGET [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
-			'send'			=> "[TARGET] CMD_SET|COMMAND [options]",
-			'status'		=> "[TARGET] [options]",
-			'version'		=> "[TARGET] [options]",
-			'reboot'		=> "[TARGET] [options]",
-			'gpios'			=> "[TARGET] [options]",
-			'ping'			=> "[TARGET] [options]",
+			'send'			=> "TARGET CMD_SET|COMMAND [options, auth_options]",
+			'status'		=> "TARGET [options, auth_options]",
+			'version'		=> "TARGET [options, auth_options]",
+			'reboot'		=> "TARGET [options, auth_options]",
+			'gpios'			=> "TARGET [options, auth_options]",
+			'ping'			=> "TARGET [options]",
 			'sonodiy'		=> "ACTION [options]",
 			'repo_version'	=> "REPO",
 			'repo_pull'		=> "REPO",
@@ -908,11 +908,17 @@ class EspBuddy {
 		if($action=='root'){
 			echo <<<EOF
 ---------------------------------------------------------------------------------
+* TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
+
+* CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
+
 * OPTIONS :
-	-y  : Automatically confirm Yes/No
-	-d  : Dry Run. Show commands but don't apply them
-	-v  : Verbose mode
-	-D  : Debug mode (shows PHP errors)
+	-y           : Automatically confirm Yes/No
+	-d           : Dry Run. Show commands but don't apply them
+	-v           : Verbose mode
+	-D           : Debug mode (shows PHP errors)
+	--conf=xxx   : Config name to use (overrides per host config)
+	--repo=xxx   : Repo to use (overrides per host config)
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -921,17 +927,14 @@ class EspBuddy {
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
 	-m           : Switch to serial monitor after upload
-
-	--port=xxx   : serial port to use (override main or per host serial port)
-	--rate=xxx   : serial port speed to use (override main or per host serial port)
-	--conf=xxx   : config to use (override per host config)
-	--repo=xxx   : repo to use (override per host config)
-	--firm=xxx   : full path to the firmware file to upload (override latest build one)
-	--from=REPO  : migrate from REPO to the selected config
+	--port=xxx   : Serial port to use (override main or per host serial port)
+	--rate=xxx   : Serial port speed to use (override main or per host serial port)
+	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
+	--from=REPO  : Migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx  : login name (override host or per config login)
-	--pass=xxx   : password (override host or per config password)
+	--login=xxx  : Login name (overrides host or per config login)
+	--pass=xxx   : Password (overrides host or per config password)
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');

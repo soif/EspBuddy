@@ -29,6 +29,7 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	protected $api_urls=array(
 		'backup'	=>	'/cfg.json?download',			// relative url to the URl where we can parse the remote version
 		'backup2'	=>	'/json?download',				// relative url to the URl where we can parse the remote version
+		'reboot'	=>	'/win&RB',						// relative url to the Reboot Command
 		'version'	=>	'/json',						// relative url to the URl where we can parse the remote version
 	);
 

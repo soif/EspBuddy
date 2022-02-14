@@ -408,7 +408,7 @@ class EspBuddy_Repo {
 		$url=$this->api_prefix.$host_arr['ip'].$url;
 		$url=str_replace('{{login}}',	$host_arr['login'], $url);
 		$url=str_replace('{{pass}}',	$host_arr['pass'], $url);
-		$url .=$suffix;
+		$url .=rawurlencode($suffix);
 		return $url;
 	}
 

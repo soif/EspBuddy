@@ -67,6 +67,8 @@ echo "This document shows the terminal output from various $NAME commands." >> $
 make_title "Main $NAME commands"
 append_command "$APP help"			"List of all $NAME commands." 1
 append_command "$APP version led2"	"Grab the remote version of the 'led2' host. *'led2' is an host defined from the config.php file.*" 1
+append_command "$APP send led2 Status 1"	"Send the 'Status 1' command to the 'led2' host." 1
+append_command "$APP status  10.1.209.32 --repo=espeasy"		"Show Device information." 1
 append_command "$APP upload led2"	"Upload the latest firmware to the 'led2' host, using an intermediate OTA firmware *as set in the 'led2' configuration, from the config.php file.*" 1
 append_command "$APP self help"		"$NAME self maintenance tools."
 

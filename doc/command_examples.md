@@ -11,7 +11,7 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.02b5 ( EspTool v2.6 )
+EspBuddby v2.21b2 ( EspTool v3.2 )
 
 * Usage             : espbuddy.php COMMAND [TARGET] [options]
 
@@ -20,6 +20,8 @@ EspBuddby v2.02b5 ( EspTool v2.6 )
   - build           : Build firmware for the selected device
   - backup          : Download and archive settings from the remote device
   - monitor         : Monitor device connected to the serial port
+  - send            : Send commands to device
+  - status          : Show Device's Information
   - version         : Show remote device version
   - reboot          : Reboot Device(s)
   - gpios           : Test all Device's GPIOs
@@ -34,14 +36,16 @@ EspBuddby v2.02b5 ( EspTool v2.6 )
   - help            : Show full help
 
 * Commands Usage : 
-  - upload          : espbuddy.php upload       [TARGET] [options, auth_options, upload_options]
-  - build           : espbuddy.php build        [TARGET] [options]
-  - backup          : espbuddy.php backup       [TARGET] [options, auth_options]
+  - upload          : espbuddy.php upload       TARGET [options, auth_options, upload_options]
+  - build           : espbuddy.php build        TARGET [options]
+  - backup          : espbuddy.php backup       TARGET [options, auth_options]
   - monitor         : espbuddy.php monitor      [TARGET] [options]
-  - version         : espbuddy.php version      [TARGET] [options]
-  - reboot          : espbuddy.php reboot       [TARGET] [options]
-  - gpios           : espbuddy.php gpios        [TARGET] [options]
-  - ping            : espbuddy.php ping         [TARGET] [options]
+  - send            : espbuddy.php send         TARGET CMD_SET|COMMAND [options, auth_options]
+  - status          : espbuddy.php status       TARGET [options, auth_options]
+  - version         : espbuddy.php version      TARGET [options, auth_options]
+  - reboot          : espbuddy.php reboot       TARGET [options, auth_options]
+  - gpios           : espbuddy.php gpios        TARGET [options, auth_options]
+  - ping            : espbuddy.php ping         TARGET [options]
   - sonodiy         : espbuddy.php sonodiy      ACTION [options]
   - repo_version    : espbuddy.php repo_version REPO
   - repo_pull       : espbuddy.php repo_pull    REPO
@@ -52,11 +56,17 @@ EspBuddby v2.02b5 ( EspTool v2.6 )
   - help            : espbuddy.php help         
 
 ---------------------------------------------------------------------------------
+* TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
+
+* CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
+
 * OPTIONS :
-	-y  : Automatically confirm Yes/No
-	-d  : Dry Run. Show commands but don't apply them
-	-v  : Verbose mode
-	-D  : Debug mode (shows PHP errors)
+	-y           : Automatically confirm Yes/No
+	-d           : Dry Run. Show commands but don't apply them
+	-v           : Verbose mode
+	-D           : Debug mode (shows PHP errors)
+	--conf=xxx   : Config name to use (overrides per host config)
+	--repo=xxx   : Repo to use (overrides per host config)
 
 * UPLOAD_OPTIONS :
 	-b           : Build before Uploading
@@ -64,16 +74,15 @@ EspBuddby v2.02b5 ( EspTool v2.6 )
 	-e           : In Wire Mode, erase flash first, then upload
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
-
-	--port=xxx   : serial port to use (override main or per host serial port)
-	--rate=xxx   : serial port speed to use (override main or per host serial port)
-	--conf=xxx   : config to use (override per host config)
-	--firm=xxx   : full path to the firmware file to upload (override latest build one)
-	--from=REPO  : migrate from REPO to the selected config
+	-m           : Switch to serial monitor after upload
+	--port=xxx   : Serial port to use (override main or per host serial port)
+	--rate=xxx   : Serial port speed to use (override main or per host serial port)
+	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
+	--from=REPO  : Migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx  : login name (override host or per config login)
-	--pass=xxx   : password (override host or per config password)
+	--login=xxx  : Login name (overrides host or per config login)
+	--pass=xxx   : Password (overrides host or per config password)
 
 ```
 
@@ -86,15 +95,228 @@ EspBuddby v2.02b5 ( EspTool v2.6 )
 Grab the remote version of the 'led2' host. *'led2' is an host defined from the config.php file.*
 
 ```plaintext
-Selected Host      : led2
-       + Host Name : led2.lo.lo
-       + Host IP   : 10.1.209.2
 
-Selected Config    : espurna_mh20
 
-Processing 1 host(s) : 
+*** Remote 'led2' (tasmota) Version is	: 9.4.0 
 
-##### led2.lo.lo                    (10.1.209.2    ) ##### : espurna	1.13.4-dev
+
+```
+
+----------
+
+
+
+### `# espbuddy.php send led2 Status 1`
+
+Send the 'Status 1' command to the 'led2' host.
+
+```plaintext
+
+
+
+** Sending commands  *************************************************************************************************************
+- StatusPRM ====================================================
+    - Baudrate                      : 115200
+    - SerialConfig                  : 8N1
+    - GroupTopic                    : tasmotas
+    - OtaUrl                        : http://ota.tasmota.com/tasmota/release/tasmota.bin.gz
+    - RestartReason                 : Exception
+    - Uptime                        : 22T11:56:54
+    - StartupUTC                    : 2022-01-22T23:08:58
+    - Sleep                         : 50
+    - CfgHolder                     : 4617
+    - BootCount                     : 1136
+    - BCResetTime                   : 2020-12-27T21:08:55
+    - SaveCount                     : 4756
+    - SaveAddress                   : F8000
+
+
+```
+
+----------
+
+
+
+### `# espbuddy.php status  10.1.209.32 --repo=espeasy`
+
+Show Device information.
+
+```plaintext
+
+
+Selected Host      : sensor2.lo.lo
+       + Host Name : sensor2.lo.lo
+       + Host IP   : 10.1.209.32
+       + Serial    : /dev/tty.wchusbserialfa140	at 115200 bauds
+
+Selected Repo      : espeasy
+
+
+- System =======================================================
+    - Load                          : 20.57
+    - Load LC                       : 1272
+    - Build                         : 20116
+    - Git Build                     : HEAD,mega-20211224,#16308606e/02Feb-18.43
+    - System Libraries              : ESP82xx Core 2843a5ac, NONOS SDK 2.2.2-dev(38a443e), LWIP: 2.1.2 PUYA support
+    - Plugin Count                  : 48
+    - Plugin Description            : [Normal]
+    - Local Time                    : 2022-02-14 12:01:14
+    - Time Source                   : NTP
+    - Time Wander                   : 0.015
+    - Use NTP                       : true
+    - Unit Number                   : 32
+    - Unit Name                     : sensor2_Test_NodeMcu
+    - Uptime                        : 4188
+    - Uptime (ms)                   : 251271613
+    - Last Boot Cause               : Soft Reboot
+    - Reset Reason                  : Software/System restart
+    - CPU Eco Mode                  : false
+    - Heap Max Free Block           : 7880
+    - Heap Fragmentation            : 33
+    - Free RAM                      : 11912
+    - Free Stack                    : 3488
+    - Sunrise                       : 7:10
+    - Sunset                        : 19:17
+    - Timezone Offset               : 60
+- WiFi =========================================================
+    - Hostname                      : sensor2-Test-NodeMcu-32
+    - mDNS                          : sensor2-Test-NodeMcu-32.local
+    - IP Config                     : Static
+    - IP Address                    : 10.1.209.32
+    - IP Subnet                     : 255.255.0.0
+    - Gateway                       : 10.1.11.1
+    - STA MAC                       : 5C:CF:7F:5A:44:0E
+    - DNS 1                         : 10.1.10.1
+    - DNS 2                         : (IP unset)
+    - SSID                          : iot
+    - BSSID                         : EA:94:F6:06:2D:87
+    - Channel                       : 11
+    - Encryption Type               : WPA2/PSK
+    - Connected msec                : 102229000
+    - Last Disconnect Reason        : 8
+    - Last Disconnect Reason str    : (8) Assoc leave
+    - Number Reconnects             : 1
+    - Configured SSID1              : iot
+    - Force WiFi B/G                : false
+    - Restart WiFi Lost Conn        : false
+    - Force WiFi No Sleep           : false
+    - Periodical send Gratuitous ARP : false
+    - Max WiFi TX Power             : 17.5
+    - Current WiFi TX Power         : 14
+    - WiFi Sensitivity Margin       : 3
+    - Send With Max TX Power        : false
+    - Use Last Connected AP from RTC : false
+    - RSSI                          : -66
+- Sensors ======================================================
+    - 0 .................................
+        - TaskValues ........................
+            - 0 .................................
+                - ValueNumber                   : 1
+                - Name                          : Temperature
+                - NrDecimals                    : 2
+                - Value                         : 20.3
+            - 1 .................................
+                - ValueNumber                   : 2
+                - Name                          : Humidity
+                - NrDecimals                    : 2
+                - Value                         : 52.82
+        - DataAcquisition ...................
+            - 0 .................................
+                - Controller                    : 1
+                - IDX                           : 908
+                - Enabled                       : true
+            - 1 .................................
+                - Controller                    : 2
+                - Enabled                       : false
+            - 2 .................................
+                - Controller                    : 3
+                - Enabled                       : false
+        - TaskInterval                  : 30
+        - Type                          : Environment - SHT30/31/35 [TESTING]
+        - TaskName                      : Capteur
+        - TaskDeviceNumber              : 68
+        - TaskEnabled                   : true
+        - TaskNumber                    : 1
+    - 1 .................................
+        - TaskValues ........................
+            - 0 .................................
+                - ValueNumber                   : 1
+                - Name                          : Temperature
+                - NrDecimals                    : 2
+                - Value                         : 19.98
+            - 1 .................................
+                - ValueNumber                   : 2
+                - Name                          : Humidity
+                - NrDecimals                    : 2
+                - Value                         : 51.5
+        - DataAcquisition ...................
+            - 0 .................................
+                - Controller                    : 1
+                - IDX                           : 909
+                - Enabled                       : true
+            - 1 .................................
+                - Controller                    : 2
+                - Enabled                       : false
+            - 2 .................................
+                - Controller                    : 3
+                - Enabled                       : false
+        - TaskInterval                  : 30
+        - Type                          : Environment - SI7021/HTU21D
+        - TaskName                      : Sonde
+        - TaskDeviceNumber              : 14
+        - TaskEnabled                   : true
+        - TaskNumber                    : 2
+    - 2 .................................
+        - TaskValues ........................
+            - 0 .................................
+                - ValueNumber                   : 1
+                - Name                          : Count
+                - NrDecimals                    : 2
+            - 1 .................................
+                - ValueNumber                   : 2
+                - Name                          : Total
+                - NrDecimals                    : 2
+            - 2 .................................
+                - ValueNumber                   : 3
+                - Name                          : Time
+                - NrDecimals                    : 2
+        - DataAcquisition ...................
+            - 0 .................................
+                - Controller                    : 1
+                - Enabled                       : false
+            - 1 .................................
+                - Controller                    : 2
+                - Enabled                       : false
+            - 2 .................................
+                - Controller                    : 3
+                - Enabled                       : false
+        - TaskInterval                  : 60
+        - Type                          : Generic - Pulse counter
+        - TaskName                      : Eau
+        - TaskDeviceNumber              : 3
+        - TaskEnabled                   : false
+        - TaskNumber                    : 3
+    - 3 .................................
+        - TaskValues ........................
+            - 0 .................................
+                - ValueNumber                   : 1
+                - Name                          : State
+        - DataAcquisition ...................
+            - 0 .................................
+                - Controller                    : 1
+                - Enabled                       : false
+            - 1 .................................
+                - Controller                    : 2
+                - Enabled                       : false
+            - 2 .................................
+                - Controller                    : 3
+                - Enabled                       : false
+        - Type                          : Switch input - Switch
+        - TaskName                      : sw
+        - TaskDeviceNumber              : 1
+        - TaskEnabled                   : true
+        - TaskNumber                    : 4
+- TTL                           : 30000
 
 
 ```

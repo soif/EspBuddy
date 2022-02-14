@@ -1979,7 +1979,11 @@ https://github.com/soif/EspBuddy/issues/20
 			if($this->flag_verbose){
 				$this->sh->PrintColorGrey(" Config Parameters :" );
 				$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
+				$repo_shown=true;
 			}	
+		}
+		if(!$repo_shown and $this->c_conf['repo'] ){
+			echo "\nSelected Repo      : {$this->c_conf['repo']}\n";
 		}
 	}
 

@@ -27,6 +27,7 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
 	protected $api_urls=array(
+		'command'	=>	'/json',						// relative url to send a command
 		'backup'	=>	'/cfg.json?download',			// relative url to the URl where we can parse the remote version
 		'backup2'	=>	'/json?download',				// relative url to the URl where we can parse the remote version
 		'reboot'	=>	'/win&RB',						// relative url to the Reboot Command
@@ -52,6 +53,31 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function RemoteSendCommand($host_arr, $txt_command){
+			list($path, $value)=preg_split('#\s+#',$txt_command);
+			$payload=array();
+			$value=$this->_ValueToJson($value);
+
+			$this->_assignArrayByPath($payload,$path,$value);
+
+			//add v to get a json return to a POST command
+			//$payload['v']=true; // Seems to not work?
+			
+			if(count($payload)){
+				$url=$this->_MakeApiUrl($host_arr, $this->api_urls['command']);
+				$payload=json_encode($payload, JSON_NUMERIC_CHECK);
+	
+				if ($json=$this->_FetchPage($url, $host_arr['login'], $host_arr['pass'], $payload)){
+					return json_decode($json,true);
+				}
+		
+				if($this->last_http_code==200){
+					return true;
+				}
+			}			
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
 		$r=0;
 		$r+=$this->_RemoteBackupSettings($host_arr, $dest_path, 'config.json','backup');
@@ -59,6 +85,26 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 		if($r==2){
 			return $r;
 		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ValueToJson($value) {
+		if(strtolower($value)=='true'){
+			$value=true;
+		}
+		elseif(strtolower($value)=='false'){
+			$value=false;
+		}
+		return $value;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _assignArrayByPath(&$arr, $path, $value) {
+		$keys = explode('.', $path);
+		foreach ($keys as $key) {
+			$arr = &$arr[$key];
+		}
+		$arr = $value;
 	}
 
 

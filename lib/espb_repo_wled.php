@@ -41,9 +41,13 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteGetVersion($host_arr){
-		if($json=parent::_RemoteGetVersionJson($host_arr)){
+		if($json=$this->_RemoteGetVersionJson($host_arr)){
 			return trim($json['ver']);
 		}
+	}
+	// ---------------------------------------------------------------------------------------
+	public function RemoteGetStatus($host_arr){
+		return $this->_RemoteGetVersionJson($host_arr);
 	}
 
 	// ---------------------------------------------------------------------------------------

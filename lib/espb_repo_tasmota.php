@@ -64,6 +64,11 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function RemoteGetStatus($host_arr){
+		return $this->RemoteSendCommands($host_arr,'Status 0');
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
 		return $this->_RemoteBackupSettings($host_arr, $dest_path, 'config.dmp');
 	}
@@ -81,8 +86,9 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 		if(is_array($commands)){
 			$count=count($commands);
 			if($count==1){
-				$txt_command=key($commands)." ".reset($commands);				
-				//echo "Sending: $txt_command\n";
+				$txt_command=key($commands)." ".reset($commands);
+	
+				//echo "Sending: $txt_command\n\n";
 				$result= $this->RemoteSendCommand($host_arr, $txt_command);
 				return $result;
 			}

@@ -64,12 +64,15 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function RemoteGetStatus($host_arr){
+		return $this->_RemoteGetVersionJson($host_arr);
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommand($host_arr, $txt_command){
 		$raw=$this->_TelnetSendCommand($host_arr,$txt_command);
 		return $this->_ExtractEspuraTelnetData($raw);
 	}
-
-
 
 
 

@@ -62,6 +62,11 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function RemoteGetStatus($host_arr){
+		return $this->_RemoteGetVersionJson($host_arr);
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function RemoteBackupSettings($host_arr, $dest_path){
 		//$this->_PreAuthenticate($host_arr);
 

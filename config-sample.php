@@ -24,16 +24,16 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 // ################################################################################################################################
 /* Most default settings should be fine, but feel free to change it if you wish */
 
-//$cfg['prefs']['config']				='';				// Default config to use
-//$cfg['prefs']['repo']					='tasmota';			// Default repo to use
+//$cfg['prefs']['config']			='';				// Default config to use
+//$cfg['prefs']['repo']				='tasmota';			// Default repo to use
 //$cfg['prefs']['serial_port']			='';				// Default serial Port (empty = autoselect)
 //$cfg['prefs']['serial_rate']			='boot';			// Default serial Rate (default to 'boot' speed: 74880)
-//$cfg['prefs']['time_zone']			='Europe/Paris';	// Time zone for dates, see http://php.net/manual/en/timezones.php
+//$cfg['prefs']['time_zone']			='Europe/Paris';		// Time zone for dates, see http://php.net/manual/en/timezones.php
 //$cfg['prefs']['show_version']			='2';				// Show version in firmware name (0=no, 1=file version, 2=full git version)
-//$cfg['prefs']['firm_name']			='Firmware';		// Firmware name prefix
-//$cfg['prefs']['settings_name']		='Settings';		// Firmware settings name prefix
-//$cfg['prefs']['name_sep']				='-';				// Field separator in firmware name
-//$cfg['prefs']['keep_previous']		=3;					// Number of previous firmwares to keep
+//$cfg['prefs']['firm_name']			='Firmware';			// Firmware name prefix
+//$cfg['prefs']['settings_name']		='Settings';			// Firmware settings name prefix
+//$cfg['prefs']['name_sep']			='-';				// Field separator in firmware name
+//$cfg['prefs']['keep_previous']		=3;				// Number of previous firmwares to keep
 
 
 
@@ -74,18 +74,18 @@ $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasm
 // Configurations #################################################################################################################
 // ################################################################################################################################
 
-// SYNTAX: $cfg['repos']['NAME']['PARAM']		="VALUE";
+// SYNTAX: $cfg['configs']['NAME']['PARAM']		="VALUE";
 
 /*
 Define all configurations needed by your hosts, where PARAM is:
 - 'repo'		: the repository to use from the list above
-- 'environment'	: the environment to pass to platformio when compiling
+- 'environment'		: the environment to pass to platformio when compiling
 - '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
 - 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
 - 'login'		: (optionnal) a global default login name to use for this config
 - 'pass'		: (optionnal) a global default password to use for this config
-- 'serial_port'	: (optionnal) the serial port (or its alias name) to use, when in Wire mode
-- 'serial_rate'	: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
+- 'serial_port'		: (optionnal) the serial port (or its alias name) to use, when in Wire mode
+- 'serial_rate'		: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
 - 'exports'		: (optionnal) various export to perform before compiling
 				  Exports can inlude special variables that get replaced by their values extracted from the host definition.
 					- {{host_name}}	is replaced by the host (first) part of the FQDN
@@ -143,15 +143,16 @@ $cfg['configs']['tasmota_fr']['environment']						="sonoff-FR";
 
 // SYNTAX: $cfg['hosts']['NAME']['PARAM']		="VALUE";
 
-/* each host must at least be defined by 2 PARAMs :
-- 'hostname' or 'ip' (non defined ip or hostname are automatically filled by a dns request)
-- 'config' : the configuration name to load (from above 'configs')
+/* 
+Each host must at least be defined by 2 PARAMs :
+	- 'hostname' or 'ip' (non defined ip or hostname are automatically filled by a dns request)
+	- 'config' : the configuration name to load (from above 'configs')
 
 Optionally you can add:
-- 'serial_port' : the serial port (or its alias name) to use, when in Wire mode
-- 'serial_rate' : the serial baud rate (or its alias name) to use, when in Wire mode
-- 'login' 		: the login name used to authenticate to the web (for 'backup' and 'version' actions)
-- 'pass' 		: the password used to authenticate to the web (for 'backup' and 'version' actions)
+	- 'serial_port' : the serial port (or its alias name) to use, when in Wire mode
+	- 'serial_rate' : the serial baud rate (or its alias name) to use, when in Wire mode
+	- 'login' 		: the login name used to authenticate to the web (for 'backup' and 'version' actions)
+	- 'pass' 		: the password used to authenticate to the web (for 'backup' and 'version' actions)
 */
 
 // Examples: ---------------------------------------------------
@@ -181,8 +182,9 @@ $cfg['hosts']['nodemcu']['config']		="espeasy_4M_testing";
 
 // SYNTAX: $cfg['commands']['NAME']['PARAM']		="VALUE";
 
-/* each Commabds Set must at least be defined by 1 or 2 PARAMs :
-- 'list'	: a (newline separated) list of commands:
+/*
+Each Commabds Set must at least be defined by 1 or 2 PARAMs :
+	- 'list'	: a (newline separated) list of commands:
 				- Separate command and value on each line with space(s) or tab(s). 
 				- Blank lines, extras spaces and Comments (starting with "#") are ignored
 				- The list can inlude special variables that get replaced by their values extracted from the host definition:
@@ -190,7 +192,7 @@ $cfg['hosts']['nodemcu']['config']		="espeasy_4M_testing";
 					- {{host_ip}}	is replaced by the host IP address
 					- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
 					- {{git_version}} is replaced by the full git version (branch,tag,commit)
-- 'repo'	: (opionnal) the repo to use (if not set as argument, as config param, or as default prefs)
+	- 'repo'	: (opionnal) the repo to use (if not set as argument, as config param, or as default prefs)
 */
 
 // Examples: ---------------------------------------------------
@@ -216,7 +218,8 @@ SetOption56 1			# Wi-Fi network scan to select strongest signal on restart
 
 $cfg['commands']['tasmota_but_simple']['repo']	='tasmota';
 $cfg['commands']['tasmota_but_simple']['list']	="
-{$cfg['commands']['tasmota_main']['list']}	#include the 'tasmota_main' commands list
+#include the 'tasmota_main' commands list
+{$cfg['commands']['tasmota_main']['list']}	
 
 # additional But settings
 SetOption13 1			# Allow immediate action on single button press

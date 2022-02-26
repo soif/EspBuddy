@@ -74,7 +74,7 @@ $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasm
 // Configurations #################################################################################################################
 // ################################################################################################################################
 
-// SYNTAX: $cfg['repos']['NAME']['PARAM']		="VALUE";
+// SYNTAX: $cfg['configs']['NAME']['PARAM']		="VALUE";
 
 /*
 Define all configurations needed by your hosts, where PARAM is:

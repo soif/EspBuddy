@@ -1,7 +1,7 @@
 <?php
 /*
 --------------------------------------------------------------------------------------------------------------------------------------
-EspBuddy : Repository class for Espeasy
+EspBuddy : Repository class for Tasmota
 --------------------------------------------------------------------------------------------------------------------------------------
 Copyright (C) 2018  by François Déchery - https://github.com/soif/
 
@@ -72,8 +72,6 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	public function RemoteBackupSettings($host_arr, $dest_path){
 		return $this->_RemoteBackupSettings($host_arr, $dest_path, 'config.dmp');
 	}
-
-
 
 	// ---------------------------------------------------------------------------------------
 	public function RemoteSendCommands($host_arr, $commands_list){

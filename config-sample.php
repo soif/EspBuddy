@@ -24,16 +24,18 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 // ################################################################################################################################
 /* Most default settings should be fine, but feel free to change it if you wish */
 
-//$cfg['prefs']['config']			='';				// Default config to use
-//$cfg['prefs']['repo']				='tasmota';			// Default repo to use
+//$cfg['prefs']['config']			='';					// Default config to use
+//$cfg['prefs']['repo']				='tasmota';				// Default repo to use
 //$cfg['prefs']['serial_port']			='';				// Default serial Port (empty = autoselect)
 //$cfg['prefs']['serial_rate']			='boot';			// Default serial Rate (default to 'boot' speed: 74880)
-//$cfg['prefs']['time_zone']			='Europe/Paris';		// Time zone for dates, see http://php.net/manual/en/timezones.php
+//$cfg['prefs']['time_zone']			='Europe/Paris';	// Time zone for dates, see http://php.net/manual/en/timezones.php
 //$cfg['prefs']['show_version']			='2';				// Show version in firmware name (0=no, 1=file version, 2=full git version)
-//$cfg['prefs']['firm_name']			='Firmware';			// Firmware name prefix
-//$cfg['prefs']['settings_name']		='Settings';			// Firmware settings name prefix
-//$cfg['prefs']['name_sep']			='-';				// Field separator in firmware name
-//$cfg['prefs']['keep_previous']		=3;				// Number of previous firmwares to keep
+//$cfg['prefs']['firm_name']			='Firmware';		// Firmware name prefix
+//$cfg['prefs']['settings_name']		='Settings';		// Firmware settings name prefix
+//$cfg['prefs']['name_sep']				='-';				// Field separator in firmware name
+//$cfg['prefs']['keep_previous']		=3;					// Number of previous firmwares to keep
+//$cfg['prefs']['server_port']			=81;				// Built-in Webserver port
+//$cfg['prefs']['server_root']			='';				// Built-in Webserver Root directory (defaults to $cfg['paths']['dir_backup'])
 
 
 

@@ -47,7 +47,7 @@ Works with :
 ## Requirements
 
 - Linux or OSX Operating System (+ [Windows](doc/install_windows.md) for some method only)
-- php5 or newer
+- php v5.4 or newer
 - PlatformIO __needed only for compiling__
 
 ## Installation
@@ -65,6 +65,7 @@ Valid Actions are:
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
+- **server**          : Launch Firmwares WebServer
 - **send**            : Send Command(s)
 - **status**          : Show Device(s) Information
 - **version**         : Show Device(s) Version
@@ -83,16 +84,17 @@ Valid Actions are:
 
 Examples:
 
-- `espbuddy.php upload` select the one to upload to from the list of targets
-- `espbuddy.php upload relay1` upload to target 'relay1'
-- `espbuddy.php upload all -b` upload to all defined targets, while building the firmware first
-- `espbuddy.php upload relay1 -w` upload using serial to target 'relay1'
-- `espbuddy.php upload relay1 -web` build 'relay1', then using serial port, erase first and upload
-- `espbuddy.php backup all` backup settings ofall defined targets
+- `espbuddy.php upload` selects the one to upload to from the list of targets
+- `espbuddy.php upload relay1` uploads to target 'relay1'
+- `espbuddy.php upload all -b` uploads to all defined targets, while building the firmware first
+- `espbuddy.php upload relay1 -w` uploads using serial to target 'relay1'
+- `espbuddy.php upload relay1 -web` builds 'relay1', then using serial port, erase first and upload
+- `espbuddy.php backup all` backups settings ofall defined targets
 - `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
-- `espbuddy.php send relay1 SetOption13 1` Send the "SetOption13 1" command to 'relay1'
-- `espbuddy.php version all` show versions of all defined targets
-- `espbuddy.php ping all` ping the all defined targets
+- `espbuddy.php server` launches the builtin webserver on port 81, serving files from the backup directory
+- `espbuddy.php send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
+- `espbuddy.php version all` shows versions of all defined targets
+- `espbuddy.php ping all` pings all defined targets
 - `espbuddy.php sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
 
 See [more command examples](doc/command_examples.md) ...

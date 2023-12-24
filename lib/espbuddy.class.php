@@ -113,6 +113,7 @@ class EspBuddy {
 			'build'			=> "Build firmware for the selected device",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
+			'server'		=> "Launch Firmwares WebServer",
 			'send'			=> "Send commands to device",
 			'status'		=> "Show Device's Information",
 			'version'		=> "Show remote device version",
@@ -159,6 +160,7 @@ class EspBuddy {
 			'build'			=> "TARGET [options]",
 			'backup'		=> "TARGET [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
+			'server'		=> "[ROOT_DIR]",
 			'send'			=> "TARGET CMD_SET|COMMAND [options, auth_options]",
 			'status'		=> "TARGET [options, auth_options]",
 			'version'		=> "TARGET [options, auth_options]",
@@ -285,6 +287,9 @@ class EspBuddy {
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 
+			case 'server':
+				$this->Command_server();
+				break;
 			case 'sonodiy':
 				$this->Command_sonodiy();
 				break;
@@ -581,6 +586,30 @@ class EspBuddy {
 			}
 		}
 		return true;
+	}
+	// ---------------------------------------------------------------------------------------
+	function Command_server(){
+		$root=$this->target or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
+		$root = rtrim($root,"/");
+		$port=$this->cfg['server_port'] or $port=81;
+		$index=$this->espb_path_lib."espb_server_index.php";
+		$command="php -S 0.0.0.0:$port -t $root $index";
+		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
+		$ip=getHostName();
+		$host=getHostByName(getHostName());
+		$tab="  ";
+		echo "Some possible URLs are:\n";
+		echo $tab."http://$ip:$port\n";
+		echo $tab."http://$host:$port\n";
+		echo $tab."http://localhost:$port\n";
+		echo $tab."http://127.0.0.1:$port\n";
+		echo "\n";
+		echo "Serving directory:\n";
+		echo $tab."$root\n";
+		echo "\n";
+		echo "(Press Ctrl-C to stop)\n";
+		passthru($command, $r);
+		exit(0);
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -911,6 +940,8 @@ class EspBuddy {
 * TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
 
 * CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
+
+* ROOT_DIR           : Root directory (for the built-in Web Server)
 
 * OPTIONS :
 	-y           : Automatically confirm Yes/No

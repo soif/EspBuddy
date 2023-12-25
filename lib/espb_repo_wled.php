@@ -18,24 +18,24 @@ require_once(dirname(__FILE__).'/espb_repo.php');
 
 class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 
-	protected $name 			= "Wled"; 				// Firmware's Name
+	protected $name 			= "Wled"; 						// Firmware's Name
 
 	// location relative to the base repository path
-	protected $version_file 	= "package.json";				// file to parse to get the version
-	protected $version_regex 	= '|"version"\s*:\s*"([^"]+)"|s'; 		// regex used to extract the version in the version_file
-	protected $version_regnum = 1; 							// captured parenthesis number where the version is extracted using the regex
+	protected $version_file		= "package.json";				// file to parse to get the version
+	protected $version_regex	= '|"version"\s*:\s*"([^"]+)"|s';	// regex used to extract the version in the version_file
+	protected $version_regnum	= 1; 							// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= '';						// first (intermediate) firmware to upload
 
 	protected $api_urls=array(
-		'command'	=>	'/json',					// relative url to send a command
-		'backup'	=>	'/cfg.json?download',				// relative url to the URl where we can parse the remote version
-		'backup2'	=>	'/json?download',				// relative url to the URl where we can parse the remote version
-		'reboot'	=>	'/win&RB',					// relative url to the Reboot Command
-		'version'	=>	'/json',					// relative url to the URl where we can parse the remote version
+		'command'	=>	'/json',								// relative url to send a command
+		'backup'	=>	'/cfg.json?download',					// relative url to the URl where we can parse the remote version
+		'backup2'	=>	'/json?download',						// relative url to the URl where we can parse the remote version
+		'reboot'	=>	'/win&RB',								// relative url to the Reboot Command
+		'version'	=>	'/json',								// relative url to the URl where we can parse the remote version
 	);
 
-	protected $default_login 		= 'admin';				// Login name to use when not set
+	protected $default_login 		= 'admin';					// Login name to use when not set
 
 	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){

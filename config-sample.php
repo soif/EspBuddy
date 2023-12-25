@@ -66,14 +66,14 @@ $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasm
 /*	
 	(REQUIRED)
 
-	Define all configurations set  (needed by your 'hosts')
+	Define all configurations sets  (needed by your 'hosts')
 
 	Configurations 'configs' are used by 'hosts' (see below) to basically describe, the firmware type used (espeasy,espura,tasmota,wled)
 	and optionally the 'environment' used to build, some 'exports' to pass to the compiler, and/or some 'pass' or 'serial_port' to use.
 
-	SYNTAX: $cfg['configs']['NAME']['PARAM']		="VALUE";
-	* NAME is your own config's name. (avoid spaces or funky characters here)
-	* PARAM is one or some of:
+	SYNTAX: $cfg['configs']['ID']['PARAM']		="VALUE";
+	* ID	: Your own config's name. (avoid spaces or funky characters here)
+	* PARAM : Each config can use one or some of the following parameters:
 		- 'repo'		: the repository to use from the list above
 		- 'environment'	: (optionnal) the environment to pass to platformio (required when compiling)
 		- '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
@@ -149,11 +149,11 @@ $cfg['configs']['espeasy_4M_testing']['environment']				="dev_ESP8266_4096";
 	(REQUIRED)
 	You have to create some "Hosts": Each 'host' basically describes one of your devices by its 'hostname' (or 'ip' Address) 
 	and points to one of the 'configs' (that you've defined above). You sould preferably use the (dns) hostname. 
-	The IP ('ip)') should then be automatically resolved. If not, you can also (or either) set the 'ip' address.
-	(depending on you network configuration) 
+	The IP ('ip)') should then be automatically resolved (depending on your own network configuration). 
+	If not, you can also (or either) set the 'ip' address.
 
-	SYNTAX: $cfg['hosts']['NAME']['PARAM']		="VALUE";
-	* NAME  : is your own device's name. (avoid spaces or funky characters here)
+	SYNTAX: $cfg['hosts']['ID']['PARAM']		="VALUE";
+	* ID  	: Your own device's name. (avoid spaces or funky characters here)
 	* PARAM : Each host must at least be defined by two parameters :
 		- 'hostname' or 'ip' : the real (FQDN) hostname of your device or its IP address
 		- 'config'			 : the configuration name to use 
@@ -187,16 +187,18 @@ $cfg['hosts']['nodemcu']['serial_port']		="wemos";
 // ################################################################################################################################
 /*
 	(optionnal)
-	Define some commands lists sets that will be used in the EspBuddy 'send' action. 
+	Define some commands sets that will be used in the EspBuddy 'send' action. 
 
-	SYNTAX: $cfg['commands']['NAME']['PARAM']		="VALUE";
-	* NAME	: Your own commands set's name.
+	SYNTAX: $cfg['commands']['ID']['PARAM']		="VALUE";
+	* ID	: Your own commands set's name.
 	* PARAM	: Each Commands Set must at least be defined by 1 or 2 parameter :
 		- 'list'	: a (newline separated) list of commands:
 					- Separate command and value on each line with space(s) or tab(s). 
 					- Blank lines, extras spaces and Comments (starting with "#") are ignored
-					- The list can inlude special variables that get replaced by their values extracted from the host definition:
-						- {{host_name}}	is replaced by the first part of the FQDN set in the host's 'hostname'.
+					- The list can inlude special variables that get replaced by their values extracted from the host's definition:
+						- {{host_fqdn}}	is replaced by the fully Qualified Domain Name, aka 'hostname'
+						- {{host_name}}	is replaced by the host's (first) part of the FQDN
+						- {{host_id}}	is replaced by the host's ID
 						- {{host_ip}}	is replaced by the host IP address.
 						- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address.
 						- {{git_version}} is replaced by the full git version (branch,tag,commit)
@@ -240,7 +242,7 @@ $cfg['commands']['tasmo_button']['list']	="
 // Examples: Upgrade from our server ----------------------------------------------
 $cfg['commands']['tasmo_upg']['repo']	='tasmota';
 $cfg['commands']['tasmo_upg']['list']	="
-OtaUrl	http://192.168.1.15:81/buttons/Firmware.bin	# Set OTA URL to Espbuddy builtin web server
+OtaUrl	http://192.168.1.15:81/{{host_id}}/Firmware.bin	# Set OTA URL to Espbuddy builtin web server
 Upgrade 1											# Upgrade and restart
 ";
 

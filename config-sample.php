@@ -245,12 +245,20 @@ Upgrade 1											# Upgrade and restart
 ";
 
 // Examples: Get some GPIO status ----------------------------------------------
-
-$cfg['commands']['espeasy_test']['repo']	='espeasy';
+$cfg['commands']['espeasy_test']['repo']="espeasy";
 $cfg['commands']['espeasy_test']['list']	="
 Status,GPIO,0
 Status,GPIO,1
 Status,GPIO,2
+Status,GPIO,3
+Status,GPIO,4
+Status,GPIO,5
+Status,GPIO,9
+Status,GPIO,10
+Status,GPIO,12
+Status,GPIO,13
+Status,GPIO,14
+Status,GPIO,15
 ";
 
 

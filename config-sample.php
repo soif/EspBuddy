@@ -1,31 +1,33 @@
 <?php
 
 // ################################################################################################################################
-// Global Paths ###################################################################################################################
+// Global Paths  ('paths') ########################################################################################################
 // ################################################################################################################################
+/*
+	'dir_backup': The  directory where uploaded firmwares and settings are stored.
+	(This will also be the default root directory of EspBuddy builtin web server)
+ */
+$cfg['paths']['dir_backup']			="/tmp/EspBuddy/";				// (with a trailing slash!)
+//$cfg['paths']['dir_backup']		="/Users/soif/EspBuddy_data/";	// (with a trailing slash!)
 
-//path to the platformio binary
-$cfg['paths']['bin_pio']						="/usr/local/bin/pio";
+// for Windows OS, the default tmp dir is at (edit and uncomment the following:)
+//$cfg['paths']['dir_backup']		="/Users/<YOUR_USER_NAME>/AppData/Local/EspBuddy/"; // (with a trailing slash!)
 
-//Directory where is python (force Esptool to use the right python version, ie on OSX)
-$cfg['paths']['dir_python']						="/Users/soif/.platformio/penv/bin/";
 
-// Backup Directory where uploaded firmwares and download settings are stored 
-//$cfg['paths']['dir_backup']					="/Users/soif/EspBuddy_data/"; //(WITH a trailing slash)
-$cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
+// 'dir_python': Directory where is python (force Esptool to use the right python version, ie on OSX)
+$cfg['paths']['dir_python']			="/Users/soif/.platformio/penv/bin/";	 // (with a trailing slash!)
 
-//for Windows OS, the default tmp dir is at (edit and uncomment the following:)
-//$cfg['paths']['dir_backup']					="/Users/<YOUR_USER_NAME>/AppData/Local/EspBuddy/"; //(WITH a trailing slash)
-
+// 'bin_pio':  Path to the platformio binary (Only needed if you want to compil some firmware)
+$cfg['paths']['bin_pio']			="/usr/local/bin/pio";
 
 
 // ################################################################################################################################
-// Global Preferences #############################################################################################################
+// Global Preferences ('prefs') ###################################################################################################
 // ################################################################################################################################
 /* Most default settings should be fine, but feel free to change it if you wish */
 
-//$cfg['prefs']['config']			='';					// Default config to use
-//$cfg['prefs']['repo']				='tasmota';				// Default repo to use
+//$cfg['prefs']['config']				='';				// Default config to use
+//$cfg['prefs']['repo']					='tasmota';			// Default repo to use
 //$cfg['prefs']['serial_port']			='';				// Default serial Port (empty = autoselect)
 //$cfg['prefs']['serial_rate']			='boot';			// Default serial Rate (default to 'boot' speed: 74880)
 //$cfg['prefs']['time_zone']			='Europe/Paris';	// Time zone for dates, see http://php.net/manual/en/timezones.php
@@ -40,61 +42,83 @@ $cfg['paths']['dir_backup']						="/tmp/EspBuddy/"; //(WITH a trailing slash)
 
 
 // ################################################################################################################################
-// #################################### USER SETTINGS #############################################################################
+// Repositories Paths ('repos') ###################################################################################################
 // ################################################################################################################################
-/* Here is where you set your own settings */
+/*
+	Defines the paths to your local copy of each repositories you wish to use.
+	(This is only used if you want to build your own binaries)
 
-
-// "sonodiy" command settings #####################################################################################################
-// URL of the Firmware to upload when using then "sonodiy flash" command (for Sonoff "DIY" devices only )
-// be sure to use a firmware < 508kB, but DON'T use the tasmota-minimal.bin (it wont allow to store settings)
-
-// unfortunately (!!!!!) The sonoff API don't seem to work with an External URL, (at least not this one).
-// You can try this URL , by adding the -P flag at the end of the flash command.
-// This should proxy the external URL, to a local URL, and may be fool the sonoff API
-$cfg['sonodiy']['firmware_url']="http://thehackbox.org/tasmota/release/tasmota-lite.bin"; 
-
-// If It does not work,  please only use an URL to a LAN webserver (see Git issue #20)
-//$cfg['sonodiy']['firmware_url']="http://<INTERNAL_SERVER_IP_OR_HOSTNAME>/tasmota-lite.bin"; 
-
-
-
-// ################################################################################################################################
-// Repositories ###################################################################################################################
-// ################################################################################################################################
-
-// SYNTAX: $cfg['repos']['NAME']['path_repo']		="PATH";
-
-// Defines the paths to your local copy of each repositories you wish to use :
-$cfg['repos']['espurna']['path_repo']				="/Users/soif/mount/dev_apache/src/espurna/";
+	SYNTAX: $cfg['repos']['NAME']['path_repo']		="PATH";	//(with a trailing slash!)
+		* NAME :	is one of the supported firmwares :  'espeasy' | 'espura' | 'tasmota' | 'wled'
+		* PATH :	path to the main folder where the repository is cloned
+*/
+// Examples --------------------------
+$cfg['repos']['espurna']['path_repo']				="/Users/soif/mount/dev_apache/src/espurna/";	
 $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPEasy/";
 $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasmota/";
 
 
 
-// ################################################################################################################################
-// Configurations #################################################################################################################
-// ################################################################################################################################
 
-// SYNTAX: $cfg['configs']['NAME']['PARAM']		="VALUE";
+// ################################################################################################################################
+// Configurations ('configs') #####################################################################################################
+// ################################################################################################################################
+/*	
+	(REQUIRED)
 
-/*
-Define all configurations needed by your hosts, where PARAM is:
-- 'repo'		: the repository to use from the list above
-- 'environment'		: the environment to pass to platformio when compiling
-- '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
-- 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
-- 'login'		: (optionnal) a global default login name to use for this config
-- 'pass'		: (optionnal) a global default password to use for this config
-- 'serial_port'		: (optionnal) the serial port (or its alias name) to use, when in Wire mode
-- 'serial_rate'		: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
-- 'exports'		: (optionnal) various export to perform before compiling
-				  Exports can inlude special variables that get replaced by their values extracted from the host definition.
-					- {{host_name}}	is replaced by the host (first) part of the FQDN
-					- {{host_ip}}	is replaced by the host IP address
-					- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
-					- {{git_version}} is replaced by the full git version (branch,tag,commit)
+	Define all configurations set  (needed by your 'hosts')
+
+	Configurations 'configs' are used by 'hosts' (see below) to basically describe, the firmware type used (espeasy,espura,tasmota,wled)
+	and optionally the 'environment' used to build, some 'exports' to pass to the compiler, and/or some 'pass' or 'serial_port' to use.
+
+	SYNTAX: $cfg['configs']['NAME']['PARAM']		="VALUE";
+	* NAME is your own config's name. (avoid spaces or funky characters here)
+	* PARAM is one or some of:
+		- 'repo'		: the repository to use from the list above
+		- 'environment'	: (optionnal) the environment to pass to platformio (required when compiling)
+		- '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
+		- 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
+		- 'login'		: (optionnal) a global default login name to use for this config
+		- 'pass'		: (optionnal) a global default password to use for this config
+		- 'serial_port'	: (optionnal) the serial port (or its alias name) to use, when in Wire mode
+		- 'serial_rate'	: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
+		- 'exports'		: (optionnal) various export to perform before compiling
+						Exports can inlude special variables that get replaced by their values extracted from the host definition.
+							- {{host_name}}	is replaced by the host (first) part of the FQDN
+							- {{host_ip}}	is replaced by the host IP address
+							- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
+							- {{git_version}} is replaced by the full git version (branch,tag,commit)
 */
+
+// Examples: Tasmota Configurations --------------------------------------------------------------
+$cfg['configs']['tasmota']['repo']										="tasmota";
+$cfg['configs']['tasmota']['environment']								="tasmota";
+
+$cfg['configs']['tasmota32']['repo']									="tasmota";
+$cfg['configs']['tasmota32']['environment']								="tasmota32";
+
+$cfg['configs']['tasmota_sens']['repo']									="tasmota";
+$cfg['configs']['tasmota_sens']['environment']							="tasmota-sensors";
+
+$cfg['configs']['tasmota_lcd_sht']['repo']								="tasmota";
+$cfg['configs']['tasmota_lcd_sht']['environment']						="tasmota";
+$cfg['configs']['tasmota_lcd_sht']['exports']['PLATFORMIO_BUILD_FLAGS']	="-DUSE_DISPLAY -DUSE_DISPLAY_LCD -DUSE_SHT3X -DUSE_HTU  -DUSE_DS18x20";
+$cfg['configs']['tasmota_lcd_sht']['2steps']							=true;
+
+
+// Examples: Espurna Configurations --------------------------------------------------------------
+$cfg['configs']['espurna_mh20']['repo']								="espurna";
+$cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
+$cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
+$cfg['configs']['espurna_mh20']['exports']['ESPURNA_BOARD']			="MAGICHOME_LED_CONTROLLER_20";
+//$cfg['configs']['espurna_mh20']['pass']							="MyEspurnaPassword";
+
+$cfg['configs']['espurna_h801']['repo']								="espurna";
+$cfg['configs']['espurna_h801']['environment']						="esp8266-1m-ota";
+$cfg['configs']['espurna_h801']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
+$cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801";
+//$cfg['configs']['espurna_h801']['pass']							="MyEspurnaPassword";
+
 
 // Examples: ESPEasy Configurations --------------------------------------------------------------
 //date_default_timezone_set($cfg['prefs']['time_zone']);
@@ -116,116 +140,141 @@ $cfg['configs']['espeasy_4M_testing']								=$cfg['configs']['espeasy_4M'];
 $cfg['configs']['espeasy_4M_testing']['environment']				="dev_ESP8266_4096";
 
 
-// Examples: Espurna Configurations --------------------------------------------------------------
-$cfg['configs']['espurna_mh20']['repo']								="espurna";
-$cfg['configs']['espurna_mh20']['environment']						="esp8266-1m-ota";
-$cfg['configs']['espurna_mh20']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
-$cfg['configs']['espurna_mh20']['exports']['ESPURNA_BOARD']			="MAGICHOME_LED_CONTROLLER_20";
-//$cfg['configs']['espurna_mh20']['pass']							="MyEspurnaPassword";
-
-$cfg['configs']['espurna_h801']['repo']								="espurna";
-$cfg['configs']['espurna_h801']['environment']						="esp8266-1m-ota";
-$cfg['configs']['espurna_h801']['exports']['PLATFORMIO_BUILD_FLAGS']="-DUSE_CUSTOM_H";
-$cfg['configs']['espurna_h801']['exports']['ESPURNA_BOARD']			="HUACANXING_H801";
-//$cfg['configs']['espurna_h801']['pass']							="MyEspurnaPassword";
-
-
-// Examples: Tasmota Configurations --------------------------------------------------------------
-$cfg['configs']['tasmota_en']['repo']								="tasmota";
-$cfg['configs']['tasmota_en']['environment']						="sonoff";
-
-$cfg['configs']['tasmota_fr']['repo']								="tasmota";
-$cfg['configs']['tasmota_fr']['environment']						="sonoff-FR";
-
 
 
 // ################################################################################################################################
-// Hosts ##########################################################################################################################
+// Hosts ('hosts') ################################################################################################################
 // ################################################################################################################################
+/*
+	(REQUIRED)
+	You have to create some "Hosts": Each 'host' basically describes one of your devices by its 'hostname' (or 'ip' Address) 
+	and points to one of the 'configs' (that you've defined above). You sould preferably use the (dns) hostname. 
+	The IP ('ip)') should then be automatically resolved. If not, you can also (or either) set the 'ip' address.
+	(depending on you network configuration) 
 
-// SYNTAX: $cfg['hosts']['NAME']['PARAM']		="VALUE";
+	SYNTAX: $cfg['hosts']['NAME']['PARAM']		="VALUE";
+	* NAME  : is your own device's name. (avoid spaces or funky characters here)
+	* PARAM : Each host must at least be defined by two parameters :
+		- 'hostname' or 'ip' : the real (FQDN) hostname of your device or its IP address
+		- 'config'			 : the configuration name to use 
 
-/* 
-Each host must at least be defined by 2 PARAMs :
-	- 'hostname' or 'ip' (non defined ip or hostname are automatically filled by a dns request)
-	- 'config' : the configuration name to load (from above 'configs')
-
-Optionally you can add:
-	- 'serial_port' : the serial port (or its alias name) to use, when in Wire mode
-	- 'serial_rate' : the serial baud rate (or its alias name) to use, when in Wire mode
-	- 'login' 		: the login name used to authenticate to the web (for 'backup' and 'version' actions)
-	- 'pass' 		: the password used to authenticate to the web (for 'backup' and 'version' actions)
+		Optionally you can add: (use )
+		- 'serial_port' : the serial port (or its alias names) to use, when in Wire mode
+		- 'serial_rate' : the serial baud rate (or its alias name) to use, when in Wire mode
+		- 'login' 		: the login name used to authenticate to the device's web server (for all remote actions)
+		- 'pass' 		: the password used to authenticate to the device's web server (for all remote actions)
 */
 
 // Examples: ---------------------------------------------------
-$cfg['hosts']['led1']['hostname']		="led1.local";
-$cfg['hosts']['led1']['config']			="espurna_mh20";
+$cfg['hosts']['led1']['hostname']			="led1.local";
+$cfg['hosts']['led1']['config']				="espurna_mh20";
 
-$cfg['hosts']['led2']['hostname']		="led2.local";
-$cfg['hosts']['led2']['config']			="espurna_h801";
+$cfg['hosts']['hall_sensor']['hostname']	="hall.local";
+$cfg['hosts']['hall_sensor']['config']		="tasmota_sens";
 
-$cfg['hosts']['led3']['ip']				="192.168.1.203";
-$cfg['hosts']['led3']['config']			="espeasy_1M";
-//$cfg['hosts']['led3']['pass']			="MyEspeasyPassword";
+$cfg['hosts']['garden_sensor']['ip']		="192.168.1.203";
+$cfg['hosts']['garden_sensor']['config']	="espeasy_1M";
+$cfg['hosts']['garden_sensor']['pass']		="MyEspeasyPassword";
 
-$cfg['hosts']['relay1']['hostname']		="relay1.local";
-$cfg['hosts']['relay1']['config']		="espeasy_4M";
-//$cfg['hosts']['relay1']['serial_port']	="wemos";
-
-$cfg['hosts']['nodemcu']['ip']			="192.168.1.240";
-$cfg['hosts']['nodemcu']['config']		="espeasy_4M_testing";
-//$cfg['hosts']['nodemcu']['serial_port']	="nodemcu";
+$cfg['hosts']['nodemcu']['hostname']		="nodemcu";
+$cfg['hosts']['nodemcu']['config']			="tasmota32";
+$cfg['hosts']['nodemcu']['serial_port']		="wemos";
 
 
 
 // ################################################################################################################################
-// Commands Sets ##########################################################################################################################
+// Commands Lists ('commands') #####################################################################################################
 // ################################################################################################################################
+/*
+	(optionnal)
+	Define some commands lists sets that will be used in the EspBuddy 'send' action. 
 
-// SYNTAX: $cfg['commands']['NAME']['PARAM']		="VALUE";
+	SYNTAX: $cfg['commands']['NAME']['PARAM']		="VALUE";
+	* NAME	: Your own commands set's name.
+	* PARAM	: Each Commands Set must at least be defined by 1 or 2 parameter :
+		- 'list'	: a (newline separated) list of commands:
+					- Separate command and value on each line with space(s) or tab(s). 
+					- Blank lines, extras spaces and Comments (starting with "#") are ignored
+					- The list can inlude special variables that get replaced by their values extracted from the host definition:
+						- {{host_name}}	is replaced by the first part of the FQDN set in the host's 'hostname'.
+						- {{host_ip}}	is replaced by the host IP address.
+						- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address.
+						- {{git_version}} is replaced by the full git version (branch,tag,commit)
+		- 'repo'	: (opionnal) the repo to use (if not set as argument, as config parameter, or as a default prefs)
+
+*/
+
+// Example: Basic Tasmota settings ----------------------------------------------
+$cfg['commands']['tasmo_main']['repo']	='tasmota';
+$cfg['commands']['tasmo_main']['list']	="
+	Topic 		{{host_name}}	# mqtt topic
+	IPAddress1 	{{host_ip}}		# Net IP address		
+	IPAddress2 	10.1.11.1		# Net Gateway
+	IPAddress3 	255.255.0.0		# Net Mask
+	IPAddress4 	10.1.10.1		# Net DNS
+
+	NtpServer1 	time.lo.lo		# NTP Server
+
+	LogHost 	log.lo.lo		# Log Server
+	SysLog 		2				# Log Level
+
+	MqttHost 	mqtt.lo.lo		# MQTT Host
+
+	SetOption56 1				# Wi-Fi network scan to select strongest signal on restart
+";
+
+
+// Example: Settings for buttons ----------------------------------------------
+$cfg['commands']['tasmo_button']['repo']	='tasmota';
+$cfg['commands']['tasmo_button']['list']	="
+
+	# includes the previously set 'tasmota_main' commands list ++++++
+	{$cfg['commands']['tasmota_main']['list']}	
+
+	# additional buttons settings +++++++++++++++++
+	SetOption13 1		# Allow immediate action on single button press
+	SetOption1	1		#  restrict to single to penta press and hold actions
+";
+
+
+// Examples: Upgrade from our server ----------------------------------------------
+$cfg['commands']['tasmo_upg']['repo']	='tasmota';
+$cfg['commands']['tasmo_upg']['list']	="
+OtaUrl	http://192.168.1.15:81/buttons/Firmware.bin	# Set OTA URL to Espbuddy builtin web server
+Upgrade 1											# Upgrade and restart
+";
+
+// Examples: Get some GPIO status ----------------------------------------------
+
+$cfg['commands']['espeasy_test']['repo']	='espeasy';
+$cfg['commands']['espeasy_test']['list']	="
+Status,GPIO,0
+Status,GPIO,1
+Status,GPIO,2
+";
+
+
+
+
+// ###########################################################################################################################
+// "sonodiy" command settings ################################################################################################
+// ###########################################################################################################################
+/*
+	URL of the Firmware to upload when using then "sonodiy flash" command (for Sonoff "DIY" devices only ).
+	Be sure to use a firmware < 508kB, but DON'T use the tasmota-minimal.bin (it wont allow to store settings)
+*/
+
+$cfg['sonodiy']['firmware_url']="https://ota.tasmota.com/tasmota/release/tasmota-lite.bin"; 
 
 /*
-Each Commabds Set must at least be defined by 1 or 2 PARAMs :
-	- 'list'	: a (newline separated) list of commands:
-				- Separate command and value on each line with space(s) or tab(s). 
-				- Blank lines, extras spaces and Comments (starting with "#") are ignored
-				- The list can inlude special variables that get replaced by their values extracted from the host definition:
-					- {{host_name}}	is replaced by the host (first) part of the FQDN
-					- {{host_ip}}	is replaced by the host IP address
-					- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address
-					- {{git_version}} is replaced by the full git version (branch,tag,commit)
-	- 'repo'	: (opionnal) the repo to use (if not set as argument, as config param, or as default prefs)
+	unfortunately (!!!!!) The sonoff API don't seem to work with an External URL, (at least not the tested one).
+	You can try this URL , by adding the -P flag at the end of the 'flash' action.
+	(This should proxy the external URL, to a local URL, and may be fool the sonoff API)
+	
+	If It does not work, please only use an URL to a LAN webserver (see Git issue #20)
+	You might use the EspBuddy builtin web server:
 */
-
-// Examples: ---------------------------------------------------
-$cfg['commands']['tasmota_main']['repo']	='tasmota';
-$cfg['commands']['tasmota_main']['list']	="
-Topic 		{{host_name}}		# mqtt topic
-IPAddress1 	{{host_ip}}	# Net IP address		
-IPAddress2 	10.1.11.1	# Net Gateway
-IPAddress3 	255.255.0.0	# Net Mask
-IPAddress4 	10.1.10.1	# Net DNS
-
-NtpServer1 	time.lo.lo	# NTP Server
-
-LogHost 	log.lo.lo		# Log Server
-SysLog 		2				# Log Level
-
-MqttHost 	mqtt.lo.lo		# MQTT Host
-
-SetOption56 1			# Wi-Fi network scan to select strongest signal on restart
-";
-
-
-
-$cfg['commands']['tasmota_but_simple']['repo']	='tasmota';
-$cfg['commands']['tasmota_but_simple']['list']	="
-#include the 'tasmota_main' commands list
-{$cfg['commands']['tasmota_main']['list']}	
-
-# additional But settings
-SetOption13 1			# Allow immediate action on single button press
-";
+//$cfg['sonodiy']['firmware_url']="http://<ESPBUDDY_SERVER_IP_OR_HOSTNAME>:81/firmwares/tasmota-lite.bin"; 
 
 
 ?>

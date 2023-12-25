@@ -294,8 +294,10 @@ class EspBuddy_Repo {
 						$com=$key;
 						!empty($value) and $com .=" $value";
 						echo " $com	";
-						if($this->RemoteSendCommand($host_arr, $com)){
-							echo "	OK\n";
+						if($r=$this->RemoteSendCommand($host_arr, $com)){
+							echo "	OK	: ";
+							print_r($r);;
+							echo "\n";
 						}
 						else {
 							echo "	Failed\n";

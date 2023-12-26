@@ -2097,7 +2097,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$esc_version_short="";
 		//$esc_version_short	=str_replace('/','_',$version_short);
 		$esc_version_full	=str_replace('/','_',$version_full);
-		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
+		$this->c_host['firmware_name']	="{$this->c_conf['repo']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
 
 	}
 
@@ -2279,10 +2279,10 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _listFirmwares($all=false){
+	private function _listFirmwares(){
 		$firm_dir			= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
-		$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
-		$all	and $mask	="{$firm_dir}*.bin";
+		//$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
+		$mask				="{$firm_dir}*.bin";
 		if($files=glob($mask) and count($files)){
 			$time_files=array();
 			foreach($files as $file){

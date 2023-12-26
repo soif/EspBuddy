@@ -23,8 +23,8 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
-	protected $version_file 	= "tasmota/tasmota_version.h";					// file to parse to get the version
-	protected $version_regex 	= '|const\s+uint32_t\s+VERSION\s*=\s*([^\s;]+)|s'; 	// regex used to extract the version in the version_file
+	protected $version_file 	= "tasmota/include/tasmota_version.h";	// file to parse to get the version
+	protected $version_regex 	= '|const\s+uint32_t\s+TASMOTA_VERSION\s*=\s*([^\s;]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
@@ -46,6 +46,7 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetVersion(){
 		$v=parent::GetVersion();
+		
 		if(preg_match('|0x(.{2})(.{2})(.{2})(.{2})|',$v,$arr)){
 			$l=intval($arr[3]) and $letter=chr(96+$l);
 			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]).$letter;

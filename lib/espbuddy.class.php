@@ -16,19 +16,17 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.30b1';						// EspBuddy Version
+	public $espb_version			= '2.30b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
 	public $espb_gh_branch_dev		= 'develop';					// Github Develop Branch
 	public $espb_gh_api_url			= 'https://api.github.com';		// Github API URL
 	public $espb_name				= 'EspBuddy';					// Application Name
-	private $espb_path			= '';		// Location of the EspBuddy root directory
-	private $espb_path_lib		= '';		// Location of the EspBuddy lib directory
+	private $espb_path				= '';		// Location of the EspBuddy root directory
+	private $espb_path_lib			= '';		// Location of the EspBuddy lib directory
 
-	private $cfg				= array();	// hold the configuration
-
-	private $sh					;			//	shell object
+	private $cfg					= array();	// hold the configuration
 
 	// command lines arguments
 	private $args				= array();	// command line arguments
@@ -62,15 +60,17 @@ class EspBuddy {
 	private $arg_firmware		= '';
 	private $arg_login			= '';
 	private $arg_pass			= '';
-	private $arg_from			= '';	// repo to migrate from
+	private $arg_from			= '';		// repo to migrate from
 
 	//selected configuration for the current host
-	private $c_host		=array();		//	current host
-	private $c_conf		=array();		//	current config
-	//private $c_repo		=array();	//	current repository
-	private $c_serial	=array();		//	current serial port and rate
+	private $c_host				=array();	//	current host
+	private $c_conf				=array();	//	current config
+	//private $c_repo			=array();	//	current repository
+	private $c_serial			=array();	//	current serial port and rate
 
-	private $orepo	;					//	repo_object
+	private $os					="";		// what is the OS we are running
+	private $sh					;			//	shell object
+	private $orepo				;			//	repo_object
 
 
 	// preferences -------------
@@ -104,7 +104,6 @@ class EspBuddy {
 		'turbo'		=>	'460800',
 	);
 
-	private $os		="";			// what is the OS we are running
 
 	// Action Help Texts ------------------------------------------------------------------------
 	private	$actions_desc=array(
@@ -202,7 +201,6 @@ class EspBuddy {
 
 
 	// ##################################################################################################################################
-
 
 	// ---------------------------------------------------------------------------------------
 	function __construct(){
@@ -363,7 +361,6 @@ class EspBuddy {
 				}
 			}
 		}
-
 
 		foreach($hosts as $this_id => $host){
 			if(!$this->flag_json){
@@ -587,6 +584,8 @@ class EspBuddy {
 		}
 		return true;
 	}
+
+
 	// ---------------------------------------------------------------------------------------
 	function Command_server(){
 		$root=$this->target or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
@@ -611,6 +610,7 @@ class EspBuddy {
 		passthru($command, $r);
 		exit(0);
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_send($id){
@@ -689,6 +689,7 @@ class EspBuddy {
 		return true;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
 	private function _ParseCommands($str, $id=''){
 		//remove blank lines
@@ -732,9 +733,7 @@ class EspBuddy {
 			$this->_EchoError($last_err);
 			return false;
 		}
-
 	}
-
 
 
 	// ---------------------------------------------------------------------------------------
@@ -859,11 +858,15 @@ class EspBuddy {
 		//TODO verify if its ALWAYS working on all OS, with wifi, DNS, MDNS, etc...
 		return getHostByName(getHostName());
 	}
+
+
 	// ---------------------------------------------------------------------------------------
 	private function _getProxyPID(){
 		//TODO move to TMP
 		return $this->proxy_pid;
 	}
+
+
 	// ---------------------------------------------------------------------------------------
 	private function _setProxyPID($pid){
 		//TODO move to TMP

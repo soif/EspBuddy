@@ -9,10 +9,12 @@
 - _Tired of typing very long commands to upload your custom firmwares?_
 - _Bored to manually upload your firmwares in two steps for 1MB devices?_
 - _Want to batch upload new firmwares to all your devices via OTA or backup all settings in one command?_
+- _Want to remotely send commands to pre set some device parameters_
+- _Want to build your own firmares, storing them by device, and applying some compilation options_
 - _Need a solid tool to discover, control or flash Sonoff DIY devices (ie Sonoff Mini)_
 
-This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air) or Serial, in one short command.
-It also gathers various tool commands to be used in batch mode.
+This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air), Serial port or using the builtin web server, in one short command.
+It also allows to use some commands in batch mode.
 
 
 ## Features
@@ -23,9 +25,10 @@ It also gathers various tool commands to be used in batch mode.
 - Optional compilation using platformio
 - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
 - Send commands (single or list) to remote devices
-- Fetch versions of remote devices
-- Archive current firmware & previous firmware per target
-- Backup current settings & previous settings per target
+- Fetch versions or full status of remote devices
+- Archive current firmware & previous firmware per device
+- Backup current settings & previous settings per device
+- Built-in (browsable) web server to easily upgrade (ie for tasmota) regular or custom firmwares
 - Parse Repositories installed versions
 - Git Pull Repositories
 - Ping Remote Host
@@ -48,12 +51,12 @@ Works with :
 
 - Linux or OSX Operating System (+ [Windows](doc/install_windows.md) for some method only)
 - php v5.4 or newer
-- PlatformIO __needed only for compiling__
+- PlatformIO _(needed only for compiling)_
 
 ## Installation
 
 - Rename _config-sample.php_ to _config.php_.
-- Fill in some hosts and configurations in config.php
+- Fill in some 'hosts' and 'configs' in config.php
 
 ## Usage
 
@@ -65,7 +68,7 @@ Valid Actions are:
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
-- **server**          : Launch Firmwares WebServer
+- **server**          : Launch firmwares web server
 - **send**            : Send Command(s)
 - **status**          : Show Device(s) Information
 - **version**         : Show Device(s) Version
@@ -92,6 +95,7 @@ Examples:
 - `espbuddy.php backup all` backups settings ofall defined targets
 - `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
 - `espbuddy.php server` launches the builtin webserver on port 81, serving files from the backup directory
+- `espbuddy.php send relay1 tasmo_upg` send the 'tasmo_upg' commands list to 'relay1' by relying on our builtin webserver
 - `espbuddy.php send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
 - `espbuddy.php version all` shows versions of all defined targets
 - `espbuddy.php ping all` pings all defined targets

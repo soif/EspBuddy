@@ -18,7 +18,7 @@ $cfg['paths']['dir_backup']			="/tmp/EspBuddy/";				// (with a trailing slash!)
 $cfg['paths']['dir_python']			="/Users/soif/.platformio/penv/bin/";	 // (with a trailing slash!)
 
 // 'bin_pio':  Path to the platformio binary (Only needed if you want to compil some firmware)
-$cfg['paths']['bin_pio']			="/usr/local/bin/pio";
+$cfg['paths']['bin_pio']			="/Users/soif/.platformio/penv/bin/pio";
 
 
 // ################################################################################################################################

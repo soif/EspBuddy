@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.30';						// EspBuddy Version
+	public $espb_version			= '2.31';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -2097,7 +2097,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$esc_version_short="";
 		//$esc_version_short	=str_replace('/','_',$version_short);
 		$esc_version_full	=str_replace('/','_',$version_full);
-		$this->c_host['firmware_name']	="{$this->prefs['firm_name']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
+		$this->c_host['firmware_name']	="{$this->c_conf['repo']}{$s}{$this->c_host['config']}{$esc_version_short}{$esc_version_full}";
 
 	}
 
@@ -2186,20 +2186,24 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _rotateFirmware($new_firmware,$do_rename=false){
-		$command_backup=array();
-		$back_dir		= $this->c_host['path_dir_backup'];
-		$firm_dir		= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
-		$cur_firm_link	="$back_dir{$this->prefs['firm_name']}.bin";
-		$prev_firm_link	="$back_dir{$this->prefs['firm_name']}_previous.bin";
-		if(!is_dir($firm_dir)){
-			@mkdir($firm_dir, 0777, true);
+	private function _rotateFirmware($path_new_firmware,$do_rename_build=false){
+
+		$path_backup		= $this->c_host['path_dir_backup'];
+		$path_firmwares		="{$path_backup}{$this->prefs['firm_name']}s/";
+
+		$cur_firm_link		="{$this->prefs['firm_name']}.bin";
+		$path_cur_firm_link	="$path_backup$cur_firm_link";
+		$path_prev_firm_link="$path_backup{$this->prefs['firm_name']}_previous.bin";
+
+		if(!is_dir($path_firmwares)){
+			@mkdir($path_firmwares, 0777, true);
 		}
+
+		$command_backup	=array();
+
 		if($this->prefs['keep_previous']){
 			$echo1="Keep the previous firmware, ";
-			//if(file_exists($cur_firm_link)){
-				$command_backup[] = "mv -f \"$cur_firm_link\" \"$prev_firm_link\"";
-			//}
+			$command_backup[] = "mv -f \"$path_cur_firm_link\" \"$path_prev_firm_link\"";
 			if($list_firmares=$this->_listFirmwares()){
 				$i=1;
 				krsort($list_firmares);
@@ -2213,25 +2217,29 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		else{
 			$echo1="";
-			if($cur_firm=@readlink($cur_firm_link)){
-				$command_backup[] = "rm -f \"$cur_firm\"";
+			if($cur_firmware=@readlink($path_cur_firm_link)){
+				$command_backup[] = "rm -f \"$cur_firmware\"";
 			}
 		}
-		if($do_rename){
-			$cur_firmware="$firm_dir{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".basename($new_firmware);
+		$file_new_firmware	=basename($path_new_firmware);
+
+		if($do_rename_build){
+			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".$file_new_firmware;
 		}
 		else{
-			$cur_firmware=$firm_dir.basename($new_firmware);
+			$path_cur_firmware=$path_firmwares.$file_new_firmware;
 		}
+		$cur_firmware		= $this->_getRelativePath($path_backup,$path_cur_firmware);
 
-		$command_backup[] = "cp -p \"$new_firmware\" \"$cur_firmware\"";
+		$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
+		$command_backup[] = "cd $path_backup";
 		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
-		$this->c_host['path_firmware']=$cur_firmware;
+		$this->c_host['path_firmware']=$path_cur_firmware;
 
 		if(count($command_backup)){
 			$command=implode(" ; \n   ", $command_backup);
 			echo "\n";
-			$this->_EchoStepStart("{$echo1}Archive and Set the new firmware to : ".basename($cur_firmware)." ", $command);
+			$this->_EchoStepStart("{$echo1}Archive and Set the new firmware to : ".basename($path_cur_firmware)." ", $command);
 			if(! $this->flag_drymode){
 				passthru($command, $r);
 				return !$r;
@@ -2242,10 +2250,39 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _listFirmwares($all=false){
+	private function _getRelativePath($from, $to){	
+		$from		= explode('/', $from);
+		$to			= explode('/', $to);
+		$relPath	= $to;
+	
+		foreach($from as $depth => $dir) {
+			// find first non-matching dir
+			if($dir === $to[$depth]) {
+				// ignore this directory
+				array_shift($relPath);
+			} 
+			else {
+				// get number of remaining dirs to $from
+				$remaining = count($from) - $depth;
+				if($remaining > 1) {
+					// add traversals up to first matching dir
+					$padLength = (count($relPath) + $remaining - 1) * -1;
+					$relPath = array_pad($relPath, $padLength, '..');
+					break;
+				} 
+				else {
+					//$relPath[0] = './' . $relPath[0];
+				}
+			}
+		}
+		return implode('/', $relPath);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _listFirmwares(){
 		$firm_dir			= "{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
-		$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
-		$all	and $mask	="{$firm_dir}*.bin";
+		//$mask				="{$firm_dir}{$this->prefs['firm_name']}*.bin";
+		$mask				="{$firm_dir}*.bin";
 		if($files=glob($mask) and count($files)){
 			$time_files=array();
 			foreach($files as $file){

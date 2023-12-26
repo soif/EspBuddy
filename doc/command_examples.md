@@ -11,7 +11,7 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.21b2 ( EspTool v3.2 )
+EspBuddby v2.30 ( EspTool v3.2 )
 
 * Usage             : espbuddy.php COMMAND [TARGET] [options]
 
@@ -20,6 +20,7 @@ EspBuddby v2.21b2 ( EspTool v3.2 )
   - build           : Build firmware for the selected device
   - backup          : Download and archive settings from the remote device
   - monitor         : Monitor device connected to the serial port
+  - server          : Launch Firmwares WebServer
   - send            : Send commands to device
   - status          : Show Device's Information
   - version         : Show remote device version
@@ -27,8 +28,8 @@ EspBuddby v2.21b2 ( EspTool v3.2 )
   - gpios           : Test all Device's GPIOs
   - ping            : Ping Device(s)
   - sonodiy         : Discover, Control or Flash Sonoff devices in DIY mode
-  - repo_version    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy or tasmota)
-  - repo_pull       : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy or tasmota)
+  - repo_version    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy, tasmota or wled)
+  - repo_pull       : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy, tasmota or wled)
   - list_hosts      : List all hosts defined in config.php
   - list_configs    : List all available configurations, defined in config.php
   - list_repos      : List all available repositories, defined in config.php
@@ -40,6 +41,7 @@ EspBuddby v2.21b2 ( EspTool v3.2 )
   - build           : espbuddy.php build        TARGET [options]
   - backup          : espbuddy.php backup       TARGET [options, auth_options]
   - monitor         : espbuddy.php monitor      [TARGET] [options]
+  - server          : espbuddy.php server       [ROOT_DIR]
   - send            : espbuddy.php send         TARGET CMD_SET|COMMAND [options, auth_options]
   - status          : espbuddy.php status       TARGET [options, auth_options]
   - version         : espbuddy.php version      TARGET [options, auth_options]
@@ -60,30 +62,31 @@ EspBuddby v2.21b2 ( EspTool v3.2 )
 
 * CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
 
+* ROOT_DIR           : Root directory (for the built-in Web Server)
+
 * OPTIONS :
-	-y           : Automatically confirm Yes/No
-	-d           : Dry Run. Show commands but don't apply them
-	-v           : Verbose mode
-	-D           : Debug mode (shows PHP errors)
-	--conf=xxx   : Config name to use (overrides per host config)
-	--repo=xxx   : Repo to use (overrides per host config)
+    -y           : Automatically confirm Yes/No
+    -d           : Dry Run. Show commands but don't apply them
+    -v           : Verbose mode
+    -D           : Debug mode (shows PHP errors)
+    --conf=xxx   : Config name to use (overrides per host config)
+    --repo=xxx   : Repo to use (overrides per host config)
 
 * UPLOAD_OPTIONS :
-	-b           : Build before Uploading
-	-w           : Wire Mode : Upload using the Serial port instead of the default OTA
-	-e           : In Wire Mode, erase flash first, then upload
-	-p           : Upload previous firmware backuped, instead of the latest built
-	-s           : Skip Intermediate Upload (if set)
-	-m           : Switch to serial monitor after upload
-	--port=xxx   : Serial port to use (override main or per host serial port)
-	--rate=xxx   : Serial port speed to use (override main or per host serial port)
-	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
-	--from=REPO  : Migrate from REPO to the selected config
+    -b           : Build before Uploading
+    -w           : Wire Mode : Upload using the Serial port instead of the default OTA
+    -e           : In Wire Mode, erase flash first, then upload
+    -p           : Upload previous firmware backuped, instead of the latest built
+    -s           : Skip Intermediate Upload (if set)
+    -m           : Switch to serial monitor after upload
+    --port=xxx   : Serial port to use (override main or per host serial port)
+    --rate=xxx   : Serial port speed to use (override main or per host serial port)
+    --firm=xxx   : Full path to the firmware file to upload (override latest build one)
+    --from=REPO  : Migrate from REPO to the selected config
 
 * AUTH_OPTIONS :
-	--login=xxx  : Login name (overrides host or per config login)
-	--pass=xxx   : Password (overrides host or per config password)
-
+    --login=xxx  : Login name (overrides host or per config login)
+    --pass=xxx   : Password (overrides host or per config password)
 ```
 
 ----------

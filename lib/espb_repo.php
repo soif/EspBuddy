@@ -51,6 +51,7 @@ class EspBuddy_Repo {
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
 	private $path_firmware		= "";	// path to the directory where the firmware is built
+	private $path_version		= "";	// path to the file where to extract the firmware version
 
 
 //	private $git_version		= "";	// latest commit

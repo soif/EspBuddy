@@ -38,6 +38,11 @@ $dirs		= array();
 $files		= array();
 $prefs		= array();
 
+## Require config (to get Time Zone))#########################################
+require_once($path_espb.'lib/espbuddy.class.php');
+$espb=new EspBuddy();
+$espb->LoadConf($path_espb.'config.php');
+
 ## Handle Existing files #####################################################
 //directly serves existing file of symlink asis
 $my_file = $path_root . $cur_url;

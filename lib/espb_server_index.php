@@ -171,11 +171,11 @@ closedir($h);
 
 // makes up url
 $up_dir = dirname($dir);
-$up_url = ($up_dir != '' && $up_dir != '.') ? '?dir=' . rawurlencode($up_dir) : '?';
+$up_url = ($up_dir != '' && $up_dir != '.') ? '/?dir=' . rawurlencode($up_dir) : '?';
 
 //make breadcrumb
 $current_dir_name = basename($dir);
-$breadcrumb = "/ <a href='?'>$rootname</a> ";
+$breadcrumb = "/ <a href='/?'>$rootname</a> ";
 if($dir){
 	$path=explode('/',$dir);
 	$cp=count($path);
@@ -184,7 +184,7 @@ if($dir){
 		$cp--;
 		$current .=$p;
 		if($cp){
-			$breadcrumb .="<a href='?dir={$current}'>$p</a> / " ;
+			$breadcrumb .="<a href='/?dir={$current}'>$p</a> / " ;
 			$current.="/";
 		}
 		else{

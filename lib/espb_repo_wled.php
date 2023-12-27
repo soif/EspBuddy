@@ -21,6 +21,7 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	protected $name 			= "Wled"; 						// Firmware's Name
 
 	// location relative to the base repository path
+	protected $dir_firmware 	= ".pio/build/"; 				// (Trailing Slash) directory where the firmware is built
 	protected $version_file		= "package.json";				// file to parse to get the version
 	protected $version_regex	= '|"version"\s*:\s*"([^"]+)"|s';	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 							// captured parenthesis number where the version is extracted using the regex

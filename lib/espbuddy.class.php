@@ -2704,8 +2704,10 @@ https://github.com/soif/EspBuddy/issues/20
 		curl_setopt($ch, CURLOPT_HEADER			, false);
 		//curl_setopt($ch, CURLOPT_SSLVERSION		, 3); //fix SSL on my old debian
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER	, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION	, true);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT	, 10);
 		curl_setopt($ch, CURLOPT_HTTPHEADER		, $headers); //array
+		
 		if($this->os=='win'){
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER			, false); 
 			// else 
@@ -2717,6 +2719,7 @@ https://github.com/soif/EspBuddy/issues/20
 			curl_setopt($ch, CURLOPT_VERBOSE, true);
 		}
 		$result = curl_exec($ch);
+		//print_r(curl_getinfo($ch));
 		curl_close($ch);
 		return $result;
 	}

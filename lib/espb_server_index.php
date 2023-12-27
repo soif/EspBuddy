@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License along with thi
 $ignore 	= array('.', '..','.DS_Store','.git','.gitignore','.github', '.htaccess', 'index.php', 'icon.php', 'Thumbs.db', 'web.config'); // ignoring these files
 $rootname 	= 'Root';
 $date_format= 'Y-m-d H:i:s';
-$path_espb	= dirname(dirname($_SERVER['SCRIPT_FILENAME'])).'/';
+$path_espb	= dirname(dirname(__FILE__)).'/';
 $path_icons	= $path_espb.'media/icons/';
 $path_root 	= $_SERVER['DOCUMENT_ROOT'];
 $cur_url	= urldecode($_SERVER["REQUEST_URI"]);
@@ -37,6 +37,11 @@ $cur_sortd	= 0;
 $dirs		= array();
 $files		= array();
 $prefs		= array();
+
+## Require config (to get Time Zone))#########################################
+require_once($path_espb.'lib/espbuddy.class.php');
+$espb=new EspBuddy();
+$espb->LoadConf($path_espb.'config.php');
 
 ## Handle Existing files #####################################################
 //directly serves existing file of symlink asis
@@ -166,11 +171,11 @@ closedir($h);
 
 // makes up url
 $up_dir = dirname($dir);
-$up_url = ($up_dir != '' && $up_dir != '.') ? '?dir=' . rawurlencode($up_dir) : '?';
+$up_url = ($up_dir != '' && $up_dir != '.') ? '/?dir=' . rawurlencode($up_dir) : '?';
 
 //make breadcrumb
 $current_dir_name = basename($dir);
-$breadcrumb = "/ <a href='?'>$rootname</a> ";
+$breadcrumb = "/ <a href='/?'>$rootname</a> ";
 if($dir){
 	$path=explode('/',$dir);
 	$cp=count($path);
@@ -179,7 +184,7 @@ if($dir){
 		$cp--;
 		$current .=$p;
 		if($cp){
-			$breadcrumb .="<a href='?dir={$current}'>$p</a> / " ;
+			$breadcrumb .="<a href='/?dir={$current}'>$p</a> / " ;
 			$current.="/";
 		}
 		else{

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.31';						// EspBuddy Version
+	public $espb_version			= '2.32';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -2088,7 +2088,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$version_full	.="{$this->c_host['versions']['branch']}";
 			$this->c_host['versions']['tag']		and $version_full	.="{$v}{$this->c_host['versions']['tag']}";
 			if($this->c_host['versions']['tag_commit'] != 	$this->c_host['versions']['commit']	){
-				$this->c_host['versions']['commit']	and $version_full	.="{$v}#{$this->c_host['versions']['commit']}";
+				$this->c_host['versions']['commit']	and $version_full	.="{$v}{$this->c_host['versions']['commit']}";
 			}
 			$this->c_host['versions']['full']	=$version_full;
 			$version_full						="{$s}({$version_full})";

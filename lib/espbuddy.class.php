@@ -928,12 +928,19 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function Command_help($action='root'){
+	public function Command_help($action='root',$error=''){
 		$action or $action='root';
 		if($action=='root'){
 			echo $this->_getVersionBuddyLong();
 			echo "\n\n";	
 		}
+
+		if($error){
+			echo "\n";
+			$this->sh->PrintError($error);
+			echo "\n";	
+		}
+
 		$this->_show_command_usage($action);
 		$this->_show_action_desc($action);
 		$this->_show_action_usage($action);

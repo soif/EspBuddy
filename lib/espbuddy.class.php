@@ -2088,7 +2088,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$version_full	.="{$this->c_host['versions']['branch']}";
 			$this->c_host['versions']['tag']		and $version_full	.="{$v}{$this->c_host['versions']['tag']}";
 			if($this->c_host['versions']['tag_commit'] != 	$this->c_host['versions']['commit']	){
-				$this->c_host['versions']['commit']	and $version_full	.="{$v}#{$this->c_host['versions']['commit']}";
+				$this->c_host['versions']['commit']	and $version_full	.="{$v}{$this->c_host['versions']['commit']}";
 			}
 			$this->c_host['versions']['full']	=$version_full;
 			$version_full						="{$s}({$version_full})";

@@ -57,7 +57,7 @@ if($cur_url=='/favicon.ico'){
 	exit;
 }
 
-// ## Serves icons ###########################################################################################
+// ## Serves icons ###########################################################
 if (isset($_GET['icon'])) {
 	$e = $_GET['icon'];
 	$my_icon=$path_icons.$e.'.png';
@@ -87,7 +87,7 @@ if (!is_dir($path) || !opendir($path)){
 	exit(1);
 }
 
-## preferences #######################################################################
+## preferences ##############################################################
 if(file_exists($prefs_file)){
 	$prefs=json_decode(file_get_contents($prefs_file),true);
 }
@@ -199,7 +199,7 @@ else{
 // ---------------------------------------------------------------------------------------------
 function DirNameToIcon($name){
 	if($name=="Firmwares"){return 'dir_o';}
-	if($name=="_COMMON"){return 'dir_g';}
+	if($name==EspBuddy::GetFactoryDirName()){return 'dir_g';}
 	if(preg_match("#^Settings#",$name)){return 'dir_p';}
 	return 'dir';
 }

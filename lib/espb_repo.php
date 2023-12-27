@@ -27,6 +27,11 @@ class EspBuddy_Repo {
 	protected $version_regex 	= ""; // regex used to extract the version in the version_file
 	protected $version_regnum	= ""; // captured parenthesis number where the version is extracted using the regex
 	protected $firststep_firmware = ''; // when uploading in 2steps mode, first upload this intermediate firmware
+
+	protected $gh_owner			= ''; // Github OWNER name
+	protected $gh_repo			= ''; // Github REPO name
+	protected $gh_zip_dir		= ''; // ('' | '/' | 'dir/') dir name of the files we want to extract from the Release's Zip file,
+
 	protected $flash_sizes 	  = array(	//maximum flash sizes
 		'512K'	=>	524288,		// 512 * 1024
 		'1M'	=>	1048576,	// 1024 * 1024
@@ -540,7 +545,6 @@ class EspBuddy_Repo {
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		curl_setopt($ch, CURLOPT_USERAGENT, EspBuddy::GetUserAgent() );
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION	, true);
-
 
 		$result	= curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);		

@@ -424,7 +424,6 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	protected function _CleanTxtList($str){
-		
 		//remove comments
 		$str=preg_replace('|\s*#.*$|m','',$str);
 		
@@ -492,6 +491,8 @@ class EspBuddy_Repo {
 		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_USERAGENT, EspBuddy::GetUserAgent());
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION	, true);
 		curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
@@ -537,6 +538,8 @@ class EspBuddy_Repo {
 		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_ENCODING, '');	// auto decompress
 		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_USERAGENT, EspBuddy::GetUserAgent() );
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION	, true);
 
 
 		$result	= curl_exec($ch);

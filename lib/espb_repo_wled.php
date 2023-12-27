@@ -26,6 +26,9 @@ class EspBuddy_Repo_Wled extends EspBuddy_Repo {
 	protected $version_regex	= '|"version"\s*:\s*"([^"]+)"|s';	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 							// captured parenthesis number where the version is extracted using the regex
 
+	protected $gh_owner			= 'Aircoookie'; 				// Github OWNER name
+	protected $gh_repo			= 'WLED'; 						// Github REPO name
+
 	protected $firststep_firmware 	= '';						// first (intermediate) firmware to upload
 
 	protected $api_urls=array(

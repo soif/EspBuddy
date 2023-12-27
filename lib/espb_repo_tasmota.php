@@ -27,6 +27,9 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	protected $version_regex 	= '|const\s+uint32_t\s+TASMOTA_VERSION\s*=\s*([^\s;]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
+	protected $gh_owner			= 'arendst'; 									// Github OWNER name
+	protected $gh_repo			= 'Tasmota'; 									// Github REPO name
+
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
 
 	protected $api_urls=array(

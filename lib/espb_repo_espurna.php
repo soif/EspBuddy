@@ -27,7 +27,11 @@ class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 	protected $version_regex 	= '|APP_VERSION\s+"([^"]+)"|s'; 		// regex used to extract the version in the version_file
 	protected $version_regnum = 1; 										// captured parenthesis number where the version is extracted using the regex
 
+	protected $gh_owner			= 'xoseperez'; 							// Github OWNER name
+	protected $gh_repo			= 'espurna'; 							// Github REPO name
+
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
+
 	protected $api_urls=array(
 		'command'	=>	'DUMMY',				// relative url to send a command : it must exist , so we set it to a dummy value (not used))
 		'backup'	=>	'/config',				// relative url to the URl where we can perform the backup

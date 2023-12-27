@@ -1086,6 +1086,7 @@ EOF;
 		}
 		if($error){
 			$this->_showActionUsage($error);
+			exit(1);
 		}
 		exit(0);
 

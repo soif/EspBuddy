@@ -455,7 +455,7 @@ class EspBuddy {
 		}
 
 		echo "\n";
-		$firm_source=readlink($firmware) or $firm_source=$firmware;
+		$firm_source=realpath($firmware) or $firm_source=$firmware;
 		$date		=date("d M Y - H:i:s", filemtime($firm_source));
 		$firm_size	=filesize($firm_source);
 		$firm_source=basename($firm_source);

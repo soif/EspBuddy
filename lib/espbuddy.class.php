@@ -3018,6 +3018,19 @@ EOF;
 	// ##################################################################################################################################
 
 	// ---------------------------------------------------------------------------------------
+	public static function FormatBytes($bytes, $precision = 2,$with_space=true) { 
+		$units = array('B', 'KB', 'MB', 'GB', 'TB'); 
+		$bytes = max($bytes, 0); 
+		$pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
+		$pow = min($pow, count($units) - 1);
+		$bytes /= pow(1024, $pow);
+		// $bytes /= (1 << (10 * $pow)); 
+		$space="";
+		$with_space and $space=" ";
+		return number_format(round($bytes, $precision),$precision) .$space. $units[$pow]; 
+	} 
+
+	// ---------------------------------------------------------------------------------------
 	public static function GetUserAgent(){
 		$o = new self;
 		return $o->espb_name.' (v'.$o->espb_version.')';

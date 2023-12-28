@@ -31,6 +31,8 @@ class EspBuddy_Repo {
 	protected $gh_owner			= ''; // Github OWNER name
 	protected $gh_repo			= ''; // Github REPO name
 	protected $gh_zip_dir		= ''; // ('' | '/' | 'dir/') dir name of the files we want to extract from the Release's Zip file,
+	protected $gh_asset_name_len=46; // max lenght of an asset name (used to make the column width in the _RepoListAssets method)
+	private $gh_api_url			=''; // github API base url
 
 	protected $flash_sizes 	  = array(	//maximum flash sizes
 		'512K'	=>	524288,		// 512 * 1024
@@ -57,11 +59,11 @@ class EspBuddy_Repo {
 	private $path_build			= "";	// path to the directory where the compiler must start 
 	private $path_firmware		= "";	// path to the directory where the firmware is built
 	private $path_version		= "";	// path to the file where to extract the firmware version
+	private $_cache_repo_releases	;	// (false or array) holds latest releases grabbed from the GitHub API
 
 
 //	private $git_version		= "";	// latest commit
 //	private $git_date			= "";	// latest commit date
-
 
 	private $http_codes = array(
 		100 => 'Continue',
@@ -348,7 +350,168 @@ class EspBuddy_Repo {
 		$this->_EchoNotImplemented();
 	}
 
+
+	// ---------------------------------------------------------------------------------------
+	public function RepoChooseAssets($tag='',$asset_name=''){
+		if(! $this->gh_owner or ! $this->gh_repo){
+			return false;
+		}
+		
+		$print= empty($tag)? true:false;		
+		echo "* Fetching releases information from Github ...\n";
+		$rel=$this->_RepoListTags($tag,$print);
+
+		if(!$rel or count($rel) !=1){
+			if(!$print){
+				if(!$this->_RepoListTags('',true)){
+					echo "# Error while trying to fetch: {$this->gh_api_url}\n";
+					echo "# Error was: ".$this->GetLastError()."\n";
+					return false;		
+				};
+			}
+			echo "\n";
+			if($tag) echo "* Can't find you tag: '$tag' !\n";
+			echo "* Please set your [TAG] argument to: 'latest', 'previous' or an existing TAG from the list above.\n";
+
+			return false;
+
+		}
+		$rel=reset($rel); // get first
+		$tag_name=$rel['tag_name'];
+		if($tag_name !==$tag){
+			$tag_name.=" ($tag)";
+		}
+		echo "* Selected {$this->name} {$tag_name} \"{$rel['name']}\" , released on {$rel['espb_date']}.\n";
+		
+		if($r=$rel['assets']){
+			$print= empty($asset_name)? true:false;
+			if($out=$this->_RepoListAssets($rel['tag_name'],$asset_name,$print)){
+				unset($rel['assets']);
+				$out['release']=$rel;
+				$out['espb_col']=$this->gh_asset_name_len;
+				return $out;
+			}
+			if(!$print){
+				$this->_RepoListAssets($rel['tag_name'],'',true);
+			}
+			echo "\n";
+			echo "* I didn't selected any asset for the $tag_name version";
+			if(is_array($asset_name)){
+				echo " with a name among: \n - ";
+				echo implode("\n - ",$asset_name). "\n";
+			}
+			elseif($asset_name){
+				echo " with name '$asset_name'.";
+			}
+			else{
+				echo ".";
+			}
+			echo "\n";
+			echo "* Please set your [ASSET] argurment to: a valid one (from the list above), or some (separated by '#'), or use 'all'\n";
+		}
+		else{
+			echo "# Did not found any assets\n";
+			return false;
+		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _RepoListAssets($tag, $name='', $print=false){
+		if(!$this->_FetchCachedRepoReleases()){
+			return false;
+		}
+		if(!$assets=$this->_cache_repo_releases[$tag]['assets']){
+			return false;
+		}
+		
+		$c_name	=$this->gh_asset_name_len;
+		$c_size	=10;
+
+		$out=false;
+		$count=count($assets);
+		if($print) {
+			echo "* $count Assets are available from '$tag' :\n";
+			echo "   ". str_pad('NAME',$c_name) . str_pad(' SIZE',$c_size). "\n"; //. "URL\n"
+		}
+
+		$i=0;
+		foreach($assets as $x => $item){
+			if($print) {
+				$size=EspBuddy::FormatBytes($item['size']);
+				echo " - ". str_pad($item['name'],$c_name) . str_pad($size,$c_size,' ',STR_PAD_LEFT). "\n"; //{$item['browser_download_url']}\n
+			}
+			unset($item['uploader']);
+			if($name=='all' or (is_array($name) and in_array($item['name'],$name))){
+				$out['assets'][$i]=$item;
+				$out['size_total'] +=$item['size'];
+				$i++;
+			}
+			elseif($item['name']==$name){
+				$out['assets']		=array($item);
+				$out['size_total']	=$item['size'];
+				$i++;
+			}
+		}
+		if($out){
+			$out['count']		=$i;
+			$out['count_total']	=$count;
+		}
+		return $out;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _RepoListTags($tag='', $print=false){
+		if(!$this->_FetchCachedRepoReleases()){
+			return false;
+		}
+
+		$c_tag	=18;
+		$c_name	=43;
+		$c_date	=18;
+
+		$out=false;
+		$count=count($this->_cache_repo_releases);
+		if($print) {
+			echo "* $count Versions are available for {$this->name} :\n";
+			echo "   ". str_pad('TAG',$c_tag) . str_pad('NAME',$c_name).str_pad("RELEASED ON",$c_date). "\n";
+		}
+		$i=0;
+		foreach($this->_cache_repo_releases as $k => $item){
+			$item['espb_time']=strtotime($item['published_at']);
+			$item['espb_date']=date('M j, Y H:i',$item['espb_time']);
+			if($print) {
+				echo " - ". str_pad($item['tag_name'],$c_tag) . str_pad($item['name'],$c_name).  str_pad($item['espb_date'],$c_date,' ',STR_PAD_LEFT). "\n";
+			}
+			if(!$tag or $item['tag_name']==$tag or ($tag=='latest' and $i==0) or ($tag=='previous' and $i==1) ){
+				$out[$k]=$item;
+			}
+			$i++;
+		}
+		return $out;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _FetchCachedRepoReleases(){
+		if(!$this->_cache_repo_releases){
+			if($res=$this->_FetchPage($this->gh_api_url.'/releases')){
+				$res=json_decode($res,true);
+				$out=array();
+				foreach($res as $arr){
+					$out[$arr['tag_name']] or $out[$arr['tag_name']]=$arr;
+				}
+				$this->_cache_repo_releases=$out;
+			}
+		}
+
+		if($this->_cache_repo_releases){
+			return true;
+		}
+	}
+
+
 	// ##### Protected ########################################################################
+
 	// ---------------------------------------------------------------------------------------
 	protected function _TelnetSendCommand($host_arr, $txt_command, $sleep=1){
 		if($txt_command){
@@ -357,8 +520,6 @@ class EspBuddy_Repo {
 			return $r_array;
 		}
 	}
-
-
 
 	// ---------------------------------------------------------------------------------------
 	protected function _RemoteGetVersionRaw($host_arr){
@@ -407,7 +568,6 @@ class EspBuddy_Repo {
 		//echo "\n $url \n";
 		return $this->_FetchPage($url, $host_arr['login'], $host_arr['pass']);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	protected function _MakeApiUrl($host_arr, $url,$suffix=''){
@@ -466,6 +626,72 @@ class EspBuddy_Repo {
 		return @file_get_contents($url, false, stream_context_create($opts));
 	}
 */
+
+	// ---------------------------------------------------------------------------------------
+	// TODO makes it Windows compatible
+	public function DownloadAsset($url, $dest_path, $time=''){
+		$file_name=basename($url);
+		
+		if($this->_DownloadFile($url,$file_name,$dest_path)){
+			$path_file	=$dest_path.$file_name;
+			if($zip_dir		=$this->gh_zip_dir){
+				$path_tmp_dir=dirname($path_file).'/_espb_tmp/';
+				mkdir($path_tmp_dir);
+				$zip_dir=rtrim($zip_dir,'/');
+				$zip_dir and $zip_dir.="/";
+				$path_zip_dir	=$path_tmp_dir.$zip_dir;
+				passthru("unzip -q $path_file -d $path_tmp_dir", $r);
+				if(!$r){
+					if ($handle = opendir($path_zip_dir)) {
+						while (false !== ($entry = readdir($handle))) {
+							if ($entry != "." && $entry != "..") {
+								$src=$path_zip_dir.$entry;
+								$dst=$dest_path.$entry;
+								rename($src, $dst);
+							}
+						}
+						closedir($handle);
+					}
+					passthru("rm -rf $path_tmp_dir", $r);
+					unlink($path_file);
+					return true;
+				}
+				passthru("rm -rf $path_tmp_dir", $r);
+
+				// Easier, but this would need a PHP extension on older PHP (5.x) ----------------------
+				// $zip 		= new ZipArchive();
+				// if ($zip->open($path_file)) {
+				// 	$zip_dir and $zip_dir.='/';
+				// 	$files=array();
+				// 	// find files in this dir
+				// 	for($i = 0; $i < $zip->numFiles; $i++) {
+				// 		$entry = $zip->getNameIndex($i);
+				// 		if (strpos($entry, "/$zip_dir")) {
+				// 		  $files[] = $entry;
+				// 		}
+				// 	}
+				// 	//Feed $files array to extractTo() to get only the files we want
+				// 	if ($zip->extractTo($dest_path, $files) === TRUE) {
+				// 		unlink($path_file);
+				// 		$zip ->close();
+				// 		return TRUE;
+				// 	}
+				// 	else{
+				// 		$zip ->close();
+				// 	}
+
+				// }
+
+			}
+			else{
+				if($time){
+					touch($path_file,$time);
+				}
+				return true;
+			}
+		}
+	}
+
 	// ---------------------------------------------------------------------------------------
 	protected function _DownloadFile($url, $file_name, $dest_path, $auth_login='', $auth_pass=''){
 		$tmp_file	= $dest_path.'temp_file';
@@ -566,6 +792,8 @@ class EspBuddy_Repo {
 		$this->path_build	= $this->path_base . $this->dir_build;
 		$this->path_firmware= $this->path_build . $this->dir_firmware;
 		$this->path_version	= $this->path_base . $this->version_file;
+		$this->gh_api_url	="https://api.github.com/repos/{$this->gh_owner}/{$this->gh_repo}";
+
 		$this->_ParseVersion();
 	}
 

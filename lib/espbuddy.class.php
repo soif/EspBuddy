@@ -1778,7 +1778,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	public function _show_action_desc($action='root',$title=""){
+	private function _show_action_desc($action='root',$title=""){
 		if($action=='root'){
 			$name="Valid COMMANDS";
 		}

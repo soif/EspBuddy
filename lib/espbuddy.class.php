@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.32';						// EspBuddy Version
+	public $espb_version			= 'd2.40b1';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -72,6 +72,7 @@ class EspBuddy {
 	private $os					="";		// what is the OS we are running
 	private $sh					;			//	shell object
 	private $orepo				;			//	repo_object
+	private $factory_dir		='_Factory';		//	name of the factory Directory
 
 
 	// preferences -------------
@@ -120,14 +121,18 @@ class EspBuddy {
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
+			'factory'		=> "Download, get information on the latest factory releases",
 			'sonodiy'		=> "Discover, Control or Flash Sonoff devices in DIY mode",
+			'self'			=> "Get current, latest or update EspBuddy version",
 			'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy, tasmota or wled)",
 			'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy, tasmota or wled)",
 			'list_hosts'	=> "List all hosts defined in config.php",
 			'list_configs'	=> "List all available configurations, defined in config.php",
 			'list_repos'	=> "List all available repositories, defined in config.php",
-			'self'			=> "Get current, latest or update EspBuddy version",
 			'help'			=> "Show full help"
+		),
+		'factory'			=> array(
+			'download'		=>'Download release assets',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'Show Sonoff DIY Help',
@@ -167,14 +172,18 @@ class EspBuddy {
 			'reboot'		=> "TARGET [options, auth_options]",
 			'gpios'			=> "TARGET [options, auth_options]",
 			'ping'			=> "TARGET [options]",
+			'factory'		=> "ACTION [options]",
 			'sonodiy'		=> "ACTION [options]",
+			'self'			=> "ACTION [options]",
 			'repo_version'	=> "REPO",
 			'repo_pull'		=> "REPO",
 			'list_hosts'	=> "",
 			'list_configs'	=> "",
 			'list_repos'	=> "",
-			'self'			=> "ACTION [options]",
 			'help'			=> ""
+		),
+		'factory'			=> array(
+			'download'		=>	'REPO [TAG] [ASSET]',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'',
@@ -287,6 +296,9 @@ class EspBuddy {
 
 			case 'server':
 				$this->Command_server();
+				break;
+			case 'factory':
+				$this->Command_factory();
 				break;
 			case 'sonodiy':
 				$this->Command_sonodiy();
@@ -1032,7 +1044,121 @@ EOF;
 		else{
 			$this->_showActionUsage();			
 		}
+	}
 
+	// ---------------------------------------------------------------------------------------
+	public function Command_factory(){
+		if($this->target=='download'){
+			$repo	=$this->args['commands'][3];
+			$tag	=$this->args['commands'][4];
+			$a_name =$this->args['commands'][5];// or $a_name='all';
+			$this->Factory_Download($repo,$tag,$a_name);
+		}
+		elseif($this->target=='help'){
+			$this->Factory_help();
+		}
+		elseif($this->target){
+			$error="Invalid Action: '{$this->target}'";
+		}
+		else{
+			$error="Missing a '{$this->action}' Action";
+		}
+		if($error){
+			$this->_showActionUsage($error);
+			exit(1);
+		}
+		exit(0);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _createDirectory($path, $time=''){
+		if(!$path){
+			return false;
+		}
+		if(! file_exists($path)){
+			$dir=basename($path);
+			echo "* Creating the '{$dir}' directory at: $path	";
+			if(! @mkdir($path)){
+				echo "FAILED!\n";
+				return false;
+			}
+			else{
+				if($time){
+					touch($path,$time,$time);
+				}
+				echo "OK\n";
+				return true;
+			}
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_Download($repo='',$tag='',$asset_name=''){
+		if(!$repo){
+			$this->Command_help('factory',"Missing a REPO argument");
+			exit(1);
+		}
+		$this->orepo=$this->_RequireRepo($repo);
+
+
+		if(preg_match('/#/',$asset_name)){
+			$asset_name=explode('#',$asset_name);
+		}
+		elseif($preset=$this->cfg['repos'][$repo]['assets_groups'][$asset_name]){
+			$asset_name=$preset;
+		}
+		if($assets=$this->orepo->RepoChooseAssets($tag,$asset_name)){
+			$size=$this->FormatBytes($assets['size_total']);
+			echo "* Found {$assets['count']} assets for a total size of $size !\n";
+			if($this->_AskConfirm()){
+				//makes needed directories
+				$path_data=$this->cfg['paths']['dir_backup'];
+				if(! $this->_createDirectory($path_data)){return false;}
+		
+				$path_fact	="{$path_data}{$this->factory_dir}/";
+				if(! $this->_createDirectory($path_fact)){return false;}
+		
+				$path_repo	="{$path_fact}$repo/";
+				if(! $this->_createDirectory($path_repo)){return false;}
+		
+				$path_tag ="{$path_repo}{$assets['release']['tag_name']}/";
+				if(! $this->_createDirectory($path_tag, $assets['release']['espb_time'])){return false;}
+
+				echo "* Downloading {$assets['count']} assets into $path_tag ...\n";
+				//touch($path_tag,time());
+
+				$err=$ok=0;
+				$col=$assets['espb_col'] or $col=50;
+				foreach($assets['assets'] as $item){
+					echo " - ".str_pad($item['name'],$col);
+					if($this->orepo->DownloadAsset($item['browser_download_url'], $path_tag, $assets['release']['espb_time'])){
+						echo "OK\n";
+						$ok++;
+					}
+					else{
+						echo "FAILED\n";
+						$err++;
+					}
+				}
+
+				//touch($path_tag,$assets['release']['espb_time'],$assets['release']['espb_time']);
+
+				if($ok==$assets['count']){
+					echo "* Successfully downloaded $ok assets!\n";
+				}
+				else{
+					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";
+				}
+			}
+		}
+		elseif($tag and $asset_name){
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_help(){
+		$this->Command_help('factory');
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -1782,6 +1908,7 @@ https://github.com/soif/EspBuddy/issues/20
 			echo "\n";
 		}
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _show_command_usage($action='root'){
@@ -2989,7 +3116,7 @@ EOF;
 		$with_space and $space=" ";
 		return number_format(round($bytes, $precision),$precision) .$space. $units[$pow]; 
 	} 
-
+	
 	// ---------------------------------------------------------------------------------------
 	public static function GetUserAgent(){
 		$o = new self;

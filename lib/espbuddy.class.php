@@ -73,9 +73,10 @@ class EspBuddy {
 	private $os					="";		// what is the OS we are running
 	private $sh					;			//	shell object
 	private $orepo				;			//	repo_object
-	private $factory_dir		='_Factory';		//	name of the factory Directory
+	private $factory_dir		='_Factory';//	name of the factory Directory
+	private $server_pid			=null;		//	Our (Bg) server Process ID
 
-
+	
 	// preferences -------------
 	private $prefs	=array(
 		'config'		=>	'',				// default config to use
@@ -263,7 +264,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	public function CommandLine(){
 		$this->_ParseCommandLine();
-
+		
 		switch ($this->action) {
 			case 'upload':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
@@ -327,6 +328,9 @@ class EspBuddy {
 				break;
 			case 'help':
 				$this->Command_help();
+				break;
+			case 'test':
+				$this->Command_test();
 				break;
 
 			default:
@@ -3102,6 +3106,85 @@ EOF;
 			return $pretty_mac;
 		}	
 	}
+
+
+
+
+
+
+	// ##################################################################################################################################
+	// ##### TEST zone ##################################################################################################################
+	// ##################################################################################################################################
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_test(){
+		echo "#### TEST zone ##############################\n";
+		return $this->_StartServerTest();
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _StartServerTest(){
+		
+		if($this->_bgServerCheck()){
+			echo "* Another server is already running on port {$this->prefs['server_port']}\n";
+			echo "* Do you want to kill it first? ";
+			if(!$this->_AskConfirm()){
+				return true;
+			}
+			if(! $this->_bgServerStop()){
+				echo "# ERROR: Cant' stop server!\n";
+				return false;
+			}
+		}
+		$this->_bgServerStart();
+		echo "* Builtin Server is running on port {$this->prefs['server_port']} with  PID {$this->server_pid}\n";
+		echo "* Do you want to stop it ? ";
+		if(!$this->_AskConfirm()){
+			return false;
+		}
+		if(! $this->_bgServerStop()){
+			echo "# Cant stop server!\n";
+			return false;
+		}
+		echo "* Stopped server!\n";
+		sleep(5);
+
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _bgServerStart($kill_on_shutdown=true) {
+		//exec('nohup php {$this->path_bin} server > nohup.out & > /dev/null');
+		$command="nohup {$this->path_bin} server > /dev/null 2> /dev/null & echo $!";
+		//echo "$command\n";
+		$this->server_pid=trim(shell_exec($command));
+		if($kill_on_shutdown){
+			register_shutdown_function(array($this,'_bgServerStop'));
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function _bgServerStop() { //need to be public (for register_shutdown_function)
+		if(!$this->server_pid){
+			exec("ps a | grep {$this->bin} | grep server | grep -v grep", $r);
+			$r = array_filter(explode(' ', $r[0]));
+			$this->server_pid = $r[0];
+		}
+		if($this->server_pid){
+			return ! shell_exec("pkill -TERM -P {$this->server_pid}");
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _bgServerCheck() {
+		$command='netstat -an | grep -E "^tcp4\s+[^*]+\*\.'.$this->prefs['server_port'].'\s+.*?LISTEN"';
+		$r=trim(shell_exec($command));		
+		if($r){
+			return true;
+		}
+		
+	}
+
 
 
 	// ##################################################################################################################################

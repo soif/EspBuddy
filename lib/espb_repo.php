@@ -799,7 +799,7 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	private function _ParseVersion(){		
-		if( $file=$this->path_version and $reg=$this->version_regex and $reg_n=$this->version_regnum ){
+		if($this->path_base and $file=$this->path_version and $reg=$this->version_regex and $reg_n=$this->version_regnum ){
 			preg_match($reg, file_get_contents($file),$matches);
 			$this->version=trim($matches[$reg_n]);
 		}

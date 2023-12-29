@@ -89,6 +89,7 @@ class EspBuddy {
 		'name_sep'		=>	'-',			// field separator in firmware name
 		'keep_previous'	=>	3,				// number of previous firmware version to keep
 		'checkout_mode'	=>	1,				// Mode when doing a Git checkout : 0 = no checkout, 1 = only if clean, 2 = allows modifications, 3 stash modifications first if any
+		'server_port'	=>	81,				// Our builtin web server Port
  	);
 
 	private $serial_ports	= array(
@@ -596,7 +597,7 @@ class EspBuddy {
 	function Command_server(){
 		$root=$this->target or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
 		$root = rtrim($root,"/");
-		$port=$this->cfg['server_port'] or $port=81;
+		$port=$this->prefs['server_port'] or $port=8888;
 		$index=$this->espb_path_lib."espb_server_index.php";
 		$command="php -S 0.0.0.0:$port -t $root $index";
 		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);

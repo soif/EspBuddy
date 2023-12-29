@@ -49,6 +49,7 @@ class EspBuddy {
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
+	private $flag_link			= false;
 	
 	private $flag_json			= false;
 
@@ -248,7 +249,6 @@ class EspBuddy {
 		$this->cfg['paths']['bin_esptool']	= $this->cfg['paths']['bin'].	"esptool.py";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function CommandLine(){
 		$this->_ParseCommandLine();
@@ -338,7 +338,6 @@ class EspBuddy {
 		exit(0);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function BatchProcessCommand($command, $id){
 		if($this->flag_drymode){
@@ -377,7 +376,6 @@ class EspBuddy {
 			echo "\n";
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
@@ -420,7 +418,6 @@ class EspBuddy {
 		}
 		return !$r;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_upload($id){
@@ -540,7 +537,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -569,7 +565,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -584,7 +579,6 @@ class EspBuddy {
 		}
 		return true;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	function Command_server(){
@@ -610,7 +604,6 @@ class EspBuddy {
 		passthru($command, $r);
 		exit(0);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_send($id){
@@ -689,7 +682,6 @@ class EspBuddy {
 		return true;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _ParseCommands($str, $id=''){
 		//remove blank lines
@@ -700,7 +692,6 @@ class EspBuddy {
 		$str=trim($str);
 		return $str;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_status($id){
@@ -735,7 +726,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -748,7 +738,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_reboot($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -759,14 +748,12 @@ class EspBuddy {
 		$this->_EchoError($this->orepo->GetLastError());
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_gpios($id){
 		$this->_AssignCurrentHostConfig($id);
 		//echo "{$this->c_conf['repo']}\t";
 		$this->orepo->RemoteTestAllGpios($this->c_host);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
@@ -793,7 +780,6 @@ class EspBuddy {
 		echo "\n";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_ping($id,$count=0){
 		$this->_AssignCurrentHostConfig($id);
@@ -816,7 +802,6 @@ class EspBuddy {
 		}
 		return "$command\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_list($type){
@@ -859,13 +844,11 @@ class EspBuddy {
 		return getHostByName(getHostName());
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _getProxyPID(){
 		//TODO move to TMP
 		return $this->proxy_pid;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _setProxyPID($pid){
@@ -934,7 +917,6 @@ class EspBuddy {
 			echo $this->_getVersionBuddyLong();
 			echo "\n\n";	
 		}
-
 		if($error){
 			echo "\n";
 			$this->sh->PrintError($error);
@@ -968,6 +950,7 @@ class EspBuddy {
 	-p           : Upload previous firmware backuped, instead of the latest built
 	-s           : Skip Intermediate Upload (if set)
 	-m           : Switch to serial monitor after upload
+	-l           : When using --firm, make a symbolic link instead of a copy
 	--port=xxx   : Serial port to use (override main or per host serial port)
 	--rate=xxx   : Serial port speed to use (override main or per host serial port)
 	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
@@ -981,7 +964,6 @@ EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_self(){
@@ -1089,8 +1071,8 @@ EOF;
 			exit(1);
 		}
 		exit(0);
-
 	}
+
 	// ---------------------------------------------------------------------------------------
 	public 	function _showActionUsage($error=""){
 		$error or $error="Invalid Action: '{$this->target}'";
@@ -1119,7 +1101,6 @@ EOF;
 		print_r($this->_sonodiy_api_info($ip,$id));
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_help(){
 		$this->Command_help('sonodiy');
@@ -1136,7 +1117,6 @@ Setup Instructions
 
 EOF;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_ping($ip, $count=1){
@@ -1171,7 +1151,6 @@ EOF;
 			echo "I've received $r answers out of $count requests.\n";
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_scan(){
@@ -1357,7 +1336,6 @@ EOF;
 
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sondiy_osx_com2bash($command,$skip){
 		//https://github.com/pstadler/non-terminating-bash-processes/blob/master/README.md
@@ -1388,7 +1366,6 @@ END
 EOFB;
 		return $bash;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private $_itead_error_codes=array(
@@ -1465,7 +1442,6 @@ EOFB;
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_info($ip, $id){
 		$data=array(
@@ -1474,7 +1450,6 @@ EOFB;
 		);
 		return $this->_sondiy_curl($ip,'info',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_flash($ip, $id,$url,$sha256='',$verify_unlocked=true){
@@ -1605,7 +1580,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_pulse($ip, $id, $state_bool=0, $width=1000){
 		$state='off';
@@ -1625,7 +1599,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'pulse',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_signal($ip, $id){
 		$data=array(
@@ -1634,7 +1607,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'signal_strength',$data);
 	}
-	
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_startup($ip, $id, $state_num=0){
@@ -1659,7 +1631,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'startup',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_switch($ip, $id, $state_bool=0){
 		$state='off';
@@ -1673,7 +1644,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'switch',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_toggle($ip, $id){
 		if($info=$this->_sonodiy_api_info($ip,$id)){
@@ -1685,7 +1655,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_unlock($ip, $id){
 		$data=array(
@@ -1694,7 +1663,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'ota_unlock',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_wifi($ip, $id, $ssid, $pass){
@@ -1729,7 +1697,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'wifi',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private $_last_curl_request;
@@ -1795,7 +1762,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _show_action_usage($action='root',$title=""){
 		if($action=='root'){
@@ -1817,7 +1783,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _show_command_usage($action='root'){
 		
@@ -1831,7 +1796,6 @@ https://github.com/soif/EspBuddy/issues/20
 		echo "\n";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _LoadPreferences($prefs){
 		foreach($this->prefs as $k => $v){
@@ -1842,7 +1806,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 		date_default_timezone_set($this->prefs['time_zone']);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _SetRunningOS(){
@@ -1901,7 +1864,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		return true;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _ListHosts($id){
@@ -2016,6 +1978,7 @@ https://github.com/soif/EspBuddy/issues/20
 			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 		}
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _EchoCurrentConfig(){
 		if ($this->c_host['config']){
@@ -2074,7 +2037,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _SetCurrentVersionNames(){
 		$s	=$this->prefs['name_sep'];
@@ -2109,7 +2071,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _ChooseValueToUse($name, $list='', $default=''){
 		$tmp		= '';
@@ -2127,7 +2088,6 @@ https://github.com/soif/EspBuddy/issues/20
 					$tmp = $default ;
 		return $tmp;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _findConnectedSerialPorts(){
@@ -2160,7 +2120,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return false;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _RequireRepo($name){
 		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
@@ -2180,7 +2139,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return new $class_name($repo_path);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
 		$dir	= $this->cfg['paths']['dir_backup'];
@@ -2192,16 +2150,15 @@ https://github.com/soif/EspBuddy/issues/20
 		return $path;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($path_new_firmware,$do_rename_build=false){
 
 		$path_backup		= $this->c_host['path_dir_backup'];
 		$path_firmwares		="{$path_backup}{$this->prefs['firm_name']}s/";
 
-		$cur_firm_link		="{$this->prefs['firm_name']}.bin";
-		$path_cur_firm_link	="$path_backup$cur_firm_link";
-		$path_prev_firm_link="$path_backup{$this->prefs['firm_name']}_previous.bin";
+		$link_cur_firm		="{$this->prefs['firm_name']}.bin";
+		$path_link_cur_firm	="$path_backup$link_cur_firm";
+		$path_link_prev_firm="$path_backup{$this->prefs['firm_name']}_previous.bin";
 
 		if(!is_dir($path_firmwares)){
 			@mkdir($path_firmwares, 0777, true);
@@ -2209,39 +2166,54 @@ https://github.com/soif/EspBuddy/issues/20
 
 		$command_backup	=array();
 
-		if($this->prefs['keep_previous']){
+		$keep=$this->prefs['keep_previous'];
+
+		if($keep){
 			$echo1="Keep the previous firmware, ";
-			$command_backup[] = "mv -f \"$path_cur_firm_link\" \"$path_prev_firm_link\"";
-			if($list_firmares=$this->_listFirmwares()){
-				$i=1;
-				krsort($list_firmares);
-				foreach($list_firmares as $t => $file){
-					if($i > $this->prefs['keep_previous'] +1 ){
-						unlink($file);
-					}
-					$i++;
+			$command_backup[] = "mv -f \"$path_link_cur_firm\" \"$path_link_prev_firm\"";
+		}
+		if($list_firmares=$this->_listFirmwares()){
+			$i=1;
+			krsort($list_firmares);
+			foreach($list_firmares as $t => $file){
+				if( ($i > $keep +1) or !$keep ){
+					unlink($file);
 				}
+				$i++;
 			}
 		}
-		else{
-			$echo1="";
-			if($cur_firmware=@readlink($path_cur_firm_link)){
-				$command_backup[] = "rm -f \"$cur_firmware\"";
-			}
-		}
-		$file_new_firmware	=basename($path_new_firmware);
+
 
 		if($do_rename_build){
-			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".$file_new_firmware;
+			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".basename($path_new_firmware);
+			$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
 		}
 		else{
-			$path_cur_firmware=$path_firmwares.$file_new_firmware;
-		}
-		$cur_firmware		= $this->_getRelativePath($path_backup,$path_cur_firmware);
+			$path_factory=$this->cfg['paths']['dir_backup'].$this->factory_dir.'/';
+			if(strpos($path_new_firmware,$path_factory)==0){
+				$link_new_firmware=str_replace($path_factory,'',$path_new_firmware);
+				$link_new_firmware=str_replace('/','_',$link_new_firmware);
+			}
+			else{
+				$link_new_firmware	=basename($path_new_firmware);
+			}
+			$path_cur_firmware=$path_firmwares.$link_new_firmware;
 
-		$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
+			if($this->flag_link){
+				$rel_cur_firmware	= $this->_getRelativePath($path_cur_firmware, $path_new_firmware);
+				$command_backup[]	= "cd $path_firmwares";
+				$command_backup[]	= "ln -sf \"$rel_cur_firmware\" \"$link_new_firmware\"";
+			}
+			else{
+				$command_backup[] = "rm \"$path_cur_firmware\"";
+				$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
+			}
+		}
+		$rel_cur_firmware		= $this->_getRelativePath($path_backup,$path_cur_firmware);
+
 		$command_backup[] = "cd $path_backup";
-		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
+		$command_backup[] = "ln -s \"$rel_cur_firmware\" \"$link_cur_firm\"";
+
 		$this->c_host['path_firmware']=$path_cur_firmware;
 
 		if(count($command_backup)){
@@ -2255,7 +2227,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		return true;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _getRelativePath($from, $to){	
@@ -2294,14 +2265,15 @@ https://github.com/soif/EspBuddy/issues/20
 		if($files=glob($mask) and count($files)){
 			$time_files=array();
 			foreach($files as $file){
-				$time=filemtime($file);
+				//$time=filemtime($file);
+				$stat=lstat($file);	// we want thesymlink date
+				$time=$stat['mtime'];
 				$time_files[$time]=$file;
 			}
 			krsort($time_files);
 			return $time_files;
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _getVersionBuddyLong(){
@@ -2320,8 +2292,6 @@ https://github.com/soif/EspBuddy/issues/20
 			return $m[1];
 		}
 	}
-
-	
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
@@ -2349,7 +2319,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $str;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _AskConfirm(){
 		if($this->flag_noconfirm){
@@ -2359,7 +2328,6 @@ https://github.com/soif/EspBuddy/issues/20
 		//echo "\n";
 		return $confirm;
 	}
-	
 
 	// ---------------------------------------------------------------------------------------
 	private function _AskYesNo($question='Are you sure', $allow_noconfirm = true){
@@ -2372,7 +2340,6 @@ https://github.com/soif/EspBuddy/issues/20
 			return true;
 		}	
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
@@ -2431,7 +2398,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $c;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _FillHostnameOrIp($id){
 		global $cfg;
@@ -2441,7 +2407,6 @@ https://github.com/soif/EspBuddy/issues/20
 		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;
 		return $name;
 	}
-
 
 	// -------------------------------------------------------------
 	private function _ParseCommandLine(){
@@ -2466,6 +2431,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
+		$this->flag_link		= (boolean) $this->args['flags']['l'];
 
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
 		$this->flag_proxy		= (boolean) $this->args['flags']['P'];
@@ -2484,7 +2450,6 @@ https://github.com/soif/EspBuddy/issues/20
 			error_reporting(E_ALL & ~E_NOTICE);
 		}
 	}
-
 
 	// -------------------------------------------------------------
 	// http://php.net/manual/en/features.commandline.php#78804
@@ -2528,11 +2493,11 @@ https://github.com/soif/EspBuddy/issues/20
 	private function _PrettyfyWithTabs($arr){
 		return $this->_Prettyfy($arr, 0, "       ");
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _PrettyfyNoTabs($arr){
 		return $this->_Prettyfy($arr,0,"");
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
@@ -2566,7 +2531,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _WaitReboot($sleep){
 		$this->_EchoStepStart("Waiting  {$sleep} sec for ESP to reboot",'',0);
@@ -2580,7 +2544,6 @@ https://github.com/soif/EspBuddy/issues/20
 		echo " ********";
 		$this->_EchoStepEnd();
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _WaitPingable($host,$timeout=60,$invert=false){
@@ -2654,6 +2617,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$do_end and $this->_EchoStepEnd();
 		}
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _EchoHost($mess){
 		$mess=str_pad("#### ".$mess." ", 130, '#');
@@ -2662,7 +2626,6 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->sh->EchoStyleClose();
 		echo "\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepEnd(){
@@ -2827,8 +2790,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_Git($commands, $dir);
 	}	
 
-
-	
 	// ---------------------------------------------------------------------------------------
 	private function _Git($git_command, $path_base=""){
 		$path_base or $path_base	= $this->orepo->GetPathBase();
@@ -2975,7 +2936,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return true;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function _IpAddressToMAC($ip){
 		$this->_ping($ip);	//put in ARP cache
@@ -3011,8 +2971,8 @@ EOF;
 			return $pretty_mac;
 		}	
 	}
-	
-	
+
+
 	// ##################################################################################################################################
 	// ##### Static ####################################################################################################################
 	// ##################################################################################################################################

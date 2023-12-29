@@ -407,7 +407,7 @@ class EspBuddy_Repo {
 				echo ".";
 			}
 			echo "\n";
-			echo "* Please set your [ASSET] argurment to: a valid one (from the list above), or some (separated by '#'), or use 'all'\n";
+			echo "* Please set your [ASSET] argurment to: a valid one (from the list above), or some (separated by '#'), or an assets group's name, or use 'all'\n";
 		}
 		else{
 			echo "# Did not found any assets\n";
@@ -442,7 +442,7 @@ class EspBuddy_Repo {
 				echo " - ". str_pad($item['name'],$c_name) . str_pad($size,$c_size,' ',STR_PAD_LEFT). "\n"; //{$item['browser_download_url']}\n
 			}
 			unset($item['uploader']);
-			if($name=='all' or (is_array($name) and in_array($item['name'],$name))){
+			if($name=='all' or ($this->_searchInArray($item['name'],$name) )){
 				$out['assets'][$i]=$item;
 				$out['size_total'] +=$item['size'];
 				$i++;
@@ -458,6 +458,21 @@ class EspBuddy_Repo {
 			$out['count_total']	=$count;
 		}
 		return $out;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _searchInArray($txt,$array){
+		if(!is_array($array)){
+			return false;
+		}
+		if(in_array($txt,$array)){
+			return true;
+		}
+		foreach($array as $reg){
+			if(preg_match("#$reg#",$txt)){
+				return true;
+			}
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------

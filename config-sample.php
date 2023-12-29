@@ -47,11 +47,15 @@ $cfg['paths']['bin_pio']			="/Users/soif/.platformio/penv/bin/pio";
 /*
 	Defines the repositories (aka Firmwares types, among: espeasy, espura, tasmota, wled ) that you wish to use.
 
-	SYNTAX: $cfg['repos']['NAME']['path_repo']		="PATH";	//(with a trailing slash!)
+	SYNTAX: $cfg['repos']['NAME']['PARAM']		="VALUE";
 		* NAME  : is one of the supported firmwares :  'espeasy' | 'espura' | 'tasmota' | 'wled'
 		* PARAM : Each repo can use one or some of the following parameters:
-			- 'path_repo'		: (REQUIRED) path to the main folder where the repository is cloned (with a trailing slash!)
-			- 'assets_groups'	: (optionnal) some preset lists of assets to use as the [ASSET] argument for the 'factory download' command
+			- 'path_repo'		: path to the main folder where the git repository is cloned (with a trailing slash!)
+									- This is required only for 'repo_xxx' or 'build' (or with -b) commands
+			- 'assets_groups'	: (optionnal) some preset lists of assets to grab with the 'factory download' command 
+									- SYNTAX: $cfg['repos']['NAME']['assets_groups']['ID']=array('name1','name2','regex',....)
+									- Each asset group is indexed by an ID (Your own list's name) to use as the [ASSET] argument
+									- Each member of the array can be either the exact name of the asset, or a Regular Expression.
 */
 // Examples --------------------------
 $cfg['repos']['espurna']['path_repo']				="/Users/soif/mount/dev_apache/src/espurna/";	
@@ -74,6 +78,8 @@ $cfg['repos']['tasmota']['assets_groups']['my']		=array(	// ie to use in command
 														'tasmota32.factory.bin',
 													);
 
+$cfg['repos']['wled']['assets_groups']['esp8266']	=array('.*ESP0','.*ESP8266');	// grab only files matching this regex
+$cfg['repos']['wled']['assets_groups']['esp32']		=array('.*ESP32');				// grab only files matching this regex
 
 
 // ################################################################################################################################
@@ -209,7 +215,7 @@ $cfg['hosts']['nodemcu']['serial_port']		="wemos";
 	* ID	: Your own commands set's name.
 	* PARAM	: Each Commands Set must at least be defined by 1 or 2 parameter :
 		- 'list'	: (REQUIRED)  a (newline separated) list of commands:
-						- Separate command and value on each line with space(s) or tab(s). 
+						- Separate command and value on each line, with space(s) or tab(s). 
 						- Blank lines, extras spaces and Comments (starting with "#") are ignored
 						- The list can inlude special variables that get replaced by their values extracted from the host's definition:
 							- {{host_fqdn}}	is replaced by the fully Qualified Domain Name, aka 'hostname'
@@ -218,7 +224,7 @@ $cfg['hosts']['nodemcu']['serial_port']		="wemos";
 							- {{host_ip}}	is replaced by the host IP address.
 							- {{host_ip1}},{{host_ip2}},{{host_ip3}},{{host_ip4}}	are the 4 parts of the host IP address.
 							- {{git_version}} is replaced by the full git version (branch,tag,commit)
-		- 'repo'	: (opionnal) the repo to use (if not set as argument, as config parameter, or as a default prefs)
+		- 'repo'	: (optionnal) the repo to use (if not set as argument, as config parameter, or as a default prefs)
 
 */
 
@@ -251,7 +257,7 @@ $cfg['commands']['tasmo_button']['list']	="
 
 	# additional buttons settings +++++++++++++++++
 	SetOption13 1		# Allow immediate action on single button press
-	SetOption1	1		#  restrict to single to penta press and hold actions
+	SetOption1	1		# restrict to single to penta press and hold actions
 ";
 
 
@@ -263,8 +269,8 @@ Upgrade 1											# Upgrade and restart
 ";
 
 // Examples: Get some GPIO status ----------------------------------------------
-$cfg['commands']['espeasy_test']['repo']="espeasy";
-$cfg['commands']['espeasy_test']['list']	="
+$cfg['commands']['espeasy_gpios']['repo']="espeasy";
+$cfg['commands']['espeasy_gpios']['list']	="
 Status,GPIO,0
 Status,GPIO,1
 Status,GPIO,2

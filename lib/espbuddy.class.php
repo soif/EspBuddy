@@ -31,6 +31,7 @@ class EspBuddy {
 	// command lines arguments
 	private $args				= array();	// command line arguments
 	private $bin				= '';		// binary name of the invoked command
+	private $path_bin			= '';		// full path to the binary name of the invoked command
 	private $action				= '';		// command line action 	(1st Arg)
 	private $target				= '';		// command line target	(2nd Arg)
 	private $opt1				= '';		// command line command	(3rd Arg)
@@ -293,7 +294,6 @@ class EspBuddy {
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'server':
 				$this->Command_server();
 				break;
@@ -2542,6 +2542,7 @@ https://github.com/soif/EspBuddy/issues/20
 		global $argv;
 		$this->args		= $this->_ParseArguments($argv);
 		$this->bin 		= basename($this->args['commands'][0]);
+		list($this->path_bin) = get_included_files();
 		$this->action	= $this->args['commands'][1];
 		$this->target	= $this->args['commands'][2];
 		$this->opt1		= $this->args['commands'][3];

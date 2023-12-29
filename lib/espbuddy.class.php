@@ -391,7 +391,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 		$path_build=$this->orepo->GetPathBuild();
 
 		$commands_compil[]="cd {$path_build} ";
@@ -772,7 +772,7 @@ class EspBuddy {
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
 
-		$this->orepo=$this->_RequireRepo($repo_key);
+		$this->orepo=$this->_RequireRepo($repo_key,true);
 
 		if($type == "version"){
 			$version = $this->orepo->GetVersion() or $version= "Not found";
@@ -2069,6 +2069,7 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		else{
 			$this->_AssignCurrentHostConfig($id);
+
 			if(!$this->flag_json){
 				if($this->flag_verbose){
 					$this->_EchoCurrentHost();
@@ -2123,7 +2124,7 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _AssignCurrentHostConfig($id){
+	private function _AssignCurrentHostConfig($id,$with_source=false){
 		// current host -------------
 		$this->_FillHostnameOrIp($id);
 
@@ -2151,7 +2152,8 @@ https://github.com/soif/EspBuddy/issues/20
 		// current repo ---------------
 		//$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
-			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
+			
+			$this->orepo=$this->_RequireRepo($this->c_conf['repo'],$with_source);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 			}
@@ -2159,7 +2161,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 		// git commands add a little delay, so only use then if needed
-		if($this->action=='build' or ($this->action=='upload' and $this->flag_build)){
+		if($with_source and ($this->action=='build' or ($this->action=='upload' and $this->flag_build))){
 			$this->_SetCurrentVersionNames();
 		}
 	}
@@ -2248,14 +2250,14 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _RequireRepo($name){
+	private function _RequireRepo($name, $with_source=false){
 		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
 		$class_path	= $this->espb_path_lib."espb_repo_{$name}.php";
 		$class_name	= "EspBuddy_Repo_$name";
-		if(!$this->cfg['repos'][$name]){
-			$this->_dieError ("Unknown repository '$name' ");
-		}
-		if(!$repo_path){
+		// if(!$this->cfg['repos'][$name] and $with_source){
+		// 	$this->_dieError ("Unknown repository '$name' ");
+		// }
+		if(!$repo_path and $with_source){
 			$this->_dieError ("You must define the path to your '$name' repo,  in \$cfg['repos']['$name']['path_repo'] ");
 		}
 		if(!file_exists($class_path)){

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.40b1';						// EspBuddy Version
+	public $espb_version			= 'd2.40b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -74,6 +74,9 @@ class EspBuddy {
 	private $sh					;			//	shell object
 	private $orepo				;			//	repo_object
 	private $factory_dir		='_Factory';//	name of the factory Directory
+	private $latest_link		='_Latest';	// name of the link to the latest assets
+	private $previous_link		='_Previous';// name of the link to the previous assets
+	private $path_factory_repo	='';		// path to /backup/_Factory/repo/
 	private $server_pid			=null;		//	Our (Bg) server Process ID
 
 	
@@ -136,6 +139,7 @@ class EspBuddy {
 		),
 		'factory'			=> array(
 			'download'		=>'Download release assets',
+			'clean'			=>'Remove oldest assets (keep only latest and previous)',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'Show Sonoff DIY Help',
@@ -186,7 +190,8 @@ class EspBuddy {
 			'help'			=> ""
 		),
 		'factory'			=> array(
-			'download'		=>	'REPO [TAG] [ASSET]',
+			'download'		=>	'REPO [TAG] [ASSET] [options]',
+			'clean'			=>	'REPO [KEEP] [options]',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'',
@@ -946,39 +951,61 @@ class EspBuddy {
 		if($action=='root'){
 			echo <<<EOF
 ---------------------------------------------------------------------------------
-* TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
 
-* CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
++ CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
 
-* ROOT_DIR           : Root directory (for the built-in Web Server)
++ ROOT_DIR          : Root directory (for the built-in Web Server)
 
-* OPTIONS :
-	-y           : Automatically confirm Yes/No
-	-d           : Dry Run. Show commands but don't apply them
-	-v           : Verbose mode
-	-D           : Debug mode (shows PHP errors)
-	--conf=xxx   : Config name to use (overrides per host config)
-	--repo=xxx   : Repo to use (overrides per host config)
++ OPTIONS :
+    -y              : Automatically confirm Yes/No
+    -d              : Dry Run. Show commands but don't apply them
+    -v              : Verbose mode
+    -D              : Debug mode (shows PHP errors)
+    --conf=xxx      : Config name to use (overrides per host config)
+    --repo=xxx      : Repo to use (overrides per host config)
 
-* UPLOAD_OPTIONS :
-	-b           : Build before Uploading
-	-w           : Wire Mode : Upload using the Serial port instead of the default OTA
-	-e           : In Wire Mode, erase flash first, then upload
-	-p           : Upload previous firmware backuped, instead of the latest built
-	-s           : Skip Intermediate Upload (if set)
-	-m           : Switch to serial monitor after upload
-	-l           : When using --firm, make a symbolic link instead of a copy
-	--port=xxx   : Serial port to use (override main or per host serial port)
-	--rate=xxx   : Serial port speed to use (override main or per host serial port)
-	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
-	--from=REPO  : Migrate from REPO to the selected config
++ UPLOAD_OPTIONS :
+    -b              : Build before Uploading
+    -w              : Wire Mode : Upload using the Serial port instead of the default OTA
+    -e              : In Wire Mode, erase flash first, then upload
+    -p              : Upload previous firmware backuped, instead of the latest built
+    -s              : Skip Intermediate Upload (if set)
+    -m              : Switch to serial monitor after upload
+    -l              : When using --firm, make a symbolic link instead of a copy
+    --port=xxx      : Serial port to use (override main or per host serial port)
+    --rate=xxx      : Serial port speed to use (override main or per host serial port)
+    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
+    --from=REPO     : Migrate from REPO to the selected config
 
-* AUTH_OPTIONS :
-	--login=xxx  : Login name (overrides host or per config login)
-	--pass=xxx   : Password (overrides host or per config password)
++ AUTH_OPTIONS :
+    --login=xxx     : Login name (overrides host or per config login)
+    --pass=xxx      : Password (overrides host or per config password)
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
+		}
+		if($action=='factory'){
+			echo <<<EOF
+---------------------------------------------------------------------------------
++ REPO              : Repository (espurna, espeasy, tasmota or wled) to process
+
++ TAG               : Tag name (aka version)
+
++ ASSET             : Assets to download. Either: 
+                      - a single asset name, 
+                      - a list of assets (separated by '#'), 
+                      - an asset list ID, previously set in your configuration
+                      - 'all' selects all available assets
+
++ KEEP              : Clean mode defaults to keep the last 2 versions (latest and previous) and ask to delete oldest files.
+                       You might enter the number of versions to keep, or use 'none' to select all files
+
++ OPTIONS :
+    -y              : Automatically confirm Yes/No
+    -v              : Verbose mode
+
+EOF;
 		}
 	}
 
@@ -1057,7 +1084,20 @@ EOF;
 			$repo	=$this->args['commands'][3];
 			$tag	=$this->args['commands'][4];
 			$a_name =$this->args['commands'][5];// or $a_name='all';
-			$this->Factory_Download($repo,$tag,$a_name);
+			$this->Factory_download($repo,$tag,$a_name);
+		}
+		elseif($this->target=='clean'){
+			$repo	=$this->args['commands'][3];
+			$back	=$this->args['commands'][4];
+			if($back=='none'){
+				$back	=0;
+			}
+			elseif($back and $back == intval($back)){
+			}
+			else{
+				$back	=2;
+			}
+			$this->Factory_clean($repo,$back);
 		}
 		elseif($this->target=='help'){
 			$this->Factory_help();
@@ -1099,7 +1139,91 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function Factory_Download($repo='',$tag='',$asset_name=''){
+	private function _IsSymLinkFrom($path_file,$path_link){
+		if(file_exists($path_link)){
+			$path_file=rtrim($path_file,'/');
+			$path_link=rtrim($path_link,'/');
+			//echo "\n LINK: $path_link\n REAL: ".realpath($path_link)."\n VS  : $path_file";
+			if($path_file==realpath($path_link)){
+				return true;
+			}
+		}
+		//echo "\n NOT FOUND: $path_link\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_clean($repo='',$back_n=2){
+		if(!$repo){
+			$this->Command_help('factory',"Missing a REPO argument");
+			exit(1);
+		}
+		$this->orepo=$this->_RequireRepo($repo);
+		$i=0;
+		if(is_dir($this->path_factory_repo)){
+			$files_names=array();
+			echo "* Keeping the latest $back_n directories in '$repo', and delete others....\n";
+			if($files=$this->_ListFilesByDate($this->path_factory_repo,'dir')){
+				echo "* All Assets found in: {$this->path_factory_repo} :\n";
+				foreach($files as $time => $path_file){
+					$name=basename($path_file);
+					if(!is_link($path_file) and !preg_match('#^\.#',$name)){
+						$date=date('M j, Y H:i',$time);
+						$files_names[$path_file]=str_pad("$name ",18). str_pad($date, 18 ,' ', STR_PAD_LEFT)." ";
+						$desc='';
+						if($this->_IsSymLinkFrom($path_file, $this->path_factory_repo.$this->latest_link)){
+							$desc="(latest)";
+						}
+						elseif($this->_IsSymLinkFrom($path_file, $this->path_factory_repo.$this->previous_link)){
+							$desc="(previous)";
+						}
+						$files_names[$path_file] .=str_pad($desc,11);
+						echo "  - ". $files_names[$path_file]."\n";
+					}
+				}
+				echo "\n";
+
+				if(count($files_names)){
+					$back_n=intval($back_n);
+					for ($i=0; $i < $back_n ; $i++) { 
+						array_shift($files_names);
+					}
+					if(count($files_names)){
+						$i=0;
+						foreach($files_names as $path_file => $name){
+							echo "* Delete ";
+							if($this->flag_verbose){
+								echo "$path_file	";
+							}
+							else{
+								echo str_pad($name, 45);
+							}
+							echo "? ";
+							if($this->_AskConfirm()){
+								$command="rm -rf $path_file";
+								if(strpos($path_file,$this->path_factory_repo)==0){
+									shell_exec($command);
+									$this->_SymlinkLatestAndPrevious();
+									$i++;
+								}
+								else{
+									echo "# CANCELED because $path_file is outside of the {$this->factory_dir} directory.\n# Please do it manually!\n";
+								}
+							}
+						}
+
+						if($i){
+							echo "* Successfully deleted $i directories !\n";	
+						}
+						return $i;
+					}
+				}
+			}
+		}
+		echo "# Directory is Empty !\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_download($repo='',$tag='',$asset_name=''){
 		if(!$repo){
 			$this->Command_help('factory',"Missing a REPO argument");
 			exit(1);
@@ -1156,8 +1280,7 @@ EOF;
 
 				if($ok==$assets['count']){
 					echo "* Successfully downloaded $ok assets!\n";
-					$this->_SymlinkLatestFromDir('dir',$path_repo.'latest',	$path_repo);
-					$this->_SymlinkLatestFromDir('dir',$path_repo.'previous',	$path_repo, 1);
+					$this->_SymlinkLatestAndPrevious();
 				}
 				else{
 					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";
@@ -2275,6 +2398,7 @@ https://github.com/soif/EspBuddy/issues/20
 		if(!file_exists($class_path)){
 			$this->_dieError ("Cant find a '$name' class at : $class_path");
 		}
+		$this->path_factory_repo="{$this->cfg['paths']['dir_backup']}{$this->factory_dir}/$name/";
 
 		require_once($class_path);
 		return new $class_name($repo_path);
@@ -3117,10 +3241,13 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	private function _GetDirOrFileTime($path){
 		if(is_dir($path)){
-			$files=array_diff(scandir($path), array('..', '.'));
+			$path=rtrim($path,'/').'/';
+			//$files=array_diff(scandir($path), array('..', '.'));
+			$files=glob($path.'*'); // no hidden files			
+			//echo "GET date: $path : "; print_r($files);echo "\n\n";
 			if(count($files)){				
 				$first_file=reset($files);
-				return filemtime($path.'/'.$first_file);
+				return filemtime($first_file);
 			}
 		}
 		return filemtime($path);
@@ -3136,50 +3263,68 @@ EOF;
 		$cur_dir=getcwd();
 		if($target=$this->_getRelativePath($path_link,$to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
 			chdir($link_dir);
-			symlink($target,$link); //shell_exec("ln -sf \"$target\" \"$link\" ");			
+			//echo " PATH: $path_link\n TO  : $to\n CD  : $link_dir\n LINK: $link\n TARG: $target\n";
+			if(is_link($link)){ // else the target is created inside the link destination
+				unlink($link);	//echo "rm link $link\n";
+			}
+			symlink($target,$link); //
+			//passthru("ln -sFi \"$target\" \"$link\" ");			
 			chdir($cur_dir);
 			return true;
 		}
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _SymlinkLatestFromDir($mode='dir', $path_link, $path_to_dir, $previous=0){
+	private function _ListFilesByDate($path_to_dir,$mode=''){
 		$path_to_dir=rtrim($path_to_dir,'/');
 		if(is_dir($path_to_dir)){
-			$files=array_diff(scandir($path_to_dir), array('..', '.'));
-			if(count($files)){
+			$files=glob($path_to_dir.'/*'); // no hidden files			
+			if(is_array($files) and count($files)){
 				$tmp=array();
-				foreach($files as $file){
-					//skip invisibles
-					if(preg_match('#^\.#', $file)){
-						continue;
-					}
-					$path_file=$path_to_dir.'/'.$file;
+				foreach($files as $path_file){
 					$time=$this->_GetDirOrFileTime($path_file);
-					if($mode='dir' and is_dir($path_file)){
+					if($mode='dir' and is_dir($path_file) and !is_link($path_file)){	// and !is_link($path_file)
 						$tmp[$time]=$path_file;
 					}
-					elseif($mode=='file' and is_file($path_file)){
+					elseif($mode=='file' and is_file($path_file) and !is_link($path_file)){ // and !is_link($path_file)
 						$tmp[$time]=$path_file;
 					}
 					elseif(!$mode){
 						$tmp[$time]=$path_file;
 					}
 				}
-				if(count($tmp)){
-					krsort($tmp);
-					$previous=intval($previous);
-					for ($i=0; $i < $previous ; $i++) { 
-						array_shift($tmp);
-					}
-					$last_file=reset($tmp);
-					if($last_file){
-						return $this->_SymlinkRelative($path_link, $last_file);
-					}
-				}
+			}
+			if(count($tmp)){
+				krsort($tmp);
+				return $tmp;
 			}
 		}
 	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkLatestFromDir($mode='dir', $path_link, $path_to_dir, $previous=0){
+		$path_to_dir=rtrim($path_to_dir,'/');
+		if($tmp=$this->_ListFilesByDate($path_to_dir,$mode)){
+			$previous=intval($previous);
+			for ($i=0; $i < $previous ; $i++) { 
+				array_shift($tmp);
+			}
+			$last_file=reset($tmp);
+			if($last_file){
+				return $this->_SymlinkRelative($path_link, $last_file);
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkLatestAndPrevious($path_dir=''){
+		$path_dir or $path_dir=$this->path_factory_repo;
+		if(is_dir($path_dir)){
+			$this->_SymlinkLatestFromDir('dir',$path_dir.$this->latest_link,	$path_dir);
+			$this->_SymlinkLatestFromDir('dir',$path_dir.$this->previous_link,	$path_dir, 1);
+		}
+	}
+
 
 
 	// ##################################################################################################################################
@@ -3190,7 +3335,9 @@ EOF;
 	// ---------------------------------------------------------------------------------------
 	public function Command_test(){
 		echo "#### TEST zone ##############################\n";
-		return $this->_StartServerTest();
+		//$this->_RequireRepo('espurna');
+		//$this->_SymlinkLatestAndPrevious();
+		//return $this->_StartServerTest();
 	}
 	// ---------------------------------------------------------------------------------------
 	private function _StartServerTest(){

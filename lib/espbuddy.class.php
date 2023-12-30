@@ -1116,6 +1116,11 @@ EOF;
 		if($assets=$this->orepo->RepoChooseAssets($tag,$asset_name)){
 			$size=$this->FormatBytes($assets['size_total']);
 			echo "* Found {$assets['count']} assets for a total size of $size !\n";
+			if($this->flag_verbose){
+				foreach($assets['assets'] as $item){
+					echo "  - ".$item['name']."\n";
+				}
+			}
 			if($this->_AskConfirm()){
 				//makes needed directories
 				$path_data=$this->cfg['paths']['dir_backup'];

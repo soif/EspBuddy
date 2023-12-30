@@ -1156,6 +1156,8 @@ EOF;
 
 				if($ok==$assets['count']){
 					echo "* Successfully downloaded $ok assets!\n";
+					$this->_SymlinkLatestFromDir('dir',$path_repo.'latest',	$path_repo);
+					$this->_SymlinkLatestFromDir('dir',$path_repo.'previous',	$path_repo, 1);
 				}
 				else{
 					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";
@@ -3112,9 +3114,72 @@ EOF;
 		}	
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _GetDirOrFileTime($path){
+		if(is_dir($path)){
+			$files=array_diff(scandir($path), array('..', '.'));
+			if(count($files)){				
+				$first_file=reset($files);
+				return filemtime($path.'/'.$first_file);
+			}
+		}
+		return filemtime($path);
+	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkRelative($path_link, $to){
+		$path_link=rtrim($path_link,'/'); //else rel path will be wrong
+		if(!$path_link or !$to){
+			return false;
+		}
 
+		$cur_dir=getcwd();
+		if($target=$this->_getRelativePath($path_link,$to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
+			chdir($link_dir);
+			symlink($target,$link); //shell_exec("ln -sf \"$target\" \"$link\" ");			
+			chdir($cur_dir);
+			return true;
+		}
+	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkLatestFromDir($mode='dir', $path_link, $path_to_dir, $previous=0){
+		$path_to_dir=rtrim($path_to_dir,'/');
+		if(is_dir($path_to_dir)){
+			$files=array_diff(scandir($path_to_dir), array('..', '.'));
+			if(count($files)){
+				$tmp=array();
+				foreach($files as $file){
+					//skip invisibles
+					if(preg_match('#^\.#', $file)){
+						continue;
+					}
+					$path_file=$path_to_dir.'/'.$file;
+					$time=$this->_GetDirOrFileTime($path_file);
+					if($mode='dir' and is_dir($path_file)){
+						$tmp[$time]=$path_file;
+					}
+					elseif($mode=='file' and is_file($path_file)){
+						$tmp[$time]=$path_file;
+					}
+					elseif(!$mode){
+						$tmp[$time]=$path_file;
+					}
+				}
+				if(count($tmp)){
+					krsort($tmp);
+					$previous=intval($previous);
+					for ($i=0; $i < $previous ; $i++) { 
+						array_shift($tmp);
+					}
+					$last_file=reset($tmp);
+					if($last_file){
+						return $this->_SymlinkRelative($path_link, $last_file);
+					}
+				}
+			}
+		}
+	}
 
 
 	// ##################################################################################################################################

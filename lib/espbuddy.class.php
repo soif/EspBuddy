@@ -76,6 +76,7 @@ class EspBuddy {
 	private $factory_dir		='_Factory';//	name of the factory Directory
 	private $latest_link		='_Latest';	// name of the link to the latest assets
 	private $previous_link		='_Previous';// name of the link to the previous assets
+	private $path_factory		='';		// path to /backup/_Factory/
 	private $path_factory_repo	='';		// path to /backup/_Factory/repo/
 	private $server_pid			=null;		//	Our (Bg) server Process ID
 
@@ -264,6 +265,8 @@ class EspBuddy {
 		$this->cfg['paths']['bin']			= $this->espb_path.'bin/';
 		$this->cfg['paths']['bin_espota']	= $this->cfg['paths']['bin'].	"espota.py";
 		$this->cfg['paths']['bin_esptool']	= $this->cfg['paths']['bin'].	"esptool.py";
+
+		$this->path_factory					="{$this->cfg['paths']['dir_backup']}{$this->factory_dir}/";
 	}
 
 	// ---------------------------------------------------------------------------------------

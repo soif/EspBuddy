@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.40b2';						// EspBuddy Version
+	public $espb_version			= 'd2.40b3';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -1119,22 +1119,28 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _createDirectory($path, $time=''){
+	private function _CreateDirectory($path, $time=''){
 		if(!$path){
 			return false;
 		}
 		if(! file_exists($path)){
 			$dir=basename($path);
-			echo "* Creating the '{$dir}' directory at: $path	";
+			if($this->flag_verbose){
+				echo "* Creating the '{$dir}' directory at: $path	";
+			}
 			if(! @mkdir($path)){
-				echo "FAILED!\n";
+				if($this->flag_verbose){
+					echo "FAILED!\n";
+				}
 				return false;
 			}
 			else{
 				if($time){
 					touch($path,$time,$time);
 				}
-				echo "OK\n";
+				if($this->flag_verbose){
+					echo "OK\n";
+				}
 				return true;
 			}
 		}
@@ -1251,16 +1257,16 @@ EOF;
 			if($this->_AskConfirm()){
 				//makes needed directories
 				$path_data=$this->cfg['paths']['dir_backup'];
-				if(! $this->_createDirectory($path_data)){return false;}
+				if(! $this->_CreateDirectory($path_data)){return false;}
 		
 				$path_fact	="{$path_data}{$this->factory_dir}/";
-				if(! $this->_createDirectory($path_fact)){return false;}
+				if(! $this->_CreateDirectory($path_fact)){return false;}
 		
 				$path_repo	="{$path_fact}$repo/";
-				if(! $this->_createDirectory($path_repo)){return false;}
+				if(! $this->_CreateDirectory($path_repo)){return false;}
 		
 				$path_tag ="{$path_repo}{$assets['release']['tag_name']}/";
-				if(! $this->_createDirectory($path_tag, $assets['release']['espb_time'])){return false;}
+				if(! $this->_CreateDirectory($path_tag, $assets['release']['espb_time'])){return false;}
 
 				echo "* Downloading {$assets['count']} assets into $path_tag ...\n";
 				//touch($path_tag,time());

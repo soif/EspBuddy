@@ -3254,14 +3254,14 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _SymlinkRelative($path_link, $to){
+	private function _SymlinkRelative($path_link, $path_to){
 		$path_link=rtrim($path_link,'/'); //else rel path will be wrong
-		if(!$path_link or !$to){
+		if(!$path_link or !$path_to){
 			return false;
 		}
 
 		$cur_dir=getcwd();
-		if($target=$this->_getRelativePath($path_link,$to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
+		if($target=$this->_getRelativePath($path_link, $path_to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
 			chdir($link_dir);
 			//echo " PATH: $path_link\n TO  : $to\n CD  : $link_dir\n LINK: $link\n TARG: $target\n";
 			if(is_link($link)){ // else the target is created inside the link destination

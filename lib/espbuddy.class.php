@@ -2420,25 +2420,19 @@ https://github.com/soif/EspBuddy/issues/20
 
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($path_new_firmware,$do_rename_build=false){
-
-		$path_backup		= $this->c_host['path_dir_backup'];
-		$path_firmwares		="{$path_backup}{$this->prefs['firm_name']}s/";
-
-		$link_cur_firm		="{$this->prefs['firm_name']}.bin";
-		$path_link_cur_firm	="$path_backup$link_cur_firm";
-		$path_link_prev_firm="$path_backup{$this->prefs['firm_name']}_previous.bin";
+		$path_firmwares		="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$path_link_cur_firm	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+		$path_link_prev_firm="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
 
 		if(!is_dir($path_firmwares)){
 			@mkdir($path_firmwares, 0777, true);
 		}
 
-		$command_backup	=array();
-
 		$keep=$this->prefs['keep_previous'];
-
 		if($keep){
 			$echo1="Keep the previous firmware, ";
-			$command_backup[] = "mv -f \"$path_link_cur_firm\" \"$path_link_prev_firm\"";
+			@unlink($path_link_prev_firm);
+			rename($path_link_cur_firm,$path_link_prev_firm);
 		}
 		if($list_firmares=$this->_listFirmwares()){
 			$i=1;
@@ -2450,16 +2444,21 @@ https://github.com/soif/EspBuddy/issues/20
 				$i++;
 			}
 		}
+		
+		$this->_EchoStepStart("{$echo1}Archive and rotate this new firmware");
+		if($this->flag_drymode){
+			return true;
+		}
 
-
+		$ok=false;
+		//makes path_cur_firmware
 		if($do_rename_build){
 			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".basename($path_new_firmware);
-			$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
+			$ok = copy($path_new_firmware, $path_cur_firmware);
 		}
 		else{
-			$path_factory=$this->cfg['paths']['dir_backup'].$this->factory_dir.'/';
-			if(strpos($path_new_firmware,$path_factory)==0){
-				$link_new_firmware=str_replace($path_factory,'',$path_new_firmware);
+			if(strpos($path_new_firmware,$this->path_factory)==0){
+				$link_new_firmware=str_replace($this->path_factory,'',$path_new_firmware);
 				$link_new_firmware=str_replace('/','_',$link_new_firmware);
 			}
 			else{
@@ -2467,33 +2466,21 @@ https://github.com/soif/EspBuddy/issues/20
 			}
 			$path_cur_firmware=$path_firmwares.$link_new_firmware;
 
-			if($this->flag_link){
-				$rel_cur_firmware	= $this->_getRelativePath($path_cur_firmware, $path_new_firmware);
-				$command_backup[]	= "cd $path_firmwares";
-				$command_backup[]	= "ln -sf \"$rel_cur_firmware\" \"$link_new_firmware\"";
+			if($this->flag_copy){
+				@unlink($path_cur_firmware);
+				$ok = copy($path_new_firmware, $path_cur_firmware);
 			}
 			else{
-				$command_backup[] = "rm \"$path_cur_firmware\"";
-				$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
+				$ok=$this->_SymlinkRelative($path_cur_firmware, $path_new_firmware);
 			}
 		}
-		$rel_cur_firmware		= $this->_getRelativePath($path_backup,$path_cur_firmware);
 
-		$command_backup[] = "cd $path_backup";
-		$command_backup[] = "ln -s \"$rel_cur_firmware\" \"$link_cur_firm\"";
-
-		$this->c_host['path_firmware']=$path_cur_firmware;
-
-		if(count($command_backup)){
-			$command=implode(" ; \n   ", $command_backup);
-			echo "\n";
-			$this->_EchoStepStart("{$echo1}Archive and Set the new firmware to : ".basename($path_cur_firmware)." ", $command);
-			if(! $this->flag_drymode){
-				passthru($command, $r);
-				return !$r;
-			}
+		if($ok and $ok = $this->_SymlinkRelative($path_link_cur_firm, $path_cur_firmware)){
+			$this->c_host['path_firmware']=$path_cur_firmware;
+			echo "* Current firmware was set to: ".basename($path_cur_firmware)."\n";
+			return true;
 		}
-		return true;
+		$this->_EchoError('Renaming or rotating current firmware failed');
 	}
 
 	// ---------------------------------------------------------------------------------------

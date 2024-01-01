@@ -446,7 +446,7 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_upload($id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 
 		// choose firmware ---------------
 		if($this->arg_firmware){
@@ -2563,7 +2563,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 
 		$ip		=	$this->c_host['ip'];
 		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);

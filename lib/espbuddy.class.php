@@ -50,7 +50,7 @@ class EspBuddy {
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
-	private $flag_link			= false;
+	private $flag_copy			= false;
 	
 	private $flag_json			= false;
 
@@ -975,7 +975,7 @@ class EspBuddy {
     -p              : Upload previous firmware backuped, instead of the latest built
     -s              : Skip Intermediate Upload (if set)
     -m              : Switch to serial monitor after upload
-    -l              : When using --firm, make a symbolic link instead of a copy
+    -c              : When using --firm, make a copy instead of a symbolic link
     --port=xxx      : Serial port to use (override main or per host serial port)
     --rate=xxx      : Serial port speed to use (override main or per host serial port)
     --firm=xxx      : Full path to the firmware file to upload (override latest build one)
@@ -2700,7 +2700,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
-		$this->flag_link		= (boolean) $this->args['flags']['l'];
+		$this->flag_copy		= (boolean) $this->args['flags']['c'];
 
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
 		$this->flag_proxy		= (boolean) $this->args['flags']['P'];

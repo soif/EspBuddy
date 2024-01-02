@@ -1006,11 +1006,12 @@ class EspBuddy {
 
 + UPLOAD_OPTIONS :
     -b              : Build before Uploading
-    -w              : Wire Mode : Upload using the Serial port instead of the default OTA
+    -w              : Wire Mode : Upload using the serial port instead of the default OTA
     -e              : In Wire Mode, erase flash first, then upload
+    -m              : Switch to serial monitor after upload
     -p              : Upload previous firmware backuped, instead of the latest built
     -s              : Skip Intermediate Upload (if set)
-    -m              : Switch to serial monitor after upload
+    -j              : displays result as JSON (only for send, status, sonodiy api commands)
     -c              : When using --firm, make a copy instead of a symbolic link
     --port=xxx      : Serial port to use (override main or per host serial port)
     --rate=xxx      : Serial port speed to use (override main or per host serial port)

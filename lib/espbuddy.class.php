@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.40b3';						// EspBuddy Version
+	public $espb_version			= 'd2.40b4';					// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -657,9 +657,10 @@ class EspBuddy {
 			echo "\n";
 			echo "(Press Ctrl-C to stop)\n";
 		}
-
+		if($this->flag_drymode){
+			return true;
+		}
 		passthru($command, $r);
-		exit(0);
 	}
 
 	// ---------------------------------------------------------------------------------------

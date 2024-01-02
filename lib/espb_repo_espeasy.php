@@ -27,7 +27,12 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	protected $version_regex 	= '|#define\s+BUILD\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
+	protected $gh_owner			= 'letscontrolit'; 						// Github OWNER name
+	protected $gh_repo			= 'ESPEasy'; 							// Github REPO name
+	protected $gh_zip_dir		= 'bin/'; 								// ('' | '/' | 'dir/') dir name of the files we want to extract from the Release's Zip file,
+
 	protected $firststep_firmware 	= 'firmwares/ESPEasyUploader.OTA.1m128.esp8266.bin';	// first (intermediate) firmware to upload
+
 	protected $flash_sizes 	  = array(	//maximum flash sizes
 		'1M'	=>	917504,	// 1M - 128k SPIFS 
 		'2M'	=>	1048576,	// 2M - 1M   SPIFS

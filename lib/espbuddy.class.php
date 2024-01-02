@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.32';						// EspBuddy Version
+	public $espb_version			= '2.40';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -31,6 +31,7 @@ class EspBuddy {
 	// command lines arguments
 	private $args				= array();	// command line arguments
 	private $bin				= '';		// binary name of the invoked command
+	private $path_bin			= '';		// full path to the binary name of the invoked command
 	private $action				= '';		// command line action 	(1st Arg)
 	private $target				= '';		// command line target	(2nd Arg)
 	private $opt1				= '';		// command line command	(3rd Arg)
@@ -49,6 +50,7 @@ class EspBuddy {
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
+	private $flag_copy			= false;
 	
 	private $flag_json			= false;
 
@@ -71,8 +73,14 @@ class EspBuddy {
 	private $os					="";		// what is the OS we are running
 	private $sh					;			//	shell object
 	private $orepo				;			//	repo_object
+	private $factory_dir		='_Factory';//	name of the factory Directory
+	private $latest_link		='_Latest';	// name of the link to the latest assets
+	private $previous_link		='_Previous';// name of the link to the previous assets
+	private $path_factory		='';		// path to /backup/_Factory/
+	private $path_factory_repo	='';		// path to /backup/_Factory/repo/
+	private $server_pid			=null;		//	Our (Bg) server Process ID
 
-
+	
 	// preferences -------------
 	private $prefs	=array(
 		'config'		=>	'',				// default config to use
@@ -86,6 +94,7 @@ class EspBuddy {
 		'name_sep'		=>	'-',			// field separator in firmware name
 		'keep_previous'	=>	3,				// number of previous firmware version to keep
 		'checkout_mode'	=>	1,				// Mode when doing a Git checkout : 0 = no checkout, 1 = only if clean, 2 = allows modifications, 3 stash modifications first if any
+		'server_port'	=>	81,				// Our builtin web server Port
  	);
 
 	private $serial_ports	= array(
@@ -119,14 +128,19 @@ class EspBuddy {
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
+			'factory'		=> "Download, get information on the latest factory releases",
 			'sonodiy'		=> "Discover, Control or Flash Sonoff devices in DIY mode",
+			'self'			=> "Get current, latest or update EspBuddy version",
 			'repo_version'	=> "Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy, tasmota or wled)",
 			'repo_pull'		=> "Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy, tasmota or wled)",
 			'list_hosts'	=> "List all hosts defined in config.php",
 			'list_configs'	=> "List all available configurations, defined in config.php",
 			'list_repos'	=> "List all available repositories, defined in config.php",
-			'self'			=> "Get current, latest or update EspBuddy version",
 			'help'			=> "Show full help"
+		),
+		'factory'			=> array(
+			'download'		=>'Download release assets',
+			'clean'			=>'Remove oldest assets (keep only latest and previous)',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'Show Sonoff DIY Help',
@@ -166,14 +180,19 @@ class EspBuddy {
 			'reboot'		=> "TARGET [options, auth_options]",
 			'gpios'			=> "TARGET [options, auth_options]",
 			'ping'			=> "TARGET [options]",
+			'factory'		=> "ACTION [options]",
 			'sonodiy'		=> "ACTION [options]",
+			'self'			=> "ACTION [options]",
 			'repo_version'	=> "REPO",
 			'repo_pull'		=> "REPO",
 			'list_hosts'	=> "",
 			'list_configs'	=> "",
 			'list_repos'	=> "",
-			'self'			=> "ACTION [options]",
 			'help'			=> ""
+		),
+		'factory'			=> array(
+			'download'		=>	'REPO [TAG] [ASSET] [options]',
+			'clean'			=>	'REPO [KEEP] [options]',
 		),
 		'sonodiy'			=> array(
 			'help'			=>	'',
@@ -246,13 +265,14 @@ class EspBuddy {
 		$this->cfg['paths']['bin']			= $this->espb_path.'bin/';
 		$this->cfg['paths']['bin_espota']	= $this->cfg['paths']['bin'].	"espota.py";
 		$this->cfg['paths']['bin_esptool']	= $this->cfg['paths']['bin'].	"esptool.py";
-	}
 
+		$this->path_factory					="{$this->cfg['paths']['dir_backup']}{$this->factory_dir}/";
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function CommandLine(){
 		$this->_ParseCommandLine();
-
+		
 		switch ($this->action) {
 			case 'upload':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
@@ -284,9 +304,11 @@ class EspBuddy {
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
-
 			case 'server':
 				$this->Command_server();
+				break;
+			case 'factory':
+				$this->Command_factory();
 				break;
 			case 'sonodiy':
 				$this->Command_sonodiy();
@@ -315,6 +337,9 @@ class EspBuddy {
 			case 'help':
 				$this->Command_help();
 				break;
+			case 'test':
+				$this->Command_test();
+				break;
 
 			default:
 				if(!$this->action){
@@ -337,7 +362,6 @@ class EspBuddy {
 		echo "\n";
 		exit(0);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function BatchProcessCommand($command, $id){
@@ -378,10 +402,9 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_build($id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 		$path_build=$this->orepo->GetPathBuild();
 
 		$commands_compil[]="cd {$path_build} ";
@@ -421,10 +444,9 @@ class EspBuddy {
 		return !$r;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_upload($id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 
 		// choose firmware ---------------
 		if($this->arg_firmware){
@@ -455,7 +477,7 @@ class EspBuddy {
 		}
 
 		echo "\n";
-		$firm_source=readlink($firmware) or $firm_source=$firmware;
+		$firm_source=realpath($firmware) or $firm_source=$firmware;
 		$date		=date("d M Y - H:i:s", filemtime($firm_source));
 		$firm_size	=filesize($firm_source);
 		$firm_source=basename($firm_source);
@@ -540,7 +562,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function Command_backup($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -569,7 +590,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function Command_monitor($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -585,32 +605,63 @@ class EspBuddy {
 		return true;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
-	function Command_server(){
-		$root=$this->target or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
+	private function _ChooseWebRoot($from=''){
+		$root='';
+		if($from){
+			$path_host	=$this->cfg['paths']['dir_backup'].$from;
+			$path_repo	=$this->path_factory.$from;
+			if(isset($this->cfg['hosts'][$from])){
+				$this->_AssignCurrentHostConfig($from);
+				$root=$this->c_host['path_dir_backup'];
+			}
+			elseif(file_exists($path_host)){
+				$root=$path_host;
+			}
+			elseif(file_exists($path_repo)){
+				$root=$path_repo;
+			}
+			elseif(file_exists($from)){
+				$root=$from;
+			}
+			else{
+				$this->_dieError("Can not find this 'ROOT_DIR' directory in the Factory folder, in the backup folder or as an absolute path");
+			}
+		}
+		$root or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
 		$root = rtrim($root,"/");
-		$port=$this->cfg['server_port'] or $port=81;
-		$index=$this->espb_path_lib."espb_server_index.php";
-		$command="php -S 0.0.0.0:$port -t $root $index";
-		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
-		$ip=getHostName();
-		$host=getHostByName(getHostName());
-		$tab="  ";
-		echo "Some possible URLs are:\n";
-		echo $tab."http://$ip:$port\n";
-		echo $tab."http://$host:$port\n";
-		echo $tab."http://localhost:$port\n";
-		echo $tab."http://127.0.0.1:$port\n";
-		echo "\n";
-		echo "Serving directory:\n";
-		echo $tab."$root\n";
-		echo "\n";
-		echo "(Press Ctrl-C to stop)\n";
-		passthru($command, $r);
-		exit(0);
+		return $root;
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function Command_server(){		
+		$root=$this->_ChooseWebRoot($this->target);
+		$port	=$this->prefs['server_port'] or $port=8888;
+		$index	=$this->espb_path_lib."espb_server_index.php";
+		$command="php -S 0.0.0.0:$port -t $root $index";
+		$ip		=getHostName();
+		$host	=getHostByName(getHostName());
+
+		$do_echo=true;
+		if($do_echo){
+		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
+			$tab="   ";
+			echo "Some possible URLs are:\n";
+			echo $tab."http://$ip:$port\n";
+			echo $tab."http://$host:$port\n";
+			echo $tab."http://localhost:$port\n";
+			echo $tab."http://127.0.0.1:$port\n";
+			echo "\n";
+			echo "Serving directory:\n";
+			echo $tab."$root\n";
+			echo "\n";
+			echo "(Press Ctrl-C to stop)\n";
+		}
+		if($this->flag_drymode){
+			return true;
+		}
+		passthru($command, $r);
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_send($id){
@@ -689,7 +740,6 @@ class EspBuddy {
 		return true;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _ParseCommands($str, $id=''){
 		//remove blank lines
@@ -700,7 +750,6 @@ class EspBuddy {
 		$str=trim($str);
 		return $str;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_status($id){
@@ -735,7 +784,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_version($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -748,7 +796,6 @@ class EspBuddy {
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_reboot($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -759,7 +806,6 @@ class EspBuddy {
 		$this->_EchoError($this->orepo->GetLastError());
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_gpios($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -767,13 +813,12 @@ class EspBuddy {
 		$this->orepo->RemoteTestAllGpios($this->c_host);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public function Command_repo($type){
 		$repo_key=$this->target;
 		$repo=$this->cfg['repos'][$repo_key];
 
-		$this->orepo=$this->_RequireRepo($repo_key);
+		$this->orepo=$this->_RequireRepo($repo_key,true);
 
 		if($type == "version"){
 			$version = $this->orepo->GetVersion() or $version= "Not found";
@@ -792,7 +837,6 @@ class EspBuddy {
 		}
 		echo "\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_ping($id,$count=0){
@@ -816,7 +860,6 @@ class EspBuddy {
 		}
 		return "$command\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_list($type){
@@ -859,13 +902,11 @@ class EspBuddy {
 		return getHostByName(getHostName());
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _getProxyPID(){
 		//TODO move to TMP
 		return $this->proxy_pid;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _setProxyPID($pid){
@@ -928,53 +969,86 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function Command_help($action='root'){
+	public function Command_help($action='root',$error=''){
 		$action or $action='root';
 		if($action=='root'){
 			echo $this->_getVersionBuddyLong();
 			echo "\n\n";	
 		}
+		if($error){
+			echo "\n";
+			$this->sh->PrintError($error);
+			echo "\n";	
+		}
+
 		$this->_show_command_usage($action);
 		$this->_show_action_desc($action);
 		$this->_show_action_usage($action);
 		if($action=='root'){
 			echo <<<EOF
 ---------------------------------------------------------------------------------
-* TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Either an Host ID (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
 
-* CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
++ CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
 
-* ROOT_DIR           : Root directory (for the built-in Web Server)
++ ROOT_DIR          : Root directory (for the built-in Web Server). Either:
+                       - a REPO to only serves from the {$this->factory_dir}/REPO/ folder
+                       - an Host ID (or a Host folder) to only serves from its backup/folder
+                       - an (absolute) path to a folder to serve
+                       - when left blank, it defaults to the backup folder
 
-* OPTIONS :
-	-y           : Automatically confirm Yes/No
-	-d           : Dry Run. Show commands but don't apply them
-	-v           : Verbose mode
-	-D           : Debug mode (shows PHP errors)
-	--conf=xxx   : Config name to use (overrides per host config)
-	--repo=xxx   : Repo to use (overrides per host config)
++ OPTIONS :
+    -y              : Automatically confirm Yes/No
+    -d              : Dry Run. Show commands but don't apply them
+    -v              : Verbose mode
+    -j              : Displays result as JSON (only for send, status, sonodiy api commands)
+    -D              : Debug mode (shows PHP errors)
+    --conf=xxx      : Config name to use (overrides per host config)
+    --repo=xxx      : Repo to use (overrides per host config)
 
-* UPLOAD_OPTIONS :
-	-b           : Build before Uploading
-	-w           : Wire Mode : Upload using the Serial port instead of the default OTA
-	-e           : In Wire Mode, erase flash first, then upload
-	-p           : Upload previous firmware backuped, instead of the latest built
-	-s           : Skip Intermediate Upload (if set)
-	-m           : Switch to serial monitor after upload
-	--port=xxx   : Serial port to use (override main or per host serial port)
-	--rate=xxx   : Serial port speed to use (override main or per host serial port)
-	--firm=xxx   : Full path to the firmware file to upload (override latest build one)
-	--from=REPO  : Migrate from REPO to the selected config
++ UPLOAD_OPTIONS :
+    -b              : Build before Uploading
+    -w              : Wire Mode : Upload using the serial port instead of the default OTA
+    -e              : In Wire Mode, erase flash first, then upload
+    -m              : Switch to serial monitor after upload
+    -p              : Upload previous firmware backuped, instead of the latest built
+    -s              : Skip Intermediate Upload (if set)
+    -c              : When using --firm, make a copy instead of a symbolic link
+    --port=xxx      : Serial port to use (override main or per host serial port)
+    --rate=xxx      : Serial port speed to use (override main or per host serial port)
+    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
+    --from=REPO     : Migrate from REPO to the selected config
 
-* AUTH_OPTIONS :
-	--login=xxx  : Login name (overrides host or per config login)
-	--pass=xxx   : Password (overrides host or per config password)
++ AUTH_OPTIONS :
+    --login=xxx     : Login name (overrides host or per config login)
+    --pass=xxx      : Password (overrides host or per config password)
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
 		}
-	}
+		if($action=='factory'){
+			echo <<<EOF
+---------------------------------------------------------------------------------
++ REPO              : Repository (espurna, espeasy, tasmota or wled) to process
 
++ TAG               : Tag name (aka version)
+
++ ASSET             : Assets to download. Either: 
+                      - a single asset name, 
+                      - a list of assets (separated by '#'), 
+                      - an asset list ID, previously set in your configuration
+                      - 'all' selects all available assets
+
++ KEEP              : Clean mode defaults to keep the last 2 versions (latest and previous) and ask to delete oldest files.
+                       You might enter the number of versions to keep, or use 'none' to select all files
+
++ OPTIONS :
+    -y              : Automatically confirm Yes/No
+    -v              : Verbose mode
+
+EOF;
+		}
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_self(){
@@ -1043,7 +1117,230 @@ EOF;
 		else{
 			$this->_showActionUsage();			
 		}
+	}
 
+	// ---------------------------------------------------------------------------------------
+	public function Command_factory(){
+		if($this->target=='download'){
+			$repo	=$this->args['commands'][3];
+			$tag	=$this->args['commands'][4];
+			$a_name =$this->args['commands'][5];// or $a_name='all';
+			$this->Factory_download($repo,$tag,$a_name);
+		}
+		elseif($this->target=='clean'){
+			$repo	=$this->args['commands'][3];
+			$back	=$this->args['commands'][4];
+			if($back=='none'){
+				$back	=0;
+			}
+			elseif($back and $back == intval($back)){
+			}
+			else{
+				$back	=2;
+			}
+			$this->Factory_clean($repo,$back);
+		}
+		elseif($this->target=='help'){
+			$this->Factory_help();
+		}
+		elseif($this->target){
+			$error="Invalid Action: '{$this->target}'";
+		}
+		else{
+			$error="Missing a '{$this->action}' Action";
+		}
+		if($error){
+			$this->_showActionUsage($error);
+			exit(1);
+		}
+		exit(0);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _CreateDirectory($path, $time=''){
+		if(!$path){
+			return false;
+		}
+		if(! file_exists($path)){
+			$dir=basename($path);
+			if($this->flag_verbose){
+				echo "* Creating the '{$dir}' directory at: $path	";
+			}
+			if(! @mkdir($path)){
+				if($this->flag_verbose){
+					echo "FAILED!\n";
+				}
+				return false;
+			}
+			else{
+				if($time){
+					touch($path,$time,$time);
+				}
+				if($this->flag_verbose){
+					echo "OK\n";
+				}
+				return true;
+			}
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _IsSymLinkFrom($path_file,$path_link){
+		if(file_exists($path_link)){
+			$path_file=rtrim($path_file,'/');
+			$path_link=rtrim($path_link,'/');
+			//echo "\n LINK: $path_link\n REAL: ".realpath($path_link)."\n VS  : $path_file";
+			if($path_file==realpath($path_link)){
+				return true;
+			}
+		}
+		//echo "\n NOT FOUND: $path_link\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_clean($repo='',$back_n=2){
+		if(!$repo){
+			$this->Command_help('factory',"Missing a REPO argument");
+			exit(1);
+		}
+		$this->orepo=$this->_RequireRepo($repo);
+		$i=0;
+		if(is_dir($this->path_factory_repo)){
+			$files_names=array();
+			echo "* Keeping the latest $back_n directories in '$repo', and delete others....\n";
+			if($files=$this->_ListFilesByDate($this->path_factory_repo,'dir')){
+				echo "* All Assets found in: {$this->path_factory_repo} :\n";
+				foreach($files as $time => $path_file){
+					$name=basename($path_file);
+					if(!is_link($path_file) and !preg_match('#^\.#',$name)){
+						$date=date('M j, Y H:i',$time);
+						$files_names[$path_file]=str_pad("$name ",18). str_pad($date, 18 ,' ', STR_PAD_LEFT)." ";
+						$desc='';
+						if($this->_IsSymLinkFrom($path_file, $this->path_factory_repo.$this->latest_link)){
+							$desc="(latest)";
+						}
+						elseif($this->_IsSymLinkFrom($path_file, $this->path_factory_repo.$this->previous_link)){
+							$desc="(previous)";
+						}
+						$files_names[$path_file] .=str_pad($desc,11);
+						echo "  - ". $files_names[$path_file]."\n";
+					}
+				}
+				echo "\n";
+
+				if(count($files_names)){
+					$back_n=intval($back_n);
+					for ($i=0; $i < $back_n ; $i++) { 
+						array_shift($files_names);
+					}
+					if(count($files_names)){
+						$i=0;
+						foreach($files_names as $path_file => $name){
+							echo "* Delete ";
+							if($this->flag_verbose){
+								echo "$path_file	";
+							}
+							else{
+								echo str_pad($name, 45);
+							}
+							echo "? ";
+							if($this->_AskConfirm()){
+								$command="rm -rf $path_file";
+								if(strpos($path_file,$this->path_factory_repo)==0){
+									shell_exec($command);
+									$this->_SymlinkLatestAndPrevious();
+									$i++;
+								}
+								else{
+									echo "# CANCELED because $path_file is outside of the {$this->factory_dir} directory.\n# Please do it manually!\n";
+								}
+							}
+						}
+
+						if($i){
+							echo "* Successfully deleted $i directories !\n";	
+						}
+						return $i;
+					}
+				}
+			}
+		}
+		echo "# Directory is Empty !\n";
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_download($repo='',$tag='',$asset_name=''){
+		if(!$repo){
+			$this->Command_help('factory',"Missing a REPO argument");
+			exit(1);
+		}
+		$this->orepo=$this->_RequireRepo($repo);
+
+
+		if(preg_match('/#/',$asset_name)){
+			$asset_name=explode('#',$asset_name);
+		}
+		elseif($preset=$this->cfg['repos'][$repo]['assets_groups'][$asset_name]){
+			$asset_name=$preset;
+		}
+		if($assets=$this->orepo->RepoChooseAssets($tag,$asset_name)){
+			$size=$this->FormatBytes($assets['size_total']);
+			echo "* Found {$assets['count']} assets for a total size of $size !\n";
+			if($this->flag_verbose){
+				foreach($assets['assets'] as $item){
+					echo "  - ".$item['name']."\n";
+				}
+			}
+			if($this->_AskConfirm()){
+				//makes needed directories
+				$path_data=$this->cfg['paths']['dir_backup'];
+				if(! $this->_CreateDirectory($path_data)){return false;}
+		
+				$path_fact	="{$path_data}{$this->factory_dir}/";
+				if(! $this->_CreateDirectory($path_fact)){return false;}
+		
+				$path_repo	="{$path_fact}$repo/";
+				if(! $this->_CreateDirectory($path_repo)){return false;}
+		
+				$path_tag ="{$path_repo}{$assets['release']['tag_name']}/";
+				if(! $this->_CreateDirectory($path_tag, $assets['release']['espb_time'])){return false;}
+
+				echo "* Downloading {$assets['count']} assets into $path_tag ...\n";
+				//touch($path_tag,time());
+
+				$err=$ok=0;
+				$col=$assets['espb_col'] or $col=50;
+				foreach($assets['assets'] as $item){
+					echo " - ".str_pad($item['name'],$col);
+					if($this->orepo->DownloadAsset($item['browser_download_url'], $path_tag, $assets['release']['espb_time'])){
+						echo "OK\n";
+						$ok++;
+					}
+					else{
+						echo "FAILED\n";
+						$err++;
+					}
+				}
+
+				//touch($path_tag,$assets['release']['espb_time'],$assets['release']['espb_time']);
+
+				if($ok==$assets['count']){
+					echo "* Successfully downloaded $ok assets!\n";
+					$this->_SymlinkLatestAndPrevious();
+				}
+				else{
+					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";
+				}
+			}
+		}
+		elseif($tag and $asset_name){
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Factory_help(){
+		$this->Command_help('factory');
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -1079,10 +1376,11 @@ EOF;
 		}
 		if($error){
 			$this->_showActionUsage($error);
+			exit(1);
 		}
 		exit(0);
-
 	}
+
 	// ---------------------------------------------------------------------------------------
 	public 	function _showActionUsage($error=""){
 		$error or $error="Invalid Action: '{$this->target}'";
@@ -1111,7 +1409,6 @@ EOF;
 		print_r($this->_sonodiy_api_info($ip,$id));
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_help(){
 		$this->Command_help('sonodiy');
@@ -1128,7 +1425,6 @@ Setup Instructions
 
 EOF;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_ping($ip, $count=1){
@@ -1163,7 +1459,6 @@ EOF;
 			echo "I've received $r answers out of $count requests.\n";
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	public 	function Sonodiy_scan(){
@@ -1349,7 +1644,6 @@ EOF;
 
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sondiy_osx_com2bash($command,$skip){
 		//https://github.com/pstadler/non-terminating-bash-processes/blob/master/README.md
@@ -1380,7 +1674,6 @@ END
 EOFB;
 		return $bash;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private $_itead_error_codes=array(
@@ -1457,7 +1750,6 @@ EOFB;
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_info($ip, $id){
 		$data=array(
@@ -1466,7 +1758,6 @@ EOFB;
 		);
 		return $this->_sondiy_curl($ip,'info',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_flash($ip, $id,$url,$sha256='',$verify_unlocked=true){
@@ -1597,7 +1888,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_pulse($ip, $id, $state_bool=0, $width=1000){
 		$state='off';
@@ -1617,7 +1907,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'pulse',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_signal($ip, $id){
 		$data=array(
@@ -1626,7 +1915,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'signal_strength',$data);
 	}
-	
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_startup($ip, $id, $state_num=0){
@@ -1651,7 +1939,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'startup',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_switch($ip, $id, $state_bool=0){
 		$state='off';
@@ -1665,7 +1952,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_sondiy_curl($ip,'switch',$data);
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_toggle($ip, $id){
 		if($info=$this->_sonodiy_api_info($ip,$id)){
@@ -1677,7 +1963,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_unlock($ip, $id){
 		$data=array(
@@ -1686,7 +1971,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'ota_unlock',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _sonodiy_api_wifi($ip, $id, $ssid, $pass){
@@ -1721,7 +2005,6 @@ https://github.com/soif/EspBuddy/issues/20
 		);
 		return $this->_sondiy_curl($ip,'wifi',$data);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private $_last_curl_request;
@@ -1770,7 +2053,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	public function _show_action_desc($action='root',$title=""){
+	private function _show_action_desc($action='root',$title=""){
 		if($action=='root'){
 			$name="Valid COMMANDS";
 		}
@@ -1786,7 +2069,6 @@ https://github.com/soif/EspBuddy/issues/20
 			echo "\n";
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _show_action_usage($action='root',$title=""){
@@ -1823,7 +2105,6 @@ https://github.com/soif/EspBuddy/issues/20
 		echo "\n";
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _LoadPreferences($prefs){
 		foreach($this->prefs as $k => $v){
@@ -1834,7 +2115,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 		date_default_timezone_set($this->prefs['time_zone']);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _SetRunningOS(){
@@ -1893,7 +2173,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		return true;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _ListHosts($id){
@@ -1972,6 +2251,7 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		else{
 			$this->_AssignCurrentHostConfig($id);
+
 			if(!$this->flag_json){
 				if($this->flag_verbose){
 					$this->_EchoCurrentHost();
@@ -2008,6 +2288,7 @@ https://github.com/soif/EspBuddy/issues/20
 			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 		}
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _EchoCurrentConfig(){
 		if ($this->c_host['config']){
@@ -2025,7 +2306,7 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _AssignCurrentHostConfig($id){
+	private function _AssignCurrentHostConfig($id,$with_source=false){
 		// current host -------------
 		$this->_FillHostnameOrIp($id);
 
@@ -2053,7 +2334,8 @@ https://github.com/soif/EspBuddy/issues/20
 		// current repo ---------------
 		//$this->c_repo	=	$this->cfg['repos'][$this->c_conf['repo']];
 		if($this->c_conf['repo']){
-			$this->orepo=$this->_RequireRepo($this->c_conf['repo']);
+			
+			$this->orepo=$this->_RequireRepo($this->c_conf['repo'],$with_source);
 			if($this->c_conf['2steps']){
 				$this->c_conf['firststep_firmware']	=$this->espb_path . $this->orepo->GetFirstStepFirmware();
 			}
@@ -2061,11 +2343,10 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 		// git commands add a little delay, so only use then if needed
-		if($this->action=='build' or ($this->action=='upload' and $this->flag_build)){
+		if($with_source and ($this->action=='build' or ($this->action=='upload' and $this->flag_build))){
 			$this->_SetCurrentVersionNames();
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _SetCurrentVersionNames(){
@@ -2101,7 +2382,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _ChooseValueToUse($name, $list='', $default=''){
 		$tmp		= '';
@@ -2119,7 +2399,6 @@ https://github.com/soif/EspBuddy/issues/20
 					$tmp = $default ;
 		return $tmp;
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _findConnectedSerialPorts(){
@@ -2152,26 +2431,25 @@ https://github.com/soif/EspBuddy/issues/20
 		return false;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
-	private function _RequireRepo($name){
+	private function _RequireRepo($name, $with_source=false){
 		$repo_path	=$this->cfg['repos'][$name]['path_repo'];
 		$class_path	= $this->espb_path_lib."espb_repo_{$name}.php";
 		$class_name	= "EspBuddy_Repo_$name";
-		if(!$this->cfg['repos'][$name]){
-			$this->_dieError ("Unknown repository '$name' ");
-		}
-		if(!$repo_path){
+		// if(!$this->cfg['repos'][$name] and $with_source){
+		// 	$this->_dieError ("Unknown repository '$name' ");
+		// }
+		if(!$repo_path and $with_source){
 			$this->_dieError ("You must define the path to your '$name' repo,  in \$cfg['repos']['$name']['path_repo'] ");
 		}
 		if(!file_exists($class_path)){
 			$this->_dieError ("Cant find a '$name' class at : $class_path");
 		}
+		$this->path_factory_repo="{$this->cfg['paths']['dir_backup']}{$this->factory_dir}/$name/";
 
 		require_once($class_path);
 		return new $class_name($repo_path);
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
@@ -2184,70 +2462,70 @@ https://github.com/soif/EspBuddy/issues/20
 		return $path;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _rotateFirmware($path_new_firmware,$do_rename_build=false){
-
-		$path_backup		= $this->c_host['path_dir_backup'];
-		$path_firmwares		="{$path_backup}{$this->prefs['firm_name']}s/";
-
-		$cur_firm_link		="{$this->prefs['firm_name']}.bin";
-		$path_cur_firm_link	="$path_backup$cur_firm_link";
-		$path_prev_firm_link="$path_backup{$this->prefs['firm_name']}_previous.bin";
+		$path_firmwares		="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}s/";
+		$path_link_cur_firm	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+		$path_link_prev_firm="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
 
 		if(!is_dir($path_firmwares)){
 			@mkdir($path_firmwares, 0777, true);
 		}
 
-		$command_backup	=array();
-
-		if($this->prefs['keep_previous']){
+		$keep=$this->prefs['keep_previous'];
+		if($keep){
 			$echo1="Keep the previous firmware, ";
-			$command_backup[] = "mv -f \"$path_cur_firm_link\" \"$path_prev_firm_link\"";
-			if($list_firmares=$this->_listFirmwares()){
-				$i=1;
-				krsort($list_firmares);
-				foreach($list_firmares as $t => $file){
-					if($i > $this->prefs['keep_previous'] +1 ){
-						unlink($file);
-					}
-					$i++;
+			@unlink($path_link_prev_firm);
+			rename($path_link_cur_firm,$path_link_prev_firm);
+		}
+		if($list_firmares=$this->_listFirmwares()){
+			$i=1;
+			krsort($list_firmares);
+			foreach($list_firmares as $t => $file){
+				if( ($i > $keep +1) or !$keep ){
+					unlink($file);
 				}
+				$i++;
 			}
 		}
-		else{
-			$echo1="";
-			if($cur_firmware=@readlink($path_cur_firm_link)){
-				$command_backup[] = "rm -f \"$cur_firmware\"";
-			}
+		
+		$this->_EchoStepStart("{$echo1}Archive and rotate this new firmware");
+		if($this->flag_drymode){
+			return true;
 		}
-		$file_new_firmware	=basename($path_new_firmware);
 
+		$ok=false;
+		//makes path_cur_firmware
 		if($do_rename_build){
-			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".$file_new_firmware;
+			$path_cur_firmware="$path_firmwares{$this->c_host['firmware_name']}{$this->prefs['name_sep']}".basename($path_new_firmware);
+			$ok = copy($path_new_firmware, $path_cur_firmware);
 		}
 		else{
-			$path_cur_firmware=$path_firmwares.$file_new_firmware;
-		}
-		$cur_firmware		= $this->_getRelativePath($path_backup,$path_cur_firmware);
+			if(strpos($path_new_firmware,$this->path_factory)==0){
+				$link_new_firmware=str_replace($this->path_factory,'',$path_new_firmware);
+				$link_new_firmware=str_replace('/','_',$link_new_firmware);
+			}
+			else{
+				$link_new_firmware	=basename($path_new_firmware);
+			}
+			$path_cur_firmware=$path_firmwares.$link_new_firmware;
 
-		$command_backup[] = "cp -p \"$path_new_firmware\" \"$path_cur_firmware\"";
-		$command_backup[] = "cd $path_backup";
-		$command_backup[] = "ln -s \"$cur_firmware\" \"$cur_firm_link\"";
-		$this->c_host['path_firmware']=$path_cur_firmware;
-
-		if(count($command_backup)){
-			$command=implode(" ; \n   ", $command_backup);
-			echo "\n";
-			$this->_EchoStepStart("{$echo1}Archive and Set the new firmware to : ".basename($path_cur_firmware)." ", $command);
-			if(! $this->flag_drymode){
-				passthru($command, $r);
-				return !$r;
+			if($this->flag_copy){
+				@unlink($path_cur_firmware);
+				$ok = copy($path_new_firmware, $path_cur_firmware);
+			}
+			else{
+				$ok=$this->_SymlinkRelative($path_cur_firmware, $path_new_firmware);
 			}
 		}
-		return true;
-	}
 
+		if($ok and $ok = $this->_SymlinkRelative($path_link_cur_firm, $path_cur_firmware)){
+			$this->c_host['path_firmware']=$path_cur_firmware;
+			echo "* Current firmware was set to: ".basename($path_cur_firmware)."\n";
+			return true;
+		}
+		$this->_EchoError('Renaming or rotating current firmware failed');
+	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _getRelativePath($from, $to){	
@@ -2286,14 +2564,15 @@ https://github.com/soif/EspBuddy/issues/20
 		if($files=glob($mask) and count($files)){
 			$time_files=array();
 			foreach($files as $file){
-				$time=filemtime($file);
+				//$time=filemtime($file);
+				$stat=lstat($file);	// we want thesymlink date
+				$time=$stat['mtime'];
 				$time_files[$time]=$file;
 			}
 			krsort($time_files);
 			return $time_files;
 		}
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _getVersionBuddyLong(){
@@ -2313,11 +2592,9 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-	
-
 	// ---------------------------------------------------------------------------------------
 	private function _ReplaceTags($str, $id){
-		$this->_AssignCurrentHostConfig($id);
+		$this->_AssignCurrentHostConfig($id,true);
 
 		$ip		=	$this->c_host['ip'];
 		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);
@@ -2341,7 +2618,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $str;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _AskConfirm(){
 		if($this->flag_noconfirm){
@@ -2351,7 +2627,6 @@ https://github.com/soif/EspBuddy/issues/20
 		//echo "\n";
 		return $confirm;
 	}
-	
 
 	// ---------------------------------------------------------------------------------------
 	private function _AskYesNo($question='Are you sure', $allow_noconfirm = true){
@@ -2364,7 +2639,6 @@ https://github.com/soif/EspBuddy/issues/20
 			return true;
 		}	
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	//http://stackoverflow.com/questions/3684367/php-cli-how-to-read-a-single-character-of-input-from-the-tty-without-waiting-f
@@ -2423,7 +2697,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $c;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _FillHostnameOrIp($id){
 		global $cfg;
@@ -2434,12 +2707,12 @@ https://github.com/soif/EspBuddy/issues/20
 		return $name;
 	}
 
-
 	// -------------------------------------------------------------
 	private function _ParseCommandLine(){
 		global $argv;
 		$this->args		= $this->_ParseArguments($argv);
 		$this->bin 		= basename($this->args['commands'][0]);
+		list($this->path_bin) = get_included_files();
 		$this->action	= $this->args['commands'][1];
 		$this->target	= $this->args['commands'][2];
 		$this->opt1		= $this->args['commands'][3];
@@ -2458,6 +2731,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
+		$this->flag_copy		= (boolean) $this->args['flags']['c'];
 
 		$this->flag_json		= (boolean) $this->args['flags']['j'];
 		$this->flag_proxy		= (boolean) $this->args['flags']['P'];
@@ -2476,7 +2750,6 @@ https://github.com/soif/EspBuddy/issues/20
 			error_reporting(E_ALL & ~E_NOTICE);
 		}
 	}
-
 
 	// -------------------------------------------------------------
 	// http://php.net/manual/en/features.commandline.php#78804
@@ -2520,11 +2793,11 @@ https://github.com/soif/EspBuddy/issues/20
 	private function _PrettyfyWithTabs($arr){
 		return $this->_Prettyfy($arr, 0, "       ");
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _PrettyfyNoTabs($arr){
 		return $this->_Prettyfy($arr,0,"");
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
@@ -2558,7 +2831,6 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	private function _WaitReboot($sleep){
 		$this->_EchoStepStart("Waiting  {$sleep} sec for ESP to reboot",'',0);
@@ -2572,7 +2844,6 @@ https://github.com/soif/EspBuddy/issues/20
 		echo " ********";
 		$this->_EchoStepEnd();
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _WaitPingable($host,$timeout=60,$invert=false){
@@ -2646,6 +2917,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$do_end and $this->_EchoStepEnd();
 		}
 	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _EchoHost($mess){
 		$mess=str_pad("#### ".$mess." ", 130, '#');
@@ -2654,7 +2926,6 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->sh->EchoStyleClose();
 		echo "\n";
 	}
-
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoStepEnd(){
@@ -2696,8 +2967,10 @@ https://github.com/soif/EspBuddy/issues/20
 		curl_setopt($ch, CURLOPT_HEADER			, false);
 		//curl_setopt($ch, CURLOPT_SSLVERSION		, 3); //fix SSL on my old debian
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER	, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION	, true);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT	, 10);
 		curl_setopt($ch, CURLOPT_HTTPHEADER		, $headers); //array
+		
 		if($this->os=='win'){
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER			, false); 
 			// else 
@@ -2709,6 +2982,7 @@ https://github.com/soif/EspBuddy/issues/20
 			curl_setopt($ch, CURLOPT_VERBOSE, true);
 		}
 		$result = curl_exec($ch);
+		//print_r(curl_getinfo($ch));
 		curl_close($ch);
 		return $result;
 	}
@@ -2816,8 +3090,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return $this->_Git($commands, $dir);
 	}	
 
-
-	
 	// ---------------------------------------------------------------------------------------
 	private function _Git($git_command, $path_base=""){
 		$path_base or $path_base	= $this->orepo->GetPathBase();
@@ -2964,7 +3236,6 @@ https://github.com/soif/EspBuddy/issues/20
 		return true;
 	}
 
-
 	// ---------------------------------------------------------------------------------------
 	function _IpAddressToMAC($ip){
 		$this->_ping($ip);	//put in ARP cache
@@ -3000,8 +3271,201 @@ EOF;
 			return $pretty_mac;
 		}	
 	}
-	
 
+	// ---------------------------------------------------------------------------------------
+	private function _GetDirOrFileTime($path){
+		if(is_dir($path)){
+			$path=rtrim($path,'/').'/';
+			//$files=array_diff(scandir($path), array('..', '.'));
+			$files=glob($path.'*'); // no hidden files			
+			//echo "GET date: $path : "; print_r($files);echo "\n\n";
+			if(count($files)){				
+				$first_file=reset($files);
+				return filemtime($first_file);
+			}
+		}
+		return filemtime($path);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkRelative($path_link, $path_to){
+		$path_link=rtrim($path_link,'/'); //else rel path will be wrong
+		if(!$path_link or !$path_to){
+			return false;
+		}
+
+		$cur_dir=getcwd();
+		if($target=$this->_getRelativePath($path_link, $path_to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
+			chdir($link_dir);
+			//echo " PATH: $path_link\n TO  : $to\n CD  : $link_dir\n LINK: $link\n TARG: $target\n";
+			if(is_link($link)){ // else the target is created inside the link destination
+				unlink($link);	//echo "rm link $link\n";
+			}
+			symlink($target,$link); //
+			//passthru("ln -sFi \"$target\" \"$link\" ");			
+			chdir($cur_dir);
+			return true;
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ListFilesByDate($path_to_dir,$mode=''){
+		$path_to_dir=rtrim($path_to_dir,'/');
+		if(is_dir($path_to_dir)){
+			$files=glob($path_to_dir.'/*'); // no hidden files			
+			if(is_array($files) and count($files)){
+				$tmp=array();
+				foreach($files as $path_file){
+					$time=$this->_GetDirOrFileTime($path_file);
+					if($mode='dir' and is_dir($path_file) and !is_link($path_file)){	// and !is_link($path_file)
+						$tmp[$time]=$path_file;
+					}
+					elseif($mode=='file' and is_file($path_file) and !is_link($path_file)){ // and !is_link($path_file)
+						$tmp[$time]=$path_file;
+					}
+					elseif(!$mode){
+						$tmp[$time]=$path_file;
+					}
+				}
+			}
+			if(count($tmp)){
+				krsort($tmp);
+				return $tmp;
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkLatestFromDir($mode='dir', $path_link, $path_to_dir, $previous=0){
+		$path_to_dir=rtrim($path_to_dir,'/');
+		if($tmp=$this->_ListFilesByDate($path_to_dir,$mode)){
+			$previous=intval($previous);
+			for ($i=0; $i < $previous ; $i++) { 
+				array_shift($tmp);
+			}
+			$last_file=reset($tmp);
+			if($last_file){
+				return $this->_SymlinkRelative($path_link, $last_file);
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _SymlinkLatestAndPrevious($path_dir=''){
+		$path_dir or $path_dir=$this->path_factory_repo;
+		if(is_dir($path_dir)){
+			$this->_SymlinkLatestFromDir('dir',$path_dir.$this->latest_link,	$path_dir);
+			$this->_SymlinkLatestFromDir('dir',$path_dir.$this->previous_link,	$path_dir, 1);
+		}
+	}
+
+
+
+	// ##################################################################################################################################
+	// ##### TEST zone ##################################################################################################################
+	// ##################################################################################################################################
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_test(){
+		echo "#### TEST zone ##############################\n";
+		//$this->_RequireRepo('espurna');
+		//$this->_SymlinkLatestAndPrevious();
+		//return $this->_StartServerTest();
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _StartServerTest(){
+		
+		if($this->_bgServerCheck()){
+			echo "* Another server is already running on port {$this->prefs['server_port']}\n";
+			echo "* Do you want to kill it first? ";
+			if(!$this->_AskConfirm()){
+				return true;
+			}
+			if(! $this->_bgServerStop()){
+				echo "# ERROR: Cant' stop server!\n";
+				return false;
+			}
+		}
+		$this->_bgServerStart();
+		echo "* Builtin Server is running on port {$this->prefs['server_port']} with  PID {$this->server_pid}\n";
+		echo "* Do you want to stop it ? ";
+		if(!$this->_AskConfirm()){
+			return false;
+		}
+		if(! $this->_bgServerStop()){
+			echo "# Cant stop server!\n";
+			return false;
+		}
+		echo "* Stopped server!\n";
+		sleep(5);
+
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _bgServerStart($kill_on_shutdown=true) {
+		//exec('nohup php {$this->path_bin} server > nohup.out & > /dev/null');
+		$command="nohup {$this->path_bin} server > /dev/null 2> /dev/null & echo $!";
+		//echo "$command\n";
+		$this->server_pid=trim(shell_exec($command));
+		if($kill_on_shutdown){
+			register_shutdown_function(array($this,'_bgServerStop'));
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function _bgServerStop() { //need to be public (for register_shutdown_function)
+		if(!$this->server_pid){
+			exec("ps a | grep {$this->bin} | grep server | grep -v grep", $r);
+			$r = array_filter(explode(' ', $r[0]));
+			$this->server_pid = $r[0];
+		}
+		if($this->server_pid){
+			return ! shell_exec("pkill -TERM -P {$this->server_pid}");
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _bgServerCheck() {
+		$command='netstat -an | grep -E "^tcp4\s+[^*]+\*\.'.$this->prefs['server_port'].'\s+.*?LISTEN"';
+		$r=trim(shell_exec($command));		
+		if($r){
+			return true;
+		}
+		
+	}
+
+
+
+	// ##################################################################################################################################
+	// ##### Static ####################################################################################################################
+	// ##################################################################################################################################
+
+	// ---------------------------------------------------------------------------------------
+	public static function FormatBytes($bytes, $precision = 2,$with_space=true) { 
+		$units = array('B', 'KB', 'MB', 'GB', 'TB'); 
+		$bytes = max($bytes, 0); 
+		$pow = floor(($bytes ? log($bytes) : 0) / log(1024)); 
+		$pow = min($pow, count($units) - 1);
+		$bytes /= pow(1024, $pow);
+		// $bytes /= (1 << (10 * $pow)); 
+		$space="";
+		$with_space and $space=" ";
+		return number_format(round($bytes, $precision),$precision) .$space. $units[$pow]; 
+	} 
+	
+	// ---------------------------------------------------------------------------------------
+	public static function GetUserAgent(){
+		$o = new self;
+		return $o->espb_name.' (v'.$o->espb_version.')';
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public static function GetFactoryDirName(){
+		$o = new self;
+		return $o->factory_dir;
+	}
 
 }
 ?>

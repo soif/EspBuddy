@@ -18,16 +18,21 @@ require_once(dirname(__FILE__).'/espb_repo.php');
 
 class EspBuddy_Repo_Espurna extends EspBuddy_Repo {
 
-	protected $name 			= "Espurna"; 							// Firmware's Name
+	protected $name 			= "Espurna"; 						// Firmware's Name
 
 	// location relative to the base repository path
-	protected $dir_build 		= "code/"; 								// (Trailing Slash) directory where the compiler must start
-	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
-	protected $version_file 	= "code/espurna/config/version.h";		// file to parse to get the version
-	protected $version_regex 	= '|APP_VERSION\s+"([^"]+)"|s'; 		// regex used to extract the version in the version_file
-	protected $version_regnum = 1; 										// captured parenthesis number where the version is extracted using the regex
+	protected $dir_build 		= "code/"; 							// (Trailing Slash) directory where the compiler must start
+	protected $dir_firmware 	= ".pio/build/"; 					// (Trailing Slash) directory where the firmware is built
+	protected $version_file 	= "code/espurna/config/version.h";	// file to parse to get the version
+	protected $version_regex 	= '|APP_VERSION\s+"([^"]+)"|s'; 	// regex used to extract the version in the version_file
+	protected $version_regnum = 1; 									// captured parenthesis number where the version is extracted using the regex
 
+	protected $gh_owner			= 'xoseperez'; 						// Github OWNER name
+	protected $gh_repo			= 'espurna'; 						// Github REPO name
+	protected $gh_asset_name_len=80;								 // max lenght of an asset name (used to make the column width in the RepoListAssets method)
+	
 	protected $firststep_firmware 	= 'firmwares/espurna-1.12.3-espurna-core.bin';	// first (intermediate) firmware to upload
+
 	protected $api_urls=array(
 		'command'	=>	'DUMMY',				// relative url to send a command : it must exist , so we set it to a dummy value (not used))
 		'backup'	=>	'/config',				// relative url to the URl where we can perform the backup

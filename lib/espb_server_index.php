@@ -57,7 +57,7 @@ if($cur_url=='/favicon.ico'){
 	exit;
 }
 
-// ## Serves icons ###########################################################################################
+// ## Serves icons ###########################################################
 if (isset($_GET['icon'])) {
 	$e = $_GET['icon'];
 	$my_icon=$path_icons.$e.'.png';
@@ -87,7 +87,7 @@ if (!is_dir($path) || !opendir($path)){
 	exit(1);
 }
 
-## preferences #######################################################################
+## preferences ##############################################################
 if(file_exists($prefs_file)){
 	$prefs=json_decode(file_get_contents($prefs_file),true);
 }
@@ -124,9 +124,21 @@ while (false !== ($f = readdir($h))) {
 			$f_url=trim("$dir/" . rawurlencode($f), '/');
 		}
 		$f_link =1;
+		
 		$f_to	=readlink($path . $f);
+		$to_show =dirname($f_to);
+		$to_link =ltrim(str_replace($path_root,'',realpath($path.dirname($f_to))),'/');
+		if(!is_dir($real_file)){
+			//$to_link=dirname($to_link);			
+		}
+		$to_link=rawurlencode($to_link);
+		$to_file =basename($f_to);
+		$f_to ="<a href=\"?dir=$to_link\">$to_show/</a>$to_file";
+		
 		$f_size	=0;
-		$f_time	=@filemtime($path . $f);
+		//$f_time	=@filemtime($path . $f);
+		$stat=@lstat($path . $f);	// we want thesymlink date
+		$f_time=$stat['mtime'];
 		$f_date =date($date_format, $f_time);
 		$f_icon	='link';
 		$f_type ='__link';
@@ -199,7 +211,7 @@ else{
 // ---------------------------------------------------------------------------------------------
 function DirNameToIcon($name){
 	if($name=="Firmwares"){return 'dir_o';}
-	if($name=="_COMMON"){return 'dir_g';}
+	if($name==EspBuddy::GetFactoryDirName()){return 'dir_g';}
 	if(preg_match("#^Settings#",$name)){return 'dir_p';}
 	return 'dir';
 }
@@ -227,7 +239,7 @@ function Page1($title=''){
 		}
 		#page {
 			padding: 5px 15px;
-			max-width: 700px;
+			max-width: 850px;
 			position: relative;
 		}
 		#head{

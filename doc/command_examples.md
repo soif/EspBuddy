@@ -6,14 +6,14 @@ This document shows the terminal output from various EspBuddy commands.
 ## Main EspBuddy commands
 
 
-### `# espbuddy.php help`
+### `# espbuddy help`
 
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.30 ( EspTool v3.2 )
+EspBuddby v2.40 ( EspTool v3.3.3 )
 
-* Usage             : espbuddy.php COMMAND [TARGET] [options]
+* Usage             : espbuddy COMMAND [TARGET] [options]
 
 * Valid COMMANDS : 
   - upload          : Build and/or Upload current repo version to Device(s)
@@ -27,73 +27,81 @@ EspBuddby v2.30 ( EspTool v3.2 )
   - reboot          : Reboot Device(s)
   - gpios           : Test all Device's GPIOs
   - ping            : Ping Device(s)
+  - factory         : Download, get information on the latest factory releases
   - sonodiy         : Discover, Control or Flash Sonoff devices in DIY mode
+  - self            : Get current, latest or update EspBuddy version
   - repo_version    : Parse the current repository (REPO) version. REPO is a supported repository (espurna, espeasy, tasmota or wled)
   - repo_pull       : Git Pull the local repository (REPO). REPO is a supported repository (espurna, espeasy, tasmota or wled)
   - list_hosts      : List all hosts defined in config.php
   - list_configs    : List all available configurations, defined in config.php
   - list_repos      : List all available repositories, defined in config.php
-  - self            : Get current, latest or update EspBuddy version
   - help            : Show full help
 
 * Commands Usage : 
-  - upload          : espbuddy.php upload       TARGET [options, auth_options, upload_options]
-  - build           : espbuddy.php build        TARGET [options]
-  - backup          : espbuddy.php backup       TARGET [options, auth_options]
-  - monitor         : espbuddy.php monitor      [TARGET] [options]
-  - server          : espbuddy.php server       [ROOT_DIR]
-  - send            : espbuddy.php send         TARGET CMD_SET|COMMAND [options, auth_options]
-  - status          : espbuddy.php status       TARGET [options, auth_options]
-  - version         : espbuddy.php version      TARGET [options, auth_options]
-  - reboot          : espbuddy.php reboot       TARGET [options, auth_options]
-  - gpios           : espbuddy.php gpios        TARGET [options, auth_options]
-  - ping            : espbuddy.php ping         TARGET [options]
-  - sonodiy         : espbuddy.php sonodiy      ACTION [options]
-  - repo_version    : espbuddy.php repo_version REPO
-  - repo_pull       : espbuddy.php repo_pull    REPO
-  - list_hosts      : espbuddy.php list_hosts   
-  - list_configs    : espbuddy.php list_configs 
-  - list_repos      : espbuddy.php list_repos   
-  - self            : espbuddy.php self         ACTION [options]
-  - help            : espbuddy.php help         
+  - upload          : espbuddy upload       TARGET [options, auth_options, upload_options]
+  - build           : espbuddy build        TARGET [options]
+  - backup          : espbuddy backup       TARGET [options, auth_options]
+  - monitor         : espbuddy monitor      [TARGET] [options]
+  - server          : espbuddy server       [ROOT_DIR]
+  - send            : espbuddy send         TARGET CMD_SET|COMMAND [options, auth_options]
+  - status          : espbuddy status       TARGET [options, auth_options]
+  - version         : espbuddy version      TARGET [options, auth_options]
+  - reboot          : espbuddy reboot       TARGET [options, auth_options]
+  - gpios           : espbuddy gpios        TARGET [options, auth_options]
+  - ping            : espbuddy ping         TARGET [options]
+  - factory         : espbuddy factory      ACTION [options]
+  - sonodiy         : espbuddy sonodiy      ACTION [options]
+  - self            : espbuddy self         ACTION [options]
+  - repo_version    : espbuddy repo_version REPO
+  - repo_pull       : espbuddy repo_pull    REPO
+  - list_hosts      : espbuddy list_hosts   
+  - list_configs    : espbuddy list_configs 
+  - list_repos      : espbuddy list_repos   
+  - help            : espbuddy help         
 
 ---------------------------------------------------------------------------------
-* TARGET             : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Either an Host ID (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
 
-* CMD_SET|COMMAND    : Either a commands List (loaded from config.php), or a single command.
++ CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
 
-* ROOT_DIR           : Root directory (for the built-in Web Server)
++ ROOT_DIR          : Root directory (for the built-in Web Server). Either:
+                       - a REPO to only serves from the _Factory/REPO/ folder
+                       - an Host ID (or a Host folder) to only serves from its backup/folder
+                       - an (absolute) path to a folder to serve
+                       - when left blank, it defaults to the backup folder
 
-* OPTIONS :
-    -y           : Automatically confirm Yes/No
-    -d           : Dry Run. Show commands but don't apply them
-    -v           : Verbose mode
-    -D           : Debug mode (shows PHP errors)
-    --conf=xxx   : Config name to use (overrides per host config)
-    --repo=xxx   : Repo to use (overrides per host config)
++ OPTIONS :
+    -y              : Automatically confirm Yes/No
+    -d              : Dry Run. Show commands but don't apply them
+    -v              : Verbose mode
+    -j              : Displays result as JSON (only for send, status, sonodiy api commands)
+    -D              : Debug mode (shows PHP errors)
+    --conf=xxx      : Config name to use (overrides per host config)
+    --repo=xxx      : Repo to use (overrides per host config)
 
-* UPLOAD_OPTIONS :
-    -b           : Build before Uploading
-    -w           : Wire Mode : Upload using the Serial port instead of the default OTA
-    -e           : In Wire Mode, erase flash first, then upload
-    -p           : Upload previous firmware backuped, instead of the latest built
-    -s           : Skip Intermediate Upload (if set)
-    -m           : Switch to serial monitor after upload
-    --port=xxx   : Serial port to use (override main or per host serial port)
-    --rate=xxx   : Serial port speed to use (override main or per host serial port)
-    --firm=xxx   : Full path to the firmware file to upload (override latest build one)
-    --from=REPO  : Migrate from REPO to the selected config
++ UPLOAD_OPTIONS :
+    -b              : Build before Uploading
+    -w              : Wire Mode : Upload using the serial port instead of the default OTA
+    -e              : In Wire Mode, erase flash first, then upload
+    -m              : Switch to serial monitor after upload
+    -p              : Upload previous firmware backuped, instead of the latest built
+    -s              : Skip Intermediate Upload (if set)
+    -c              : When using --firm, make a copy instead of a symbolic link
+    --port=xxx      : Serial port to use (override main or per host serial port)
+    --rate=xxx      : Serial port speed to use (override main or per host serial port)
+    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
+    --from=REPO     : Migrate from REPO to the selected config
 
-* AUTH_OPTIONS :
-    --login=xxx  : Login name (overrides host or per config login)
-    --pass=xxx   : Password (overrides host or per config password)
++ AUTH_OPTIONS :
+    --login=xxx     : Login name (overrides host or per config login)
+    --pass=xxx      : Password (overrides host or per config password)
 ```
 
 ----------
 
 
 
-### `# espbuddy.php version led2`
+### `# espbuddy version led2`
 
 Grab the remote version of the 'led2' host. *'led2' is an host defined from the config.php file.*
 
@@ -109,7 +117,7 @@ Grab the remote version of the 'led2' host. *'led2' is an host defined from the 
 
 
 
-### `# espbuddy.php send led2 Status 1`
+### `# espbuddy send led2 Status 1`
 
 Send the 'Status 1' command to the 'led2' host.
 
@@ -140,7 +148,7 @@ Send the 'Status 1' command to the 'led2' host.
 
 
 
-### `# espbuddy.php status  10.1.209.32 --repo=espeasy`
+### `# espbuddy status  10.1.209.32 --repo=espeasy`
 
 Show Device information.
 
@@ -328,7 +336,7 @@ Selected Repo      : espeasy
 
 
 
-### `# espbuddy.php upload led2`
+### `# espbuddy upload led2`
 
 Upload the latest firmware to the 'led2' host, using an intermediate OTA firmware *as set in the 'led2' configuration, from the config.php file.*
 
@@ -357,12 +365,12 @@ Processing 1 host(s) :
 
 
 
-### `# espbuddy.php self help`
+### `# espbuddy self help`
 
 EspBuddy self maintenance tools.
 
 ```plaintext
-* Usage             : espbuddy.php self ACTION [options]
+* Usage             : espbuddy self ACTION [options]
 
 * Valid 'self' Actions : 
   - version         : Show EspBuddy version
@@ -372,11 +380,11 @@ EspBuddy self maintenance tools.
   - update          : Update EspBuddy to the latest version
 
 * 'self' Actions Usage : 
-  - version         : espbuddy.php self version 
-  - latest          : espbuddy.php self latest 
-  - avail           : espbuddy.php self avail  
-  - log             : espbuddy.php self log    [VERSION]
-  - update          : espbuddy.php self update [TAG|VERSION|BRANCH]
+  - version         : espbuddy self version 
+  - latest          : espbuddy self latest 
+  - avail           : espbuddy self avail  
+  - log             : espbuddy self log    [VERSION]
+  - update          : espbuddy self update [TAG|VERSION|BRANCH]
 
 
 ```
@@ -388,12 +396,12 @@ EspBuddy self maintenance tools.
 ##  Sonoff DIY (sonodiy) specific commands
 
 
-### `# espbuddy.php sonodiy help`
+### `# espbuddy sonodiy help`
 
 Tasks for the 'sonodiy' command.
 
 ```plaintext
-* Usage             : espbuddy.php sonodiy ACTION [options]
+* Usage             : espbuddy sonodiy ACTION [options]
 
 * Valid 'sonodiy' Actions : 
   - help            : Show Sonoff DIY Help
@@ -411,28 +419,28 @@ Tasks for the 'sonodiy' command.
   - wifi            : Set WiFi SSID and Password
 
 * 'sonodiy' Actions Usage : 
-  - help            : espbuddy.php sonodiy help   
-  - scan            : espbuddy.php sonodiy scan   
-  - test            : espbuddy.php sonodiy test   IP ID
-  - flash           : espbuddy.php sonodiy flash  IP ID [URL] [SHA256SUM]
-  - ping            : espbuddy.php sonodiy ping   IP [COUNT]
-  - info            : espbuddy.php sonodiy info   IP ID
-  - pulse           : espbuddy.php sonodiy pulse  IP ID [MODE] [WIDTH]
-  - signal          : espbuddy.php sonodiy signal IP ID
-  - startup         : espbuddy.php sonodiy startup IP ID [STATE]
-  - switch          : espbuddy.php sonodiy switch IP ID [STATE]
-  - toggle          : espbuddy.php sonodiy toggle IP ID
-  - unlock          : espbuddy.php sonodiy unlock IP ID
-  - wifi            : espbuddy.php sonodiy wifi   IP ID SSID [PASSWORD]
+  - help            : espbuddy sonodiy help   
+  - scan            : espbuddy sonodiy scan   
+  - test            : espbuddy sonodiy test   IP ID
+  - flash           : espbuddy sonodiy flash  IP ID [URL] [SHA256SUM]
+  - ping            : espbuddy sonodiy ping   IP [COUNT]
+  - info            : espbuddy sonodiy info   IP ID
+  - pulse           : espbuddy sonodiy pulse  IP ID [MODE] [WIDTH]
+  - signal          : espbuddy sonodiy signal IP ID
+  - startup         : espbuddy sonodiy startup IP ID [STATE]
+  - switch          : espbuddy sonodiy switch IP ID [STATE]
+  - toggle          : espbuddy sonodiy toggle IP ID
+  - unlock          : espbuddy sonodiy unlock IP ID
+  - wifi            : espbuddy sonodiy wifi   IP ID SSID [PASSWORD]
 
 ---------------------------------------------------------------------------------
 Setup Instructions
 ---------------------------------------------------------------------------------
   1) Setup an access point in your network named "sonoffDiy" with password "20170618sn"
   2) Set the OTA/DIY jumper in your Sonoff Device, and power it On.
-  3) Run 'espbuddy.php sonodiy scan'        to find your device IP & ID
-  4) Run 'espbuddy.php sonodiy test  IP ID' to toggle the relay on the device (verification)
-  5) Run 'espbuddy.php sonodiy flash IP ID' to upload another firmware (Tasmota by default)
+  3) Run 'espbuddy sonodiy scan'        to find your device IP & ID
+  4) Run 'espbuddy sonodiy test  IP ID' to toggle the relay on the device (verification)
+  5) Run 'espbuddy sonodiy flash IP ID' to upload another firmware (Tasmota by default)
   6) Enjoy!
 ```
 
@@ -440,7 +448,7 @@ Setup Instructions
 
 
 
-### `# espbuddy.php sonodiy scan`
+### `# espbuddy sonodiy scan`
 
 Show the IP Adresses and IDs of connected devices.
 
@@ -458,8 +466,8 @@ Devices Found:
 
 You can now use: 10.1.250.154 1000aba1ee as arguments for sonodiy Actions!
 Examples:
- espbuddy.php sonodiy test  10.1.250.154 1000aba1ee
- espbuddy.php sonodiy flash 10.1.250.154 1000aba1ee
+ espbuddy sonodiy test  10.1.250.154 1000aba1ee
+ espbuddy sonodiy flash 10.1.250.154 1000aba1ee
 
 ```
 
@@ -467,7 +475,7 @@ Examples:
 
 
 
-### `# espbuddy.php sonodiy test 10.1.250.154 1000aba1ee`
+### `# espbuddy sonodiy test 10.1.250.154 1000aba1ee`
 
 Test if we can successfully connect to the Sonoff Device.
 
@@ -496,7 +504,7 @@ Array
 
 
 
-### `# espbuddy.php sonodiy info 10.1.250.154 1000aba1ee -v`
+### `# espbuddy sonodiy info 10.1.250.154 1000aba1ee -v`
 
 Show device information.
 
@@ -522,7 +530,7 @@ Array
 
 
 
-### `# espbuddy.php sonodiy info 10.1.250.154 1000aba1ee -j`
+### `# espbuddy sonodiy info 10.1.250.154 1000aba1ee -j`
 
 Show device information in JSON format.
 

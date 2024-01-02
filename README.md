@@ -60,7 +60,7 @@ Works with :
 
 ## Usage
 
-**espbuddy.php ACTION [TARGET] [OPTIONS]**
+**espbuddy ACTION [TARGET] [OPTIONS]**
 
 Valid Actions are:
  
@@ -87,19 +87,18 @@ Valid Actions are:
 
 Examples:
 
-- `espbuddy.php upload` selects the one to upload to from the list of targets
-- `espbuddy.php upload relay1` uploads to target 'relay1'
-- `espbuddy.php upload all -b` uploads to all defined targets, while building the firmware first
-- `espbuddy.php upload relay1 -w` uploads using serial to target 'relay1'
-- `espbuddy.php upload relay1 -web` builds 'relay1', then using serial port, erase first and upload
-- `espbuddy.php backup all` backups settings ofall defined targets
-- `espbuddy.php monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
-- `espbuddy.php server` launches the builtin webserver on port 81, serving files from the backup directory
-- `espbuddy.php send relay1 tasmo_upg` send the 'tasmo_upg' commands list to 'relay1' by relying on our builtin webserver
-- `espbuddy.php send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
-- `espbuddy.php version all` shows versions of all defined targets
-- `espbuddy.php ping all` pings all defined targets
-- `espbuddy.php sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
+- `espbuddy upload` selects the one to upload to from the list of targets
+- `espbuddy upload relay1` uploads to target 'relay1'
+- `espbuddy upload all -b` uploads to all defined targets, while building the firmware first
+- `espbuddy upload relay1 -w` uploads using serial to target 'relay1'
+- `espbuddy upload relay1 -web` builds 'relay1', then using serial port, erase first and upload
+- `espbuddy backup all` backups settings ofall defined targets
+- `espbuddy monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
+- `espbuddy server` launches the builtin webserver on port 81, serving files from the backup directory
+- `espbuddy send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
+- `espbuddy version all` shows versions of all defined targets
+- `espbuddy ping all` pings all defined targets
+- `espbuddy sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode
 
 See [more command examples](doc/command_examples.md) ...
 

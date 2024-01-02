@@ -606,26 +606,58 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	function Command_server(){
-		$root=$this->target or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
+	private function _ChooseWebRoot($from=''){
+		$root='';
+		if($from){
+			$path_host	=$this->cfg['paths']['dir_backup'].$from;
+			$path_repo	=$this->path_factory.$from;
+			if(isset($this->cfg['hosts'][$from])){
+				$this->_AssignCurrentHostConfig($from);
+				$root=$this->c_host['path_dir_backup'];
+			}
+			elseif(file_exists($path_host)){
+				$root=$path_host;
+			}
+			elseif(file_exists($path_repo)){
+				$root=$path_repo;
+			}
+			elseif(file_exists($from)){
+				$root=$from;
+			}
+			else{
+				$this->_dieError("Can not find this 'ROOT_DIR' directory in the Factory folder, in the backup folder or as an absolute path");
+			}
+		}
+		$root or $root=$this->cfg['server_root'] or $root=$this->cfg['paths']['dir_backup'];
 		$root = rtrim($root,"/");
-		$port=$this->prefs['server_port'] or $port=8888;
-		$index=$this->espb_path_lib."espb_server_index.php";
+		return $root;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_server(){		
+		$root=$this->_ChooseWebRoot($this->target);
+		$port	=$this->prefs['server_port'] or $port=8888;
+		$index	=$this->espb_path_lib."espb_server_index.php";
 		$command="php -S 0.0.0.0:$port -t $root $index";
+		$ip		=getHostName();
+		$host	=getHostByName(getHostName());
+
+		$do_echo=true;
+		if($do_echo){
 		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
-		$ip=getHostName();
-		$host=getHostByName(getHostName());
-		$tab="  ";
-		echo "Some possible URLs are:\n";
-		echo $tab."http://$ip:$port\n";
-		echo $tab."http://$host:$port\n";
-		echo $tab."http://localhost:$port\n";
-		echo $tab."http://127.0.0.1:$port\n";
-		echo "\n";
-		echo "Serving directory:\n";
-		echo $tab."$root\n";
-		echo "\n";
-		echo "(Press Ctrl-C to stop)\n";
+			$tab="   ";
+			echo "Some possible URLs are:\n";
+			echo $tab."http://$ip:$port\n";
+			echo $tab."http://$host:$port\n";
+			echo $tab."http://localhost:$port\n";
+			echo $tab."http://127.0.0.1:$port\n";
+			echo "\n";
+			echo "Serving directory:\n";
+			echo $tab."$root\n";
+			echo "\n";
+			echo "(Press Ctrl-C to stop)\n";
+		}
+
 		passthru($command, $r);
 		exit(0);
 	}
@@ -954,11 +986,15 @@ class EspBuddy {
 		if($action=='root'){
 			echo <<<EOF
 ---------------------------------------------------------------------------------
-+ TARGET            : Either an Host (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Either an Host ID (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
 
 + CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
 
-+ ROOT_DIR          : Root directory (for the built-in Web Server)
++ ROOT_DIR          : Root directory (for the built-in Web Server). Either:
+                       - a REPO to only serves from the {$this->factory_dir}/REPO/ folder
+                       - an Host ID (or a Host folder) to only serves from its backup/folder
+                       - an (absolute) path to a folder to serve
+                       - when left blank, it defaults to the backup folder
 
 + OPTIONS :
     -y              : Automatically confirm Yes/No

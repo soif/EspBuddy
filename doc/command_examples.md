@@ -74,6 +74,7 @@ EspBuddby v2.40 ( EspTool v3.3.3 )
     -y              : Automatically confirm Yes/No
     -d              : Dry Run. Show commands but don't apply them
     -v              : Verbose mode
+    -j              : Displays result as JSON (only for send, status, sonodiy api commands)
     -D              : Debug mode (shows PHP errors)
     --conf=xxx      : Config name to use (overrides per host config)
     --repo=xxx      : Repo to use (overrides per host config)
@@ -85,7 +86,6 @@ EspBuddby v2.40 ( EspTool v3.3.3 )
     -m              : Switch to serial monitor after upload
     -p              : Upload previous firmware backuped, instead of the latest built
     -s              : Skip Intermediate Upload (if set)
-    -j              : displays result as JSON (only for send, status, sonodiy api commands)
     -c              : When using --firm, make a copy instead of a symbolic link
     --port=xxx      : Serial port to use (override main or per host serial port)
     --rate=xxx      : Serial port speed to use (override main or per host serial port)

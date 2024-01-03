@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.41';						// EspBuddy Version
+	public $espb_version			= 'd2.50b1';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -304,6 +304,9 @@ class EspBuddy {
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
+			case 'upgrade':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
 			case 'server':
 				$this->Command_server();
 				break;
@@ -444,14 +447,49 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function Command_upload($id){
-		$this->_AssignCurrentHostConfig($id,true);
+	public function Command_upgrade($id){
+		return $this->Command_upload($id,'upgrade');
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _GetFirmwareVersion($path_firmware){
+		if(realpath($path_firmware)){
+			$dir_firmware=dirname(realpath($path_firmware));
+		}
+		else{
+			$dir_firmware=realpath(dirname($path_firmware));
+
+		}
+
+		if(strpos($path_firmware,$this->path_factory)===0){
+			return basename($dir_firmware);
+		}
+		elseif(strpos(realpath($path_firmware),$this->c_host['path_dir_backup'])===0){
+			if(preg_match('#\([^,]+,([^,)]+)#',realpath($path_firmware),$m)){
+				return $m[1];
+			}
+		}
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _Gzip($path_in, $path_out){
+		$command="gzip -c \"$path_in\" > \"$path_out\"";
+		passthru($command,$r);
+		return ! $r;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_upload($id,$mode=''){
+		$this->_AssignCurrentHostConfig($id);
+		$arg_version=$this->args['commands'][3]; // intermediate firmware version for upgrade
 
 		// choose firmware ---------------
 		if($this->arg_firmware){
+			if($mode=='upgrade'){
+				$this->_dieError (" the '--firm' option is not supported with the upgrade command");
+			}
 			if(file_exists($this->arg_firmware)){
 				$this->_rotateFirmware($this->arg_firmware);
-				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+				$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
 			}
 			$echo_name="EXTERNAL";
 		}
@@ -459,44 +497,195 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="NEWEST";
+			$path_firm_link	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$echo_name="BUILT";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
+			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
 			$echo_name="PREVIOUS";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		else{
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="LATEST";
+			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$echo_name="CURRENT";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 
-		if(!file_exists($firmware)){
-			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
+		if(!file_exists($path_firm_link)){
+			$this->_dieError ("No ($echo_name) Firmware found at: $path_firm_link");
 		}
 
 		echo "\n";
-		$firm_source=realpath($firmware) or $firm_source=$firmware;
+		$firm_source=realpath($path_firm_link) or $firm_source=$path_firm_link;
 		$date		=date("d M Y - H:i:s", filemtime($firm_source));
 		$firm_size	=filesize($firm_source);
 		$firm_source=basename($firm_source);
+		
 
 		$this->_EchoStepStart("Use $echo_name Firmware: $firm_source   (Compiled on $date )","");
 
-		// .wire mode ------------------
-		if($this->flag_serial){
+		// upgrade mode ----------------------------------------------------------------
+		if($mode=='upgrade'){
+			$upg=$this->orepo->GetUpgradeConf();
+			$path_serv_root	=$this->cfg['paths']['dir_backup'];
+			$path_host_dir	=$path_serv_root.$this->_getHostBackupDir($this->c_host).'/';
+
+			$path_firm_file	=realpath($path_firm_link);
+			$path_firm_gz_file	=$path_firm_file.'.gz';
+			$path_firm_gz_link	=$path_firm_link.'.gz';
+			
+			if($upg['method']=='server_mini'){
+				// ----------------------
+				if(!file_exists($path_firm_gz_file)){
+					if(!$this->_Gzip($path_firm_file,$path_firm_gz_file)){
+						$this->_EchoError("Cannot gzip the firmware");
+						return false;
+					}
+				}
+				$this->_SymlinkRelative($path_firm_gz_link, $path_firm_gz_file);
+				$url_host_firm_gz	=$this->_GetServerBaseUrl().'/'.$this->_getHostBackupDir($this->c_host).'/'.basename($path_firm_gz_link);
+
+				// is upgrade implemented ----------------------
+				if(!$upg['upgrade_command']){
+					$this->_EchoError($this->c_conf['repo']." doesnt support upgrade. Aborted");
+					return false;
+				}
+
+				$pad=37;
+				// makes mini firmware ----------------------
+				if($upg['firmware']){
+					$path_fact_minifirm =$this->path_factory_repo.$arg_version.'/'.$upg['firmware'];	
+					$path_fact_minifirm_gz=$path_fact_minifirm.'.gz';
+					if(!$arg_version){
+						$arg_version=$this->_GetFirmwareVersion($this->path_factory_repo.$this->latest_link.'/'.$upg['firmware']);
+						$path_fact_minifirm=$this->path_factory_repo.$arg_version.'/'.$upg['firmware'];			
+						if(!file_exists($path_fact_minifirm)){
+							echo "* I can't guess the intermediate firmware version to use. Can I revert to the latest (factory) version '$arg_version'? \n";
+							if(!$this->_AskConfirm()){
+									$this->_EchoError("I need an intermediate firmware version. (You can set it as last argument). Aborted");
+									return false;
+							}
+						}
+					}
+					// Download mini firmware if not found  ----------------------
+					if(!file_exists($path_fact_minifirm)){
+						echo "* The $arg_version/{$upg['firmware']} intermediate firmware is not found in the Factory's {$this->c_conf['repo']} folder. Let's download it...\n";
+						if(!$this->Factory_download($this->c_conf['repo'],$arg_version,$upg['firmware'])){
+							$this->_EchoError("This intermediate firmware is required to perform the upgrade. Aborted");
+							return false;
+						}
+						$arg_version=$this->_GetFirmwareVersion($path_fact_minifirm);
+					}
+					// Link to the mini firmware ----------------------
+					if(!$minfirm_link= $this->orepo->GetMinimalFirmwareName($path_firm_link)){
+						$this->_EchoError("Cant make Minimal Firmware name. Aborted");
+						return false;					
+					}
+					$this->_SymlinkRelative($path_host_dir.$minfirm_link, $path_fact_minifirm);
+
+					// Gzip mini firmware if not found  ----------------------
+					if(!file_exists($path_fact_minifirm_gz)){
+						if(!$this->_Gzip($path_fact_minifirm,$path_fact_minifirm_gz)){
+							$this->_EchoError("Cannot gzip the firmware");
+							return false;
+						}
+					}
+					// Link to the mini gz firmware ----------------------
+					if(!$minfirm_gz_link= $this->orepo->GetMinimalFirmwareName($path_firm_gz_link)){
+						$this->_EchoError("Cant make Minimal Gz Firmware name. Aborted");
+						return false;
+					}
+					$this->_SymlinkRelative($path_host_dir.$minfirm_gz_link, $path_fact_minifirm_gz);
+
+					echo str_pad("* Intermediate firmware is set to: ",$pad)."$arg_version / {$upg['firmware']}\n";
+				}
+
+				// get current url ----------------------
+				if($upg['get_command']){
+					echo str_pad("* Current device's upgrade URL was: ",$pad);
+					if(!$r=$this->orepo->RemoteSendCommands($this->c_host,$upg['get_command'])){
+						$this->_EchoError("No answer");
+						return false;
+					}
+					$url_dev_upg=$r[$upg['get_field']];
+					echo "$url_dev_upg\n";
+				}
+				// set upgrade url ----------------------
+				if($upg['set_command']){
+					echo str_pad("* Set device's upgrade URL to: ",$pad).$url_host_firm_gz."\n";
+					$set_com=str_replace('{{server_url}}',$url_host_firm_gz, $upg['set_command']);
+					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
+						$this->_EchoError("No answer");
+						return false;
+					}
+				}
+				// Performs upgrade ----------------------
+				$return =true;
+				if($upg['upgrade_command']){
+					if(!$this->_bgServerStartSafe()){
+						$this->_EchoError("Can't start built-in WebServer");
+						return false;
+					}
+					if($r=$this->orepo->RemoteSendCommands($this->c_host, $upg['upgrade_command'])){
+						echo "* Uploading intermediate firmware...\n";
+						$this->_WaitPingable($this->c_host['ip'],30,true);
+						sleep(1);
+						echo "* Rebooting....\n";
+						$this->_WaitPingable($this->c_host['ip'],15);
+						sleep(1);
+						echo "* Uploading new firmware...\n";
+						$this->_WaitPingable($this->c_host['ip'],30,true);
+						sleep(1);
+						echo "* Rebooting....\n";
+						$this->_WaitPingable($this->c_host['ip'],15);
+						echo "* Waiting a little bit....\n";
+						sleep(4);
+						if($vers=$this->orepo->RemoteGetVersion($this->c_host)){
+							echo str_pad("* SUCCESSFULLY updated to version: ",$pad). $vers ."\n";
+						}
+						else{
+							$this->_EchoError("Cant get remote version! This maybe means that something has failed");
+							$return = false;
+						}
+					}
+					else{
+						$this->_EchoError("Upgrade command was not accepted");
+						$return = false;
+					}
+					$this->_bgServerStop();
+				}
+
+				// reverts upgrade url ----------------------
+				if($upg['set_command'] and $url_dev_upg){
+					echo  str_pad("* Revert device upgrade URL to: ",$pad).$url_dev_upg."\n";
+					$set_com=str_replace('{{server_url}}',$url_dev_upg, $upg['set_command']);
+					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
+						$this->_EchoError("No answer");
+						return false;
+					}
+				}
+				return $return;
+			}
+			else{
+				return $this->_dieError ("Unknown Upgrade Method '{$upg['method']}'");
+			}
+
+		}
+		// .wire mode -----------------------------------------------------------------------
+		elseif($this->flag_serial){
 			if($this->flag_eraseflash){
 				$this->_DoSerial($id,'erase_flash');
 				$this->_WaitReboot(5);
 			}
-			$this->_DoSerial($id,'write_flash', $firmware);
+			$this->_DoSerial($id,'write_flash', $path_firm_link);
 			
 			if($this->flag_monitor){
 				$this->Command_monitor($id);
 			}
 		}
 
-		// .OTA mode ------------------
+		// .OTA mode ------------------------------------------------------------------------
 		else{
 			if($this->c_host['pass']){
 				$arg_pass=" -a {$this->c_host['pass']}";
@@ -546,7 +735,7 @@ class EspBuddy {
 			}
 
 			// Final Upload
-			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\"$arg_pass";
+			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$path_firm_link\"$arg_pass";
 			echo "\n";
 
 			$this->_EchoStepStart("Uploading Final Firmware", $command);

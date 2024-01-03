@@ -11,13 +11,14 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.40 ( EspTool v3.3.3 )
+EspBuddby v2.50 ( EspTool v3.3.3 )
 
 * Usage             : espbuddy COMMAND [TARGET] [options]
 
 * Valid COMMANDS : 
   - upload          : Build and/or Upload current repo version to Device(s)
-  - build           : Build firmware for the selected device
+  - upgrade         : Upgrade device(s) firmware
+  - build           : Build device(s) firmware
   - backup          : Download and archive settings from the remote device
   - monitor         : Monitor device connected to the serial port
   - server          : Launch Firmwares WebServer
@@ -39,6 +40,7 @@ EspBuddby v2.40 ( EspTool v3.3.3 )
 
 * Commands Usage : 
   - upload          : espbuddy upload       TARGET [options, auth_options, upload_options]
+  - upgrade         : espbuddy upgrade      TARGET [options, auth_options, upload_options]
   - build           : espbuddy build        TARGET [options]
   - backup          : espbuddy backup       TARGET [options, auth_options]
   - monitor         : espbuddy monitor      [TARGET] [options]

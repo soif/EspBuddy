@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.50b1';						// EspBuddy Version
+	public $espb_version			= 'd2.50b2';					// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -118,7 +118,8 @@ class EspBuddy {
 	private	$actions_desc=array(
 		'root'=>array(
 			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build firmware for the selected device",
+			'upgrade'		=> "Upgrade device(s) firmware",
+			'build'			=> "Build device(s) firmware",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
 			'server'		=> "Launch Firmwares WebServer",
@@ -170,6 +171,7 @@ class EspBuddy {
 	private	$actions_usage=array(
 		'root'=>array(
 			'upload'		=> "TARGET [options, auth_options, upload_options]",
+			'upgrade'		=> "TARGET [options, auth_options, upload_options]",
 			'build'			=> "TARGET [options]",
 			'backup'		=> "TARGET [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",

@@ -45,7 +45,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
   - backup          : espbuddy backup       TARGET [options, auth_options]
   - monitor         : espbuddy monitor      [TARGET] [options]
   - server          : espbuddy server       [ROOT_DIR]
-  - send            : espbuddy send         TARGET CMD_SET|COMMAND [options, auth_options]
+  - send            : espbuddy send         TARGET COMMAND|CMD_SET [options, auth_options]
   - status          : espbuddy status       TARGET [options, auth_options]
   - version         : espbuddy version      TARGET [options, auth_options]
   - reboot          : espbuddy reboot       TARGET [options, auth_options]
@@ -62,32 +62,37 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
   - help            : espbuddy help         
 
 ---------------------------------------------------------------------------------
-+ TARGET            : Either an Host ID (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Target of the command. Either:
+                       - the Host's ID (defined in $cfg['hosts'] from config.php). This is the easiest way!
+                       - an IP address or a Hostname. (Most of the time a --repo or --conf would also be needed!)
+                       - 'all' (for commands supporting batch mode) loops thru all defined Hosts (defined from config.php)
 
-+ CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
++ COMMAND|CMD_SET   : Command(s) to send. Either:
+                       - a single command as "command [value]" (following the the device's command own syntax)
+                       - a commands List's ID (defined in $cfg['commands'] from config.php), 
 
 + ROOT_DIR          : Root directory (for the built-in Web Server). Either:
-                       - a REPO to only serves from the _Factory/REPO/ folder
-                       - an Host ID (or a Host folder) to only serves from its backup/folder
-                       - an (absolute) path to a folder to serve
-                       - when left blank, it defaults to the backup folder
+                       - a REPO to only serves from the /espb_backup/_Factory/REPO/ folder
+                       - an Host ID (or a Host folder) to only serves from its /espb_backup/folder
+                       - an (absolute) path of a directory
+                       - when left blank, it defaults to the /espb_backup/ folder (prefered way)
 
 + OPTIONS :
-    -y              : Automatically confirm Yes/No
+    -y              : Automatically set YES to confirm "Yes/No" dialogs
     -d              : Dry Run. Show commands but don't apply them
     -v              : Verbose mode
-    -j              : Displays result as JSON (only for send, status, sonodiy api commands)
+    -j              : Displays result as JSON (only for 'send', 'status', 'sonodiy api' commands)
     -D              : Debug mode (shows PHP errors)
-    --conf=xxx      : Config name to use (overrides per host config)
-    --repo=xxx      : Repo to use (overrides per host config)
+    --conf=xxx      : Config name to use (overrides per host settings)
+    --repo=xxx      : Repository to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
-    -b              : Build before Uploading
+    -b              : Build before Flashing/Uploading/Upgrading firmware
     -w              : Wire Mode : Upload using the serial port instead of the default OTA
     -e              : In Wire Mode, erase flash first, then upload
     -m              : Switch to serial monitor after upload
-    -p              : Upload previous firmware backuped, instead of the latest built
-    -s              : Skip Intermediate Upload (if set)
+    -p              : Upload previous firmware backuped (instead of the latest build)
+    -s              : Skip Intermediate OTA Upload (when 2steps mode is  set)
     -c              : When using --firm, make a copy instead of a symbolic link
     --port=xxx      : Serial port to use (override main or per host serial port)
     --rate=xxx      : Serial port speed to use (override main or per host serial port)

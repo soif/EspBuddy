@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.40';						// EspBuddy Version
+	public $espb_version			= 'd2.41b1';					// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -634,21 +634,35 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _GetServerBaseUrl($use_hostname=false){
+		$port	=$this->prefs['server_port'];
+		if($use_hostname){
+			$ip	=getHostName();
+		}
+		else{
+			$ip=getHostByName(getHostName());
+		}
+		return "http://$ip:$port";
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_server(){		
 		$root=$this->_ChooseWebRoot($this->target);
-		$port	=$this->prefs['server_port'] or $port=8888;
 		$index	=$this->espb_path_lib."espb_server_index.php";
+		$port	=$this->prefs['server_port'];
 		$command="php -S 0.0.0.0:$port -t $root $index";
-		$ip		=getHostName();
-		$host	=getHostByName(getHostName());
+		
+		$ip_url		=$this->_GetServerBaseUrl();
+		$host_url	=$this->_GetServerBaseUrl(true);
+		$port		=$this->prefs['server_port'];
 
 		$do_echo=true;
 		if($do_echo){
 		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
 			$tab="   ";
 			echo "Some possible URLs are:\n";
-			echo $tab."http://$ip:$port\n";
-			echo $tab."http://$host:$port\n";
+			echo $tab."$ip_url\n";
+			echo $tab."$host_url\n";
 			echo $tab."http://localhost:$port\n";
 			echo $tab."http://127.0.0.1:$port\n";
 			echo "\n";

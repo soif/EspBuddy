@@ -406,11 +406,10 @@ class EspBuddy {
 	public function Command_build($id){
 		$this->_AssignCurrentHostConfig($id,true);
 		$path_build=$this->orepo->GetPathBuild();
-
 		$commands_compil[]="cd {$path_build} ";
 		if(is_array($this->c_conf['exports'])){
 			foreach( $this->c_conf['exports'] as $k => $v ){
-				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
+				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'");
 			}
 		}
 		$start_compil =time();
@@ -2607,8 +2606,10 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _ReplaceTags($str, $id){
-		$this->_AssignCurrentHostConfig($id,true);
+	private function _ReplaceTags($str, $id=''){
+		if($id){
+			$this->_AssignCurrentHostConfig($id,true);
+		}
 
 		$ip		=	$this->c_host['ip'];
 		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);

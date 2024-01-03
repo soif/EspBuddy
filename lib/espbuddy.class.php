@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.41b1';					// EspBuddy Version
+	public $espb_version			= 'd2.41b2';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -2468,12 +2468,18 @@ https://github.com/soif/EspBuddy/issues/20
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
 		$dir	= $this->cfg['paths']['dir_backup'];
-		$name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		$name	= $this->_getHostBackupDir($host);
 		$path="$dir$name/";
 		if(!file_exists($path)){
 			mkdir($path);
 		}
 		return $path;
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _getHostBackupDir($host){
+		//$name	= $host['id'] or $name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		$name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		return $name;
 	}
 
 	// ---------------------------------------------------------------------------------------

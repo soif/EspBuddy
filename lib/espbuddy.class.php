@@ -1341,6 +1341,7 @@ EOF;
 				if($ok==$assets['count']){
 					echo "* Successfully downloaded $ok assets!\n";
 					$this->_SymlinkLatestAndPrevious();
+					return true;
 				}
 				else{
 					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";

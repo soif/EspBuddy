@@ -3387,10 +3387,10 @@ EOF;
 		echo "#### TEST zone ##############################\n";
 		//$this->_RequireRepo('espurna');
 		//$this->_SymlinkLatestAndPrevious();
-		//return $this->_StartServerTest();
+		//return $this->_bgServerStartSafe();
 	}
 	// ---------------------------------------------------------------------------------------
-	private function _StartServerTest(){
+	private function _bgServerStartSafe(){
 		
 		if($this->_bgServerCheck()){
 			echo "* Another server is already running on port {$this->prefs['server_port']}\n";
@@ -3403,19 +3403,7 @@ EOF;
 				return false;
 			}
 		}
-		$this->_bgServerStart();
-		echo "* Builtin Server is running on port {$this->prefs['server_port']} with  PID {$this->server_pid}\n";
-		echo "* Do you want to stop it ? ";
-		if(!$this->_AskConfirm()){
-			return false;
-		}
-		if(! $this->_bgServerStop()){
-			echo "# Cant stop server!\n";
-			return false;
-		}
-		echo "* Stopped server!\n";
-		sleep(5);
-
+		return $this->_bgServerStart();
 	}
 
 
@@ -3428,6 +3416,7 @@ EOF;
 		if($kill_on_shutdown){
 			register_shutdown_function(array($this,'_bgServerStop'));
 		}
+		return $this->server_pid;
 	}
 
 	// ---------------------------------------------------------------------------------------

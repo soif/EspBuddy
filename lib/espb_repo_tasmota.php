@@ -33,6 +33,15 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	protected $firststep_firmware 	= 'firmwares/TasmotaUploader.OTA-0x20161209.bin';	// first (intermediate) firmware to upload
 
+	protected $upgrade_conf	=array(
+		'method'			=> 'server_mini',				// method used to upgrade
+		'firmware'			=> 'tasmota-minimal.bin',		// The intermediate firmware (from factory) needed to make a two step upgrade
+		'set_command'		=> 'OtaUrl {{server_url}}',		// Command to set the upgrade URL. {{server_url}} will be replaced by our builtin webserver
+		'get_command'		=> 'OtaUrl',					// Command to get the current upgrade URL
+		'get_field'			=> 'OtaUrl',					// The JSON field holding the current upgrade URL
+		'upgrade_command'	=> 'Upgrade 1',					// Command to launch the upgrade.
+	);
+
 	protected $api_urls=array(
 		'backup'	=>	'/dl',			// relative url to the URl where we can perform the backup
 		'command'	=>	'/cm?user={{login}}&password={{pass}}&cmnd=',						// relative url to send a command
@@ -56,6 +65,11 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 			$this->version= hexdec($arr[1]).'.'.hexdec($arr[2]).'.'.hexdec($arr[3]).$letter;
 		}
 		return $this->version;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function MakeMiniFirmwareName($name){
+		return preg_replace("#(.*?)((\.bin)(\.gz)?)#",'$1-minimal$2',$name);
 	}
 
 	// ---------------------------------------------------------------------------------------

@@ -47,8 +47,48 @@ $espb->LoadConf($path_espb.'config.php');
 //directly serves existing file of symlink asis
 $my_file = $path_root . $cur_url;
 if (file_exists($my_file) and is_file($my_file)) {
+	HandleDownload($my_file);
 	//this makes php builin server to directly serve the file
 	return false;
+}
+function HandleDownload($my_file){
+	$file_ext=strtolower(pathinfo($my_file,PATHINFO_EXTENSION));
+	if($file_ext=='gz'){
+		$type="application/x-gzip";
+	}
+	elseif($file_ext=='bin'){
+		$type="application/octet-stream";
+	}
+	else{
+		return;
+	}
+	$base_file	=basename($my_file);
+	$size		=filesize($my_file);
+	$time		=date('r',filemtime($my_file));
+	$etag		=md5($base_file.$time.$size);
+
+	//file_put_contents("php://stdout", "Requested: $my_file\n");
+	//file_put_contents("php://stdout", "Info: $base_file	$type	$size	$time	$etag\n");
+
+	header("Content-Length: $size");
+	header("Content-Type: $type");
+	header('Content-Disposition: inline; filename="'.$base_file.'"');
+
+	//header("Connection: keep-alive");	
+	//header("Accept-Ranges: bytes");
+	//header('Cache-Control: no-cache');
+	//header('Cache-Control: must-revalidate');
+	//header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	//header('Content-Transfer-Encoding: binary');
+	//header('Content-Disposition: attachment; filename="'.$base_file.'"');
+	//header('ETag: "'.$etag.'"');
+	//header("Last-Modified: $time");
+	//header('Server: EspBuddy');
+	//header('Content-Description: File Transfer');
+	//header('Expires: 0');
+	//header('Pragma: public');
+	readfile($my_file);
+	exit(0);
 }
 
 ## Handle favicon ############################################################

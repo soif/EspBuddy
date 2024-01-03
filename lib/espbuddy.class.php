@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.40';						// EspBuddy Version
+	public $espb_version			= '2.41';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -406,11 +406,10 @@ class EspBuddy {
 	public function Command_build($id){
 		$this->_AssignCurrentHostConfig($id,true);
 		$path_build=$this->orepo->GetPathBuild();
-
 		$commands_compil[]="cd {$path_build} ";
 		if(is_array($this->c_conf['exports'])){
 			foreach( $this->c_conf['exports'] as $k => $v ){
-				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'", $id);
+				$commands_compil[]	=$this->_ReplaceTags("export $k='$v'");
 			}
 		}
 		$start_compil =time();
@@ -634,21 +633,35 @@ class EspBuddy {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _GetServerBaseUrl($use_hostname=false){
+		$port	=$this->prefs['server_port'];
+		if($use_hostname){
+			$ip	=getHostName();
+		}
+		else{
+			$ip=getHostByName(getHostName());
+		}
+		return "http://$ip:$port";
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function Command_server(){		
 		$root=$this->_ChooseWebRoot($this->target);
-		$port	=$this->prefs['server_port'] or $port=8888;
 		$index	=$this->espb_path_lib."espb_server_index.php";
+		$port	=$this->prefs['server_port'];
 		$command="php -S 0.0.0.0:$port -t $root $index";
-		$ip		=getHostName();
-		$host	=getHostByName(getHostName());
+		
+		$ip_url		=$this->_GetServerBaseUrl();
+		$host_url	=$this->_GetServerBaseUrl(true);
+		$port		=$this->prefs['server_port'];
 
 		$do_echo=true;
 		if($do_echo){
 		$this->_EchoStepStart("Launching WebServer on port $port on every network interfaces",$command);
 			$tab="   ";
 			echo "Some possible URLs are:\n";
-			echo $tab."http://$ip:$port\n";
-			echo $tab."http://$host:$port\n";
+			echo $tab."$ip_url\n";
+			echo $tab."$host_url\n";
 			echo $tab."http://localhost:$port\n";
 			echo $tab."http://127.0.0.1:$port\n";
 			echo "\n";
@@ -1328,6 +1341,7 @@ EOF;
 				if($ok==$assets['count']){
 					echo "* Successfully downloaded $ok assets!\n";
 					$this->_SymlinkLatestAndPrevious();
+					return true;
 				}
 				else{
 					echo "* ERROR: Downloaded $ok/{$assets['count']} assets. $err have failed!\n";
@@ -2343,7 +2357,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 		// git commands add a little delay, so only use then if needed
-		if($with_source and ($this->action=='build' or ($this->action=='upload' and $this->flag_build))){
+		if($with_source and ($this->action=='build' or $this->action=='upload' or $this->flag_build)){
 			$this->_SetCurrentVersionNames();
 		}
 	}
@@ -2454,12 +2468,18 @@ https://github.com/soif/EspBuddy/issues/20
 	// ---------------------------------------------------------------------------------------
 	private function _CreateBackupDir($host){
 		$dir	= $this->cfg['paths']['dir_backup'];
-		$name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		$name	= $this->_getHostBackupDir($host);
 		$path="$dir$name/";
 		if(!file_exists($path)){
 			mkdir($path);
 		}
 		return $path;
+	}
+	// ---------------------------------------------------------------------------------------
+	private function _getHostBackupDir($host){
+		//$name	= $host['id'] or $name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		$name	= $host['hostname'] or $name = $host['ip'] or $name = "_ERROR_";
+		return $name;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -2593,8 +2613,10 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _ReplaceTags($str, $id){
-		$this->_AssignCurrentHostConfig($id,true);
+	private function _ReplaceTags($str, $id=''){
+		if($id){
+			$this->_AssignCurrentHostConfig($id,true);
+		}
 
 		$ip		=	$this->c_host['ip'];
 		list($ip1,$ip2,$ip3,$ip4)=explode('.',$ip);
@@ -3371,10 +3393,10 @@ EOF;
 		echo "#### TEST zone ##############################\n";
 		//$this->_RequireRepo('espurna');
 		//$this->_SymlinkLatestAndPrevious();
-		//return $this->_StartServerTest();
+		//return $this->_bgServerStartSafe();
 	}
 	// ---------------------------------------------------------------------------------------
-	private function _StartServerTest(){
+	private function _bgServerStartSafe(){
 		
 		if($this->_bgServerCheck()){
 			echo "* Another server is already running on port {$this->prefs['server_port']}\n";
@@ -3387,19 +3409,7 @@ EOF;
 				return false;
 			}
 		}
-		$this->_bgServerStart();
-		echo "* Builtin Server is running on port {$this->prefs['server_port']} with  PID {$this->server_pid}\n";
-		echo "* Do you want to stop it ? ";
-		if(!$this->_AskConfirm()){
-			return false;
-		}
-		if(! $this->_bgServerStop()){
-			echo "# Cant stop server!\n";
-			return false;
-		}
-		echo "* Stopped server!\n";
-		sleep(5);
-
+		return $this->_bgServerStart();
 	}
 
 
@@ -3412,6 +3422,7 @@ EOF;
 		if($kill_on_shutdown){
 			register_shutdown_function(array($this,'_bgServerStop'));
 		}
+		return $this->server_pid;
 	}
 
 	// ---------------------------------------------------------------------------------------

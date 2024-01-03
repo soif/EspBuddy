@@ -47,6 +47,16 @@ class EspBuddy_Repo {
 		'gpio_off'	=>	'',			// relative url to switch gpio OFF : start with "/", use "{{gpio}}" as a placeholder for the GPIO pin number
 		'command'	=>	'',			// relative url to send a command
 	);
+
+	protected $upgrade_conf	=array(
+		'method'			=> 'server_mini',// method used to upgrade
+		'firmware'			=> '',			// The minimal firmware (from factory) needed to make a two step upgrade
+		'set_command'		=> '',			// Command to set the upgrade URL. {{server_url}} will be replaced by our builtin webserver
+		'get_command'		=> '',			// Command to get the current upgrade URL
+		'get_field'			=> '',			// The JSON field holding the current upgrade URL
+		'upgrade_command'	=> '',			// Command to launch the upgrade.
+	);
+
 	protected $api_prefix 		= 'http://';	// scheme to use : http:// , https://
 	protected $default_login 	= '';			// Login name to use when not set
 	
@@ -202,6 +212,11 @@ class EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
+	public function GetUpgradeConf(){
+		return $this->upgrade_conf;
+	}
+
+	// ---------------------------------------------------------------------------------------
 	public function GetPathBase(){
 		return $this->path_base;
 	}
@@ -209,6 +224,20 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	public function GetFirstStepFirmware(){
 		return $this->firststep_firmware;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function GetMinimalFirmwareName($path_or_name){
+		$path_or_name=basename($path_or_name);
+		$new = $this->MakeMiniFirmwareName($path_or_name);
+		if($new == $path_or_name or !$new){
+			return false;
+		}
+		return $new;
+	}
+	// ---------------------------------------------------------------------------------------
+	protected function MakeMiniFirmwareName($name){
+			return false;
 	}
 
 	// ---------------------------------------------------------------------------------------

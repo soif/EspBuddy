@@ -2357,7 +2357,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 		// git commands add a little delay, so only use then if needed
-		if($with_source and ($this->action=='build' or ($this->action=='upload' and $this->flag_build))){
+		if($with_source and ($this->action=='build' or $this->action=='upload' or $this->flag_build)){
 			$this->_SetCurrentVersionNames();
 		}
 	}

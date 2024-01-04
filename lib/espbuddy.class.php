@@ -599,17 +599,17 @@ class EspBuddy {
 
 				// get current url ----------------------
 				if($upg['get_command']){
-					echo str_pad("* Current device's upgrade URL was: ",$pad);
+					$this->_EchoVerbose( str_pad("* Current device's upgrade URL was: ",$pad),false);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host,$upg['get_command'])){
 						$this->_EchoError("No answer");
 						return false;
 					}
 					$url_dev_upg=$r[$upg['get_field']];
-					echo "$url_dev_upg\n";
+					$this->_EchoVerbose( "$url_dev_upg");
 				}
 				// set upgrade url ----------------------
 				if($upg['set_command']){
-					echo str_pad("* Set device's upgrade URL to: ",$pad).$url_host_firm_gz."\n";
+					$this->_EchoVerbose(  str_pad("* Set device's upgrade URL to: ",$pad).$url_host_firm_gz );
 					$set_com=str_replace('{{server_url}}',$url_host_firm_gz, $upg['set_command']);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
 						$this->_EchoError("No answer");
@@ -624,19 +624,20 @@ class EspBuddy {
 						return false;
 					}
 					if($r=$this->orepo->RemoteSendCommands($this->c_host, $upg['upgrade_command'])){
-						echo "* Uploading intermediate firmware...\n";
+						echo "* Uploading minimal firmware... ";
 						$this->_WaitPingable($this->c_host['ip'],30,true);
 						sleep(1);
-						echo "* Rebooting....\n";
+						echo "* Rebooting.................... ";
 						$this->_WaitPingable($this->c_host['ip'],15);
 						sleep(1);
-						echo "* Uploading new firmware...\n";
+						echo "* Uploading new firmware....... ";
 						$this->_WaitPingable($this->c_host['ip'],30,true);
 						sleep(1);
-						echo "* Rebooting....\n";
+						echo "* Rebooting.................... ";
 						$this->_WaitPingable($this->c_host['ip'],15);
-						echo "* Waiting a little bit....\n";
+						echo "* Waiting a little bit......... ";
 						sleep(4);
+						echo "\n";
 						if($vers=$this->orepo->RemoteGetVersion($this->c_host)){
 							echo str_pad("* SUCCESSFULLY updated to version: ",$pad). $vers ."\n";
 						}
@@ -654,7 +655,7 @@ class EspBuddy {
 
 				// reverts upgrade url ----------------------
 				if($upg['set_command'] and $url_dev_upg){
-					echo  str_pad("* Revert device upgrade URL to: ",$pad).$url_dev_upg."\n";
+					$this->_EchoVerbose( str_pad("* Revert device upgrade URL to: ",$pad).$url_dev_upg );
 					$set_com=str_replace('{{server_url}}',$url_dev_upg, $upg['set_command']);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
 						$this->_EchoError("No answer");
@@ -920,7 +921,7 @@ class EspBuddy {
 					echo json_encode($r,JSON_PRETTY_PRINT);
 				}
 				else{
-					$this->_PrettyfyNoTabs($r);
+					echo $this->_PrettyfyNoTabs($r);
 				}
 			
 				//$txt=json_encode($r,JSON_PRETTY_PRINT);
@@ -966,7 +967,7 @@ class EspBuddy {
 			}
 			else{
 				echo "\n";
-				$this->_PrettyfyNoTabs($r);
+				echo $this->_PrettyfyNoTabs($r);
 			}
 			return true;
 		}
@@ -2443,14 +2444,14 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 
 		if(!$force_selected){
-			echo "Choose Target Host : \n ";
+			echo "* Choose Target Host : \n ";
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
 			echo "\n-----------------------------------\n";
 		}
 
 		if($choosen == 'a'){
-			echo "Selected Host : ALL HOSTS \n";
+			echo "* Selected Host : ALL HOSTS \n";
 			$id=0;
 		}
 		else{
@@ -2458,8 +2459,10 @@ https://github.com/soif/EspBuddy/issues/20
 
 			if(!$this->flag_json){
 				if($this->flag_verbose){
+					$this->sh->EchoStyleVerbose();
 					$this->_EchoCurrentHost();
 					$this->_EchoCurrentConfig();	
+					$this->sh->EchoStyleClose();
 					echo "\n";
 				}
 			}
@@ -2485,11 +2488,11 @@ https://github.com/soif/EspBuddy/issues/20
 		$host	=$this->c_host;
 		
 		//echo "\n";
-		echo "Selected Host      : {$host['id']}\n";
-		echo "       + Host Name : {$host['hostname']}\n";
-		echo "       + Host IP   : {$host['ip']}\n";
+		echo "* Selected Host      : {$host['id']}\n";
+		echo "         + Host Name : {$host['hostname']}\n";
+		echo "         + Host IP   : {$host['ip']}\n";
 		if($host['serial_port']){
-			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+			echo "         + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 		}
 	}
 
@@ -2497,15 +2500,15 @@ https://github.com/soif/EspBuddy/issues/20
 	private function _EchoCurrentConfig(){
 		if ($this->c_host['config']){
 			$host	=$this->c_host;
-			echo "\nSelected Config    : {$this->c_host['config']}\n";
+			echo "\n* Selected Config    : {$this->c_host['config']}\n";
+			$this->_EchoVerbose("* Config Parameters  :");
+			$this->_EchoVerbose($this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]));
 			if($this->flag_verbose){
-				$this->sh->PrintColorGrey(" Config Parameters :" );
-				$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
 				$repo_shown=true;
 			}	
 		}
 		if(!$repo_shown and $this->c_conf['repo'] ){
-			echo "\nSelected Repo      : {$this->c_conf['repo']}\n";
+			echo "\n* Selected Repo      : {$this->c_conf['repo']}\n";
 		}
 	}
 
@@ -3012,8 +3015,8 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0,$left_prefix=""){
+		$out='';
 		//$tabs = "     "; //initial margin
 		$tabs=$left_prefix; //initial margin
 
@@ -3033,14 +3036,16 @@ https://github.com/soif/EspBuddy/issues/20
 					$pad='.';
 					$len_pad2=$len_pad +6;
 				}
-				print ($tabs . str_pad($key." ",$len_pad2, $pad) . "\n");
-				$this->_Prettyfy($val, $level + 1, $left_prefix);
-			} else {
+				$out.= $tabs . str_pad($key." ",$len_pad2, $pad) . "\n";
+				$out.= $this->_Prettyfy($val, $level + 1, $left_prefix);
+			} 
+			else {
 				if($val && $val !== 0){
-					print ($tabs . str_pad($key,$len_pad) . " : " . $val . "\n");
+					$out.= $tabs . str_pad($key,$len_pad) . " : " . $val . "\n";
 				}
 			}
 		}
+		return $out;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -3063,7 +3068,8 @@ https://github.com/soif/EspBuddy/issues/20
 		if($invert){
 			$message="Waiting for ESP to be offline (reboot)";
 		}
-		$this->_EchoStepStart($message,'',0);
+		$this->sh->EchoStyleWait();
+		echo str_pad("$message... ",42);
 		if($this->flag_drymode){
 			$out=true;
 		}
@@ -3084,8 +3090,8 @@ https://github.com/soif/EspBuddy/issues/20
 				$i++;
 			}
 		}
-		echo " **********";
-		$this->_EchoStepEnd();
+		echo " ........\n";
+		$this->sh->EchoStyleClose();
 		return $out;
 	}
 
@@ -3113,7 +3119,7 @@ https://github.com/soif/EspBuddy/issues/20
 		if($this->flag_verbose){
 			$verbose=true;
 		}
-		if($verbose) echo "\n";
+		//if($verbose) echo "\n";
 		$mess	="$char $mess ";
 		if($do_end){
 			$mess=str_pad($mess, 130, $char);
@@ -3145,6 +3151,18 @@ https://github.com/soif/EspBuddy/issues/20
 		echo "\n";
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _EchoVerbose($mess,$with_cr=true){
+		if(!$this->flag_verbose){
+			return;
+		}
+		if($mess){
+			$this->sh->EchoStyleVerbose();
+			echo $mess;
+			if($with_cr) echo "\n";
+			$this->sh->EchoStyleClose();
+		}
+	}
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoError($mess){

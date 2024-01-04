@@ -23,8 +23,8 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
-	protected $version_file 	= "src/src/CustomBuild/ESPEasy_buildinfo.h";			// file to parse to get the version
-	protected $version_regex 	= '|#define\s+BUILD\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
+	protected $version_file 	= "dist/Release_notes.txt";				// file to parse to get the version
+	protected $version_regex 	= '|^Changes\s+in\s+release\s+([^\s]+)\s+\(|m'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $gh_owner			= 'letscontrolit'; 						// Github OWNER name

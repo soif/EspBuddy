@@ -104,17 +104,26 @@ class EspBuddy_Shell {
 	
 	// ----------------------------------------------------------------------------
 	public function EchoStyleCommand(){
-		echo $this->GetStyleOpen('grey2');
+		echo $this->GetStyleOpen('purple2');
 	}
 
 	// ----------------------------------------------------------------------------
 	public function EchoStyleStep(){
-		echo $this->GetStyleOpen('blue');
+		echo $this->GetStyleOpen('red');
 	}
 
 	// ----------------------------------------------------------------------------
 	public function EchoStyleHost(){
-		echo $this->GetStyleOpen('purple');
+		echo $this->GetStyleOpen('blue');
+	}
+
+	// ----------------------------------------------------------------------------
+	public function EchoStyleWait(){
+		echo $this->GetStyleOpen('cyan');
+	}
+	// ----------------------------------------------------------------------------
+	public function EchoStyleVerbose(){
+		echo $this->GetStyleOpen('grey2');
 	}
 
 

@@ -364,7 +364,7 @@ class EspBuddy {
 				//echo "\n";
 				break;
 		}
-		echo "\n";
+		//echo "\n";
 		exit(0);
 	}
 
@@ -376,21 +376,15 @@ class EspBuddy {
 		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
 		if(!$this->flag_json){
-			echo "\n";
+			//echo "\n";
 			if($c > 1){
-				echo "Processing $c host(s)$in_drymode : \n";
+				echo "* Processing $c host(s)$in_drymode : \n";
 			}
 			else{
-				//echo "Processing host$in_drymode : ".key($hosts)."\n\n";
-				if($in_drymode){
-					echo "Processing$in_drymode\n";
-				}
-				else{
-					echo "\n";
-				}
+				$name=str_pad($this->_FillHostnameOrIp($id), 30);
+				echo "* Processing host '$id'$in_drymode : $name\n";
 			}
 		}
-
 		foreach($hosts as $this_id => $host){
 			if(!$this->flag_json){
 				if($c > 1){
@@ -401,9 +395,9 @@ class EspBuddy {
 			//if($c==1){echo "\n";}
 			$fn="Command_$command";
 			$this->$fn($this_id);
-		}
-		if(!$this->flag_json){
-			echo "\n";
+			if(!$this->flag_json){
+				echo "\n";
+			}
 		}
 	}
 
@@ -518,7 +512,7 @@ class EspBuddy {
 			$this->_dieError ("No ($echo_name) Firmware found at: $path_firm_link");
 		}
 
-		echo "\n";
+		//echo "\n";
 		$firm_source=realpath($path_firm_link) or $firm_source=$path_firm_link;
 		$date		=date("d M Y - H:i:s", filemtime($firm_source));
 		$firm_size	=filesize($firm_source);
@@ -3120,7 +3114,7 @@ https://github.com/soif/EspBuddy/issues/20
 			$verbose=true;
 		}
 		if($verbose) echo "\n";
-		$mess	="$char$char $mess ";
+		$mess	="$char $mess ";
 		if($do_end){
 			$mess=str_pad($mess, 130, $char);
 		}
@@ -3150,6 +3144,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->sh->EchoStyleClose();
 		echo "\n";
 	}
+
 
 	// ---------------------------------------------------------------------------------------
 	private function _EchoError($mess){

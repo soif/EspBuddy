@@ -626,17 +626,15 @@ class EspBuddy {
 					if($r=$this->orepo->RemoteSendCommands($this->c_host, $upg['upgrade_command'])){
 						echo "* Uploading minimal firmware... ";
 						$this->_WaitPingable($this->c_host['ip'],30,true);
-						sleep(1);
 						echo "* Rebooting.................... ";
 						$this->_WaitPingable($this->c_host['ip'],15);
-						sleep(1);
 						echo "* Uploading new firmware....... ";
 						$this->_WaitPingable($this->c_host['ip'],30,true);
-						sleep(1);
 						echo "* Rebooting.................... ";
 						$this->_WaitPingable($this->c_host['ip'],15);
-						echo "* Waiting a little bit......... ";
-						sleep(4);
+						echo "* Waiting a little bit more.... ";
+						sleep(2);
+						$this->_WaitPingable($this->c_host['ip'],15);
 						echo "\n";
 						if($vers=$this->orepo->RemoteGetVersion($this->c_host)){
 							echo str_pad("* SUCCESSFULLY updated to version: ",$pad). $vers ."\n";
@@ -3064,6 +3062,8 @@ https://github.com/soif/EspBuddy/issues/20
 
 	// ---------------------------------------------------------------------------------------
 	private function _WaitPingable($host,$timeout=60,$invert=false){
+		$max_fail=2;
+		$out=false;
 		$message="Waiting for ESP to be back online";
 		if($invert){
 			$message="Waiting for ESP to be offline (reboot)";
@@ -3075,22 +3075,30 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		else{
 			$i=1;
+			$sep='';
+			$seen=0;
 			while($i <= $timeout){
 				$state=$this->_ping($host);
 				$bool=$state;
 				$invert and $bool = ! $bool;
-				if($bool){
-					$out=true;
-					break;
-				}
-				echo "$i ";
-				if($state and $i < $timeout){
-					sleep(1);
-				}
+
+				echo "$sep$i";
+				$sep=',';
 				$i++;
+
+				if($bool){
+					$seen++;
+					if($seen >= $max_fail){
+						$out=true;
+						break;
+					}
+					usleep(500 * 1000);
+					continue;
+				}
+				sleep(1);
 			}
 		}
-		echo " ........\n";
+		echo " ...\n";
 		$this->sh->EchoStyleClose();
 		return $out;
 	}

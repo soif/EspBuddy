@@ -2417,11 +2417,12 @@ https://github.com/soif/EspBuddy/issues/20
 				return $this->_dieError ("Invalid Action");
 				break;
 		}
-		echo "\n";
 		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
 
 		if(!$this->flag_drymode){
+			$this->sh->EchoStyleCommand();
 			passthru($command, $r);
+			$this->sh->EchoStyleClose();
 			if($r){
 				return $this->_dieError ("Serial Upload Failed");
 			}

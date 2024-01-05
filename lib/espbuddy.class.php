@@ -51,6 +51,8 @@ class EspBuddy {
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
 	private $flag_copy			= false;
+	private $flag_proxy			= false;
+	private $flag_background	= false;
 	
 	private $flag_json			= false;
 

@@ -3126,7 +3126,12 @@ https://github.com/soif/EspBuddy/issues/20
 			$message="Waiting for ESP to be offline (reboot)";
 		}
 		$this->sh->EchoStyleWait();
-		echo str_pad("$message... ",42);
+		if($this->flag_verbose){
+			echo str_pad("$message... ",42);
+		}
+		else{
+			echo 'Waiting ';
+		}
 		if($this->flag_drymode){
 			$out=true;
 		}
@@ -3138,9 +3143,13 @@ https://github.com/soif/EspBuddy/issues/20
 				$state=$this->_ping($host);
 				$bool=$state;
 				$invert and $bool = ! $bool;
-
-				echo "$sep$i";
-				$sep=',';
+				if($this->flag_verbose){
+					echo "$sep$i";
+					$sep=',';
+				}
+				else{
+					echo ".";
+				}
 				$i++;
 
 				if($bool){
@@ -3155,7 +3164,7 @@ https://github.com/soif/EspBuddy/issues/20
 				sleep(1);
 			}
 		}
-		echo " ...\n";
+		echo " \n";
 		$this->sh->EchoStyleClose();
 		return $out;
 	}

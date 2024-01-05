@@ -478,8 +478,9 @@ class EspBuddy {
 		return ! $r;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
-	public function Command_upload($id,$mode=''){
+	private function _ChooseFirmwareToUse($id,$mode=''){
 		$this->_AssignCurrentHostConfig($id);
 		$arg_version=$this->args['commands'][3]; // intermediate firmware version for upgrade
 
@@ -492,7 +493,7 @@ class EspBuddy {
 				$this->_rotateFirmware($this->arg_firmware);
 				$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
 			}
-			$echo_name="EXTERNAL";
+			$firm_type="EXTERNAL";
 		}
 		elseif($this->flag_build){
 			if(! $this->Command_build($id)){
@@ -500,32 +501,55 @@ class EspBuddy {
 			}
 			echo "\n";
 			$path_firm_link	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="BUILT";
+			$firm_type="BUILT";
 			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		elseif($this->flag_prevfirm){
 			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
-			$echo_name="PREVIOUS";
+			$firm_type="PREVIOUS";
 			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		else{
 			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="CURRENT";
+			$firm_type="CURRENT";
 			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 
+
 		if(!file_exists($path_firm_link)){
-			$this->_dieError ("No ($echo_name) Firmware found at: $path_firm_link");
+			$this->_EchoError ("No ($firm_type) Firmware found at: $path_firm_link");
+			return false;
 		}
 
-		//echo "\n";
-		$firm_source=realpath($path_firm_link) or $firm_source=$path_firm_link;
-		$date		=date("d M Y - H:i:s", filemtime($firm_source));
-		$firm_size	=filesize($firm_source);
-		$firm_source=basename($firm_source);
-		
+		if($path_firm_link){
+			$out=array();
+			$firm_source=realpath($path_firm_link) or $firm_source=$path_firm_link;
+			$out['path_firm_link']	=$path_firm_link;
+			$out['type']			=$firm_type;
+			$out['name']			=basename($firm_source);
+			$out['date']			=date("d M Y - H:i:s", filemtime($firm_source));
+			$out['size']			=filesize($firm_source);
+			return $out;
+		}
+	}
 
-		$this->_EchoStepStart("Uploading $echo_name Firmware: $firm_source   (Compiled on $date )","");
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_upload($id,$mode=''){
+		//$this->_AssignCurrentHostConfig($id);
+
+		if(!$firm=$this->_ChooseFirmwareToUse($id,$mode)){
+			$this->_EchoError ("Cant figure what firwmare to use");
+			return false;
+		}
+		$path_firm_link	=$firm['path_firm_link'];
+		$firm_type		=$firm['type'];
+		$firm_date		=$firm['date'];
+		$firm_size		=$firm['size'];
+		$firm_name		=$firm['name'];
+		//echo "\n";		
+
+		$this->_EchoStepStart("Using $firm_type Firmware: $firm_name   (Compiled on $firm_date )","");
 
 		// upgrade mode ----------------------------------------------------------------
 		if($mode=='upgrade'){

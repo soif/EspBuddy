@@ -82,7 +82,7 @@ class EspBuddy_Shell {
 	}
 	// ----------------------------------------------------------------------------
 	public function PrintAnswer($string, $new_line=true){
-		$this->_Print("--> $string", 'green','','',$new_line);
+		$this->_Print("* $string", 'green','','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ class EspBuddy_Shell {
 
 	// ----------------------------------------------------------------------------
 	public function PrintCommand($string, $new_line=true){
-		$this->_Print("$string", 'grey2','','',$new_line);
+		$this->_Print("$string", 'purple2','','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------

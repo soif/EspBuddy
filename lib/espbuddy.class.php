@@ -746,11 +746,11 @@ class EspBuddy {
 				}
 				if($r=$this->orepo->RemoteSendCommands($this->c_host, $upg['upgrade_command'])){
 					echo "* ". str_pad("Uploading minimal firmware...",$pad);
-					$this->_WaitPingable($this->c_host['ip'],30,true);
+					$this->_WaitNotPingable($this->c_host['ip'],30);
 					echo "* ". str_pad("Rebooting...",$pad);
 					$this->_WaitPingable($this->c_host['ip'],15);
 					echo "* ". str_pad("Uploading new firmware...",$pad);
-					$this->_WaitPingable($this->c_host['ip'],30,true);
+					$this->_WaitNotPingable($this->c_host['ip'],30);
 					echo "* ". str_pad("Rebooting...",$pad);
 					$this->_WaitPingable($this->c_host['ip'],15);
 					echo "* ". str_pad("Waiting a little bit more...",$pad);
@@ -2114,7 +2114,7 @@ EOFB;
 			)
 		);
 		if($r=$this->_sondiy_curl($ip,'ota_flash',$data)){
-			$this->_WaitPingable($ip, 60, true);
+			$this->_WaitNotPingable($ip, 60);
 			$this->_WaitPingable($ip, 5);
 			if($this->flag_proxy){
 				if(!$this->flag_force){
@@ -3115,6 +3115,12 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 		echo " ********";
 		$this->_EchoStepEnd();
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	private function _WaitNotPingable($host,$timeout=60,$invert=false){
+		return $this->_WaitPingable($host,$timeout, true);
 	}
 
 	// ---------------------------------------------------------------------------------------

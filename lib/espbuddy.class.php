@@ -425,6 +425,7 @@ class EspBuddy {
 				touch($firmware_created,$start_compil);
 			}
 		}
+		echo "\n";
 		if(!$r){
 			if($this->_rotateFirmware($firmware_created, true)){
 				if($commands_post=$this->orepo->GetPostBuildCommands($this->c_host, $this->cfg)){
@@ -435,6 +436,7 @@ class EspBuddy {
 						passthru($command, $r);
 						return !$r;
 					}
+					echo "\n";
 				}
 				return true;
 			}
@@ -469,6 +471,7 @@ class EspBuddy {
 	// ---------------------------------------------------------------------------------------
 	private function _Gzip($path_in, $path_out){
 		$command="gzip -c \"$path_in\" > \"$path_out\"";
+		$this->_EchoVerbose("$command");
 		passthru($command,$r);
 		return ! $r;
 	}
@@ -493,6 +496,7 @@ class EspBuddy {
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
+			echo "\n";
 			$path_firm_link	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
 			$echo_name="BUILT";
 			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
@@ -519,7 +523,7 @@ class EspBuddy {
 		$firm_source=basename($firm_source);
 		
 
-		$this->_EchoStepStart("Use $echo_name Firmware: $firm_source   (Compiled on $date )","");
+		$this->_EchoStepStart("Uploading $echo_name Firmware: $firm_source   (Compiled on $date )","");
 
 		// upgrade mode ----------------------------------------------------------------
 		if($mode=='upgrade'){
@@ -594,22 +598,22 @@ class EspBuddy {
 					}
 					$this->_SymlinkRelative($path_host_dir.$minfirm_gz_link, $path_fact_minifirm_gz);
 
-					echo str_pad("* Intermediate firmware is set to: ",$pad)."$arg_version / {$upg['firmware']}\n";
+					echo "* ". str_pad("Intermediate firmware is set to: ",$pad)."$arg_version / {$upg['firmware']}\n";
 				}
 
 				// get current url ----------------------
 				if($upg['get_command']){
-					$this->_EchoVerbose( str_pad("* Current device's upgrade URL was: ",$pad),false);
+					$this->_EchoVerbose( str_pad("Current device's upgrade URL was: ",$pad),false);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host,$upg['get_command'])){
 						$this->_EchoError("No answer");
 						return false;
 					}
 					$url_dev_upg=$r[$upg['get_field']];
-					$this->_EchoVerbose( "$url_dev_upg");
+					$this->_EchoVerbosePart( "$url_dev_upg");
 				}
 				// set upgrade url ----------------------
 				if($upg['set_command']){
-					$this->_EchoVerbose(  str_pad("* Set device's upgrade URL to: ",$pad).$url_host_firm_gz );
+					$this->_EchoVerbose(  str_pad("Set device's upgrade URL to: ",$pad).$url_host_firm_gz );
 					$set_com=str_replace('{{server_url}}',$url_host_firm_gz, $upg['set_command']);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
 						$this->_EchoError("No answer");
@@ -633,11 +637,11 @@ class EspBuddy {
 						echo "* Rebooting.................... ";
 						$this->_WaitPingable($this->c_host['ip'],15);
 						echo "* Waiting a little bit more.... ";
-						sleep(2);
-						$this->_WaitPingable($this->c_host['ip'],15);
-						echo "\n";
+						sleep(3);
+						$this->_WaitPingable($this->c_host['ip'],10);
 						if($vers=$this->orepo->RemoteGetVersion($this->c_host)){
-							echo str_pad("* SUCCESSFULLY updated to version: ",$pad). $vers ."\n";
+							echo "\n";
+							$this->sh->PrintAnswer( str_pad("SUCCESSFULLY updated to version: ",$pad). $vers);
 						}
 						else{
 							$this->_EchoError("Cant get remote version! This maybe means that something has failed");
@@ -648,12 +652,12 @@ class EspBuddy {
 						$this->_EchoError("Upgrade command was not accepted");
 						$return = false;
 					}
-					$this->_bgServerStop();
+					$this->_bgServerStop(true);
 				}
 
 				// reverts upgrade url ----------------------
 				if($upg['set_command'] and $url_dev_upg){
-					$this->_EchoVerbose( str_pad("* Revert device upgrade URL to: ",$pad).$url_dev_upg );
+					$this->_EchoVerbose( str_pad("Revert device upgrade URL to: ",$pad).$url_dev_upg );
 					$set_com=str_replace('{{server_url}}',$url_dev_upg, $upg['set_command']);
 					if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
 						$this->_EchoError("No answer");
@@ -1365,22 +1369,16 @@ EOF;
 		}
 		if(! file_exists($path)){
 			$dir=basename($path);
-			if($this->flag_verbose){
-				echo "* Creating the '{$dir}' directory at: $path	";
-			}
+			$this->_EchoVerbose("Creating the '{$dir}' directory at: $path	",false);
 			if(! @mkdir($path)){
-				if($this->flag_verbose){
-					echo "FAILED!\n";
-				}
+				$this->_EchoVerbosePart("FAILED!");
 				return false;
 			}
 			else{
 				if($time){
 					touch($path,$time,$time);
 				}
-				if($this->flag_verbose){
-					echo "OK\n";
-				}
+				$this->_EchoVerbosePart("OK");
 				return true;
 			}
 		}
@@ -2499,10 +2497,14 @@ https://github.com/soif/EspBuddy/issues/20
 		if ($this->c_host['config']){
 			$host	=$this->c_host;
 			echo "\n* Selected Config    : {$this->c_host['config']}\n";
-			$this->_EchoVerbose("* Config Parameters  :");
-			$this->_EchoVerbose($this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]));
+			$this->_EchoVerbose("Config Parameters  :");
+			if($this->flag_verbose){
+				$this->sh->EchoStyleVerbose();
+			}
+			echo $this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
 			if($this->flag_verbose){
 				$repo_shown=true;
+				$this->sh->EchoStyleClose();
 			}	
 		}
 		if(!$repo_shown and $this->c_conf['repo'] ){
@@ -2662,6 +2664,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$name	= $this->_getHostBackupDir($host);
 		$path="$dir$name/";
 		if(!file_exists($path)){
+			$this->_EchoVerbose("Created the '$name' folder in the Backup directory");
 			mkdir($path);
 		}
 		return $path;
@@ -2733,6 +2736,7 @@ https://github.com/soif/EspBuddy/issues/20
 		if($ok and $ok = $this->_SymlinkRelative($path_link_cur_firm, $path_cur_firmware)){
 			$this->c_host['path_firmware']=$path_cur_firmware;
 			echo "* Current firmware was set to: ".basename($path_cur_firmware)."\n";
+			echo "\n";
 			return true;
 		}
 		$this->_EchoError('Renaming or rotating current firmware failed');
@@ -3160,12 +3164,18 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _EchoVerbose($mess,$with_cr=true){
+	private function _EchoVerbosePart($mess,$with_cr=true){
+		return $this->_EchoVerbose($mess,$with_cr,false);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _EchoVerbose($mess,$with_cr=true,$with_prefix=true){
 		if(!$this->flag_verbose){
 			return;
 		}
 		if($mess){
 			$this->sh->EchoStyleVerbose();
+			if($with_prefix) echo "* ";
 			echo $mess;
 			if($with_cr) echo "\n";
 			$this->sh->EchoStyleClose();
@@ -3535,6 +3545,7 @@ EOF;
 
 		$cur_dir=getcwd();
 		if($target=$this->_getRelativePath($path_link, $path_to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
+			$this->_EchoVerbose("Symlink $link	-> $target");
 			chdir($link_dir);
 			//echo " PATH: $path_link\n TO  : $to\n CD  : $link_dir\n LINK: $link\n TARG: $target\n";
 			if(is_link($link)){ // else the target is created inside the link destination
@@ -3635,6 +3646,8 @@ EOF;
 		//exec('nohup php {$this->path_bin} server > nohup.out & > /dev/null');
 		$command="nohup {$this->path_bin} server > /dev/null 2> /dev/null & echo $!";
 		//echo "$command\n";
+		$this->_EchoVerbose("Launching builtin WebServer in the background...");
+
 		$this->server_pid=trim(shell_exec($command));
 		if($kill_on_shutdown){
 			register_shutdown_function(array($this,'_bgServerStop'));
@@ -3643,13 +3656,14 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function _bgServerStop() { //need to be public (for register_shutdown_function)
+	public function _bgServerStop($echo=false) { //need to be public (for register_shutdown_function)
 		if(!$this->server_pid){
 			exec("ps a | grep {$this->bin} | grep server | grep -v grep", $r);
 			$r = array_filter(explode(' ', $r[0]));
 			$this->server_pid = $r[0];
 		}
 		if($this->server_pid){
+			if($echo) $this->_EchoVerbose("Stopping builtin WebServer...");
 			return ! shell_exec("pkill -TERM -P {$this->server_pid}");
 		}
 	}

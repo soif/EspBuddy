@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.50b3';					// EspBuddy Version
+	public $espb_version			= 'd2.50b4';					// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -45,7 +45,6 @@ class EspBuddy {
 	private $flag_debug			= false;
 	
 	private $flag_build			= false;
-	private $flag_serial		= false;
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
@@ -119,8 +118,9 @@ class EspBuddy {
 	// Action Help Texts ------------------------------------------------------------------------
 	private	$actions_desc=array(
 		'root'=>array(
-			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'upgrade'		=> "Upgrade device(s) firmware",
+			'flash'			=> "Flash device(s) firmware, using the serial port",
+			'ota'			=> "Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)",
+			'upgrade'		=> "Upgrade device(s) firmware thru WebServer (currently only available on Tasmota)",
 			'build'			=> "Build device(s) firmware",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
@@ -172,8 +172,9 @@ class EspBuddy {
 	// Command Usages Texts ------------------------------------------------------------------------
 	private	$actions_usage=array(
 		'root'=>array(
-			'upload'		=> "TARGET [options, auth_options, upload_options]",
-			'upgrade'		=> "TARGET [options, auth_options, upload_options]",
+			'flash'			=> "TARGET [options, upload_options, flash_options]",
+			'ota'			=> "TARGET [options, upload_options, ota_options, auth_options]",
+			'upgrade'		=> "TARGET [options, upload_options, auth_options]",
 			'build'			=> "TARGET [options]",
 			'backup'		=> "TARGET [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
@@ -1257,21 +1258,30 @@ class EspBuddy {
     --repo=xxx      : Repository to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
-    -b              : Build before Flashing/Uploading/Upgrading firmware
-    -w              : Wire Mode : Upload using the serial port instead of the default OTA
-    -e              : In Wire Mode, erase flash first, then upload
-    -m              : Switch to serial monitor after upload
-    -p              : Upload previous firmware backuped (instead of the latest build)
-    -s              : Skip Intermediate OTA Upload (when 2steps mode is  set)
+    -b              : Build before Flashing / OTA Uploading / Upgrading firmware
+    -p              : Upload previous firmware backuped (instead of the latest one)
     -c              : When using --firm, make a copy instead of a symbolic link
-    --port=xxx      : Serial port to use (override main or per host serial port)
-    --rate=xxx      : Serial port speed to use (override main or per host serial port)
-    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
-    --from=REPO     : Migrate from REPO to the selected config
+    --firm=xxx      : Full path to the firmware file to upload (overrides latest build one)
+
++ FLASH_OPTIONS :
+    -e              : Erase memory first, then upload
+    -m              : Imediatly switches to serial port monitor after upload
+    --port=xxx      : Serial port to use (overrides main or per host serial port)
+    --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
+                       - a speed number to use
+                       - 'slow'  a shorcut to   57600
+                       - 'boot'  a shorcut to   74880 (default)
+                       - 'fast'  a shorcut to   57600
+                       - 'turbo' a shorcut to  460800
+
++ OTA_OPTIONS :
+    -s              : Skip Intermediate OTA Upload (when 2steps mode is set in config)
+    --from=REPO     : Migrate from REPO to the selected config's REPO
 
 + AUTH_OPTIONS :
     --login=xxx     : Login name (overrides host or per config login)
     --pass=xxx      : Password (overrides host or per config password)
+
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
@@ -2988,7 +2998,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
 		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
-		$this->flag_serial		= (boolean) $this->args['flags']['w'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];

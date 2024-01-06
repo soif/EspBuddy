@@ -3119,7 +3119,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 
 	// ---------------------------------------------------------------------------------------
-	private function _WaitNotPingable($host,$timeout=60,$invert=false){
+	private function _WaitNotPingable($host,$timeout=60){
 		return $this->_WaitPingable($host,$timeout, true);
 	}
 

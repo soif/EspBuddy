@@ -16,8 +16,9 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
 * Usage             : espbuddy COMMAND [TARGET] [options]
 
 * Valid COMMANDS : 
-  - upload          : Build and/or Upload current repo version to Device(s)
-  - upgrade         : Upgrade device(s) firmware
+  - flash           : Flash device(s) firmware, using the serial port
+  - ota             : Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)
+  - upgrade         : Upgrade device(s) firmware using our WebServer (only available for Tasmota)
   - build           : Build device(s) firmware
   - backup          : Download and archive settings from the remote device
   - monitor         : Monitor device connected to the serial port
@@ -39,8 +40,9 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
   - help            : Show full help
 
 * Commands Usage : 
-  - upload          : espbuddy upload       TARGET [options, auth_options, upload_options]
-  - upgrade         : espbuddy upgrade      TARGET [options, auth_options, upload_options]
+  - flash           : espbuddy flash        TARGET [options, upload_options, flash_options]
+  - ota             : espbuddy ota          TARGET [options, upload_options, ota_options, auth_options]
+  - upgrade         : espbuddy upgrade      TARGET [options, upload_options, auth_options]
   - build           : espbuddy build        TARGET [options]
   - backup          : espbuddy backup       TARGET [options, auth_options]
   - monitor         : espbuddy monitor      [TARGET] [options]
@@ -87,17 +89,25 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
     --repo=xxx      : Repository to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
-    -b              : Build before Flashing/Uploading/Upgrading firmware
-    -w              : Wire Mode : Upload using the serial port instead of the default OTA
-    -e              : In Wire Mode, erase flash first, then upload
-    -m              : Switch to serial monitor after upload
-    -p              : Upload previous firmware backuped (instead of the latest build)
-    -s              : Skip Intermediate OTA Upload (when 2steps mode is  set)
+    -b              : Build before Flashing / OTA Uploading / Upgrading firmware
+    -p              : Upload previous firmware backuped (instead of the latest one)
     -c              : When using --firm, make a copy instead of a symbolic link
-    --port=xxx      : Serial port to use (override main or per host serial port)
-    --rate=xxx      : Serial port speed to use (override main or per host serial port)
-    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
-    --from=REPO     : Migrate from REPO to the selected config
+    --firm=xxx      : Full path to the firmware file to upload (overrides latest build one)
+
++ FLASH_OPTIONS :
+    -e              : Erase memory first, then upload
+    -m              : Imediatly switches to serial port monitor after upload
+    --port=xxx      : Serial port to use (overrides main or per host serial port)
+    --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
+                       - a number
+                       - 'slow'  is a shorcut for   57600
+                       - 'boot'  is a shorcut for   74880 (default)
+                       - 'fast'  is a shorcut for  115200
+                       - 'turbo' is a shorcut for  460800
+
++ OTA_OPTIONS :
+    -s              : Skip Intermediate OTA Upload (when 2steps mode is set in config)
+    --from=REPO     : Migrate from REPO to the selected config's REPO
 
 + AUTH_OPTIONS :
     --login=xxx     : Login name (overrides host or per config login)
@@ -343,7 +353,7 @@ Selected Repo      : espeasy
 
 
 
-### `# espbuddy upload led2`
+### `# espbuddy ota led2`
 
 Upload the latest firmware to the 'led2' host, using an intermediate OTA firmware *as set in the 'led2' configuration, from the config.php file.*
 

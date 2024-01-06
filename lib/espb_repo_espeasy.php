@@ -79,7 +79,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		$url=$this->_MakeApiUrl($host_arr,$this->api_urls['backup']);
 		$i=0;
 		foreach($files as $file){
-			echo "- $file		";
+			echo ' '. str_pad("- $file ",20);
 			if($this->_DownloadFile($url.$file,	$file,	$dest_path, $host_arr['login'], $host_arr['pass'])){
 				echo "OK\n";
 				$i++;
@@ -88,6 +88,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 				echo "Failed\n";
 				//break;
 			}
+			usleep(700 * 1000);
 		} 
 
 		if($i >= 3 ){

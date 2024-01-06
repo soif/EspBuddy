@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= 'd2.50b4';					// EspBuddy Version
+	public $espb_version			= 'd2.50b5';					// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -384,6 +384,7 @@ class EspBuddy {
 		}
 		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
+
 		if(!$this->flag_json){
 			//echo "\n";
 			if($c > 1){
@@ -392,6 +393,17 @@ class EspBuddy {
 			else{
 				$name=str_pad($this->_FillHostnameOrIp($id), 30);
 				echo "* Processing host '$id'$in_drymode : $name\n";
+
+				// host info
+				$this->_AssignCurrentHostConfig($id);
+				if($this->flag_verbose){
+					$this->sh->EchoStyleVerbose();
+					$this->_EchoCurrentHost();
+					$this->_EchoCurrentConfig();	
+					$this->sh->EchoStyleClose();
+					echo "\n";
+				}
+
 			}
 		}
 		foreach($hosts as $this_id => $host){
@@ -937,24 +949,19 @@ class EspBuddy {
 
 		$commands=$this->_ParseCommands($commands,$id);
 		if(!$this->flag_json){
-			echo "\n";
+			//echo "\n";
 			$this->_EchoStepStart("Sending commands ","");
 
 			if($is_single){
 				$this->_EchoVerbose("COMMAND: $commands");
-				echo "COMMAND: $commands\n\n";
 			}
 			else{
-				$this->_EchoVerbose("COMMANDS LIST:\n$commands\n");
-			}
-		}
-		if(! $is_single){
-			if(! $this->_AskYesNo()){
-				return false;
-			}	
-			if(!$this->flag_json){
+				$this->sh->PrintCommand("COMMANDS LIST:\n$commands\n");
+				if(! $this->_AskYesNo()){
+					return false;
+				}	
 				echo "\n";
-			}	
+			}
 		}
 
 		if(!$this->flag_drymode){
@@ -974,7 +981,7 @@ class EspBuddy {
 				//echo $txt;
 			}
 			elseif($r){
-				echo "$r";
+				$this->sh->PrintAnswer("$r");
 			}
 			elseif(!$r){
 				$last_err=$this->_EchoError($this->orepo->GetLastError()) or $last_err='No Result';
@@ -2498,7 +2505,7 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 
 		if(!$force_selected){
-			echo "* Choose Target Host : \n ";
+			echo "* Choose Target Host : \n";
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
 			echo "\n-----------------------------------\n";
@@ -2509,17 +2516,6 @@ https://github.com/soif/EspBuddy/issues/20
 			$id=0;
 		}
 		else{
-			$this->_AssignCurrentHostConfig($id);
-
-			if(!$this->flag_json){
-				if($this->flag_verbose){
-					$this->sh->EchoStyleVerbose();
-					$this->_EchoCurrentHost();
-					$this->_EchoCurrentConfig();	
-					$this->sh->EchoStyleClose();
-					echo "\n";
-				}
-			}
 		}
 
 		// confirm -------

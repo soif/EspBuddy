@@ -13,8 +13,8 @@
 - _Want to build your own firmares, storing them by device, and applying some compilation options_
 - _Need a solid tool to discover, control or flash Sonoff DIY devices (ie Sonoff Mini)_
 
-This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air), Serial port or using the builtin web server, in one short command.
-It also allows to use some commands in batch mode.
+This script allows you to easily upload firmwares to remote (ESP8266 based) devices via Wifi (Over The Air) or Serial, in one short command.
+It also gathers various tool commands to be used in batch mode.
 
 
 ## Features
@@ -26,8 +26,9 @@ It also allows to use some commands in batch mode.
 - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
 - Send commands (single or list) to remote devices
 - Fetch versions or full status of remote devices
-- Archive current firmware & previous firmware per device
+- Archive current firmware & previous firmware built per target
 - Backup current settings & previous settings per device
+- Download latest released firmwares
 - Built-in (browsable) web server to easily upgrade (ie for tasmota) regular or custom firmwares
 - Parse Repositories installed versions
 - Git Pull Repositories
@@ -51,12 +52,12 @@ Works with :
 
 - Linux or OSX Operating System (+ [Windows](doc/install_windows.md) for some method only)
 - php v5.4 or newer
-- PlatformIO _(needed only for compiling)_
+- PlatformIO __needed only for compiling__
 
 ## Installation
 
 - Rename _config-sample.php_ to _config.php_.
-- Fill in some 'hosts' and 'configs' in config.php
+- Fill in some hosts and configurations in config.php
 
 ## Usage
 
@@ -70,7 +71,6 @@ Valid Actions are:
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
-- **server**          : Launch firmwares web server
 - **send**            : Send Command(s)
 - **server**          : Launch Firmwares WebServer
 - **factory**         : Downloads and sort latest released firmwares

@@ -120,7 +120,7 @@ class EspBuddy {
 		'root'=>array(
 			'flash'			=> "Flash device(s) firmware, using the serial port",
 			'ota'			=> "Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)",
-			'upgrade'		=> "Upgrade device(s) firmware thru our WebServer (only available for Tasmota)",
+			'upgrade'		=> "Upgrade device(s) firmware using our WebServer (only available for Tasmota)",
 			'build'			=> "Build device(s) firmware",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
@@ -388,7 +388,7 @@ class EspBuddy {
 		if(!$this->flag_json){
 			//echo "\n";
 			if($c > 1){
-				echo "* Processing $c host(s)$in_drymode : \n";
+				echo "* Processing $c host(s)$in_drymode : \n\n";
 			}
 			else{
 				$name=str_pad($this->_FillHostnameOrIp($id), 30);
@@ -409,7 +409,7 @@ class EspBuddy {
 		foreach($hosts as $this_id => $host){
 			if(!$this->flag_json){
 				if($c > 1){
-					$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
+					$name=str_pad("'$this_id' ",20,'#').$this->_FillHostnameOrIp($this_id);
 					$this->_EchoHost($name);			
 				}
 			}
@@ -816,7 +816,7 @@ class EspBuddy {
 		if(is_dir($tmp_dir)){
 			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
 			if($count){
-				echo "Downloaded $count files \n";
+				$this->sh->PrintAnswer("Downloaded $count files");
 				//remove prev
 				@array_map( "unlink", glob( $prev_dir."*" ) );
 				@rmdir($prev_dir);
@@ -2974,7 +2974,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
 
-		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;
+		$name = str_pad(" ".$this->cfg['hosts'][$id]['hostname']. " ", 25,'#') . ' (' . $this->cfg['hosts'][$id]['ip'] .')' ;
 		return $name;
 	}
 
@@ -3177,10 +3177,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 	// ---------------------------------------------------------------------------------------
 	function _ping ($host) {
-		//$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
-		//exec($command, $output, $r);
-		//return ! $r;
-		//https://stackoverflow.com/questions/8030789/pinging-an-ip-address-using-php-and-echoing-the-result
 		if($this->os=='win'){
 			if (!exec("ping -n 1 -w 1 $host 2>NUL > NUL && (echo 0) || (echo 1)")){
 				return true;
@@ -3253,9 +3249,10 @@ https://github.com/soif/EspBuddy/issues/20
 	// ---------------------------------------------------------------------------------------
 	private function _EchoError($mess){
 		if($mess){
-			echo "\n";
-			$this->sh->PrintError(' ERROR: '.$mess);
-			echo "\n";	
+			//echo "\n";
+			echo " ";
+			$this->sh->PrintError('ERROR: '.$mess);
+			//echo "\n";	
 		}
 	}
 

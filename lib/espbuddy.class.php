@@ -120,7 +120,7 @@ class EspBuddy {
 		'root'=>array(
 			'flash'			=> "Flash device(s) firmware, using the serial port",
 			'ota'			=> "Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)",
-			'upgrade'		=> "Upgrade device(s) firmware thru WebServer (currently only available on Tasmota)",
+			'upgrade'		=> "Upgrade device(s) firmware thru our WebServer (only available for Tasmota)",
 			'build'			=> "Build device(s) firmware",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
@@ -940,13 +940,12 @@ class EspBuddy {
 			echo "\n";
 			$this->_EchoStepStart("Sending commands ","");
 
-			if($this->flag_verbose){
-				if($is_single){
-					echo "COMMAND: $commands\n\n";
-				}
-				else{
-					echo "COMMANDS LIST:\n$commands\n\n";
-				}
+			if($is_single){
+				$this->_EchoVerbose("COMMAND: $commands");
+				echo "COMMAND: $commands\n\n";
+			}
+			else{
+				$this->_EchoVerbose("COMMANDS LIST:\n$commands\n");
 			}
 		}
 		if(! $is_single){
@@ -988,8 +987,12 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function _ParseCommands($str, $id=''){
-		//remove blank lines
-		$str=preg_replace('#^\s*[\n\r]+#m','',$str);
+		
+		$str=preg_replace('|^\s*[\n\r]+|m','',$str);// no blank lines
+		$str=preg_replace('|#.*$|m','',$str);		// comments
+		$str=preg_replace('|[ \t]+|m',' ',$str);	// singles space
+		$str=preg_replace('|^[ \t]+|m','',$str);	// left trim
+		$str=preg_replace('|[ \t]+$|m','',$str);	// right trim
 		if($id){
 			$str=$this->_ReplaceTags($str,$id);
 		}
@@ -1268,11 +1271,11 @@ class EspBuddy {
     -m              : Imediatly switches to serial port monitor after upload
     --port=xxx      : Serial port to use (overrides main or per host serial port)
     --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
-                       - a speed number to use
-                       - 'slow'  a shorcut to   57600
-                       - 'boot'  a shorcut to   74880 (default)
-                       - 'fast'  a shorcut to   57600
-                       - 'turbo' a shorcut to  460800
+                       - a number
+                       - 'slow'  is a shorcut for   57600
+                       - 'boot'  is a shorcut for   74880 (default)
+                       - 'fast'  is a shorcut for  115200
+                       - 'turbo' is a shorcut for  460800
 
 + OTA_OPTIONS :
     -s              : Skip Intermediate OTA Upload (when 2steps mode is set in config)

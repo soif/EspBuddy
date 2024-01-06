@@ -87,7 +87,7 @@ class EspBuddy_Shell {
 
 	// ----------------------------------------------------------------------------
 	public function PrintError($string, $new_line=true){
-		$this->_Print("$string !", 'white','red','',$new_line);
+		$this->_Print("$string", 'white','red','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------

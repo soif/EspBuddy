@@ -65,6 +65,7 @@ class EspBuddy_Repo {
 	protected $last_http_code 	= 200; 	// last HTTP status code returned by curl
 	protected $last_http_status = '';	// last HTTP status
 	protected $version			= "";	// extracted version
+	protected $sh						;	//	shell object
 	private $path_base			= "";	// path to the repository directory
 	private $path_build			= "";	// path to the directory where the compiler must start 
 	private $path_firmware		= "";	// path to the directory where the firmware is built
@@ -832,12 +833,12 @@ class EspBuddy_Repo {
 
 	// ---------------------------------------------------------------------------------------
 	private function _Init($path_to_repo){
+		$this->sh 			=new EspBuddy_Shell(); 
 		$this->path_base	= $path_to_repo;
 		$this->path_build	= $this->path_base . $this->dir_build;
 		$this->path_firmware= $this->path_build . $this->dir_firmware;
 		$this->path_version	= $this->path_base . $this->version_file;
 		$this->gh_api_url	="https://api.github.com/repos/{$this->gh_owner}/{$this->gh_repo}";
-
 		$this->_ParseVersion();
 	}
 

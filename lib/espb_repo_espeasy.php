@@ -23,8 +23,8 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 	// location relative to the base repository path
 	protected $dir_build 		= ""; 									// (Trailing Slash) directory where the compiler must start
 	protected $dir_firmware 	= ".pio/build/"; 						// (Trailing Slash) directory where the firmware is built
-	protected $version_file 	= "src/src/CustomBuild/ESPEasy_buildinfo.h";			// file to parse to get the version
-	protected $version_regex 	= '|#define\s+BUILD\s+([^\s\n\r]+)|s'; 	// regex used to extract the version in the version_file
+	protected $version_file 	= "dist/Release_notes.txt";				// file to parse to get the version
+	protected $version_regex 	= '|^Changes\s+in\s+release\s+([^\s]+)\s+\(|m'; 	// regex used to extract the version in the version_file
 	protected $version_regnum	= 1; 									// captured parenthesis number where the version is extracted using the regex
 
 	protected $gh_owner			= 'letscontrolit'; 						// Github OWNER name
@@ -79,7 +79,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 		$url=$this->_MakeApiUrl($host_arr,$this->api_urls['backup']);
 		$i=0;
 		foreach($files as $file){
-			echo "- $file		";
+			echo ' '. str_pad("- $file ",20);
 			if($this->_DownloadFile($url.$file,	$file,	$dest_path, $host_arr['login'], $host_arr['pass'])){
 				echo "OK\n";
 				$i++;
@@ -88,6 +88,7 @@ class EspBuddy_Repo_Espeasy extends EspBuddy_Repo {
 				echo "Failed\n";
 				//break;
 			}
+			usleep(700 * 1000);
 		} 
 
 		if($i >= 3 ){

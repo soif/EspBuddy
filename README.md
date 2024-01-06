@@ -64,12 +64,16 @@ Works with :
 
 Valid Actions are:
  
-- **upload**          : Build and/or Upload current repo version to Device(s)
+- **flash**           : flash current repo firmware to Device(s) using the serial port
+- **ota**             : Upgrade device(s) firmware using 'Arduino OTA'
+- **upgrade**         : Upgrade device(s) firmware using our WebServer
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
 - **server**          : Launch firmwares web server
 - **send**            : Send Command(s)
+- **server**          : Launch Firmwares WebServer
+- **factory**         : Downloads and sort latest released firmwares
 - **status**          : Show Device(s) Information
 - **version**         : Show Device(s) Version
 - **reboot**          : Reboot remote devive
@@ -87,15 +91,16 @@ Valid Actions are:
 
 Examples:
 
-- `espbuddy upload` selects the one to upload to from the list of targets
-- `espbuddy upload relay1` uploads to target 'relay1'
-- `espbuddy upload all -b` uploads to all defined targets, while building the firmware first
-- `espbuddy upload relay1 -w` uploads using serial to target 'relay1'
-- `espbuddy upload relay1 -web` builds 'relay1', then using serial port, erase first and upload
-- `espbuddy backup all` backups settings ofall defined targets
+- `espbuddy ota` selects the device to upgrade from the list of targets
+- `espbuddy ota relay1` upgrade target 'relay1'
+- `espbuddy ota all -b` upgrade all defined targets, while building the firmware first
+- `espbuddy flash relay1` uploads using serial port to target 'relay1'
+- `espbuddy flash relay1 -eb` builds 'relay1', then using the serial port, erase first and flash
+- `espbuddy backup all` backups settings of all defined targets
 - `espbuddy monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
-- `espbuddy server` launches the builtin webserver on port 81, serving files from the backup directory
 - `espbuddy send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
+- `espbuddy server` launches the builtin webserver on port 81, serving files from the backup directory
+- `espbuddy factory download tasmota latest all` Downloads and links all latest released Tasmota firmwares
 - `espbuddy version all` shows versions of all defined targets
 - `espbuddy ping all` pings all defined targets
 - `espbuddy sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode

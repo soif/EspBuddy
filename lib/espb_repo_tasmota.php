@@ -110,26 +110,26 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 				return $result;
 			}
 			elseif($count){
-				echo "Processing $count commands...\n";
+				echo "* Processing $count commands...\n";
 				$start=0;
 				$part=array_slice($commands,$start,$max_backlog);
 				$step=1;
 				while($part){
 					if($start){
-						echo "\n...Waiting reboot for $delay_between_reboot sec.";
+						echo "\n...* Waiting reboot for $delay_between_reboot sec.";
 						sleep($delay_between_reboot);
 						echo "\n\n";
 					}
-					echo "# ";
+					echo "* ";
 					if($count > $max_backlog){
 						echo "[$step] ";
 					}
 					$echo_start=$start+1;
-					echo "Sending (max $max_backlog) commands from line $echo_start :\n\n";
+					echo "Sending (max $max_backlog) commands from line $echo_start :\n";
 					
 					$backlog=$this->_CommandsToBacklog($part);
-					echo "$backlog\n";
-					
+					$this->sh->PrintCommand($backlog);
+
 					$this->RemoteSendCommand($host_arr, $backlog);
 					
 					$start=$start + $max_backlog;

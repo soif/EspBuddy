@@ -82,17 +82,17 @@ class EspBuddy_Shell {
 	}
 	// ----------------------------------------------------------------------------
 	public function PrintAnswer($string, $new_line=true){
-		$this->_Print("--> $string", 'green','','',$new_line);
+		$this->_Print("* $string", 'green','','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------
 	public function PrintError($string, $new_line=true){
-		$this->_Print("$string !", 'white','red','',$new_line);
+		$this->_Print("$string", 'white','red','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------
 	public function PrintCommand($string, $new_line=true){
-		$this->_Print("$string", 'grey2','','',$new_line);
+		$this->_Print("$string", 'purple2','','',$new_line);
 	}
 
 	// ----------------------------------------------------------------------------
@@ -104,17 +104,26 @@ class EspBuddy_Shell {
 	
 	// ----------------------------------------------------------------------------
 	public function EchoStyleCommand(){
-		echo $this->GetStyleOpen('grey2');
+		echo $this->GetStyleOpen('purple2');
 	}
 
 	// ----------------------------------------------------------------------------
 	public function EchoStyleStep(){
-		echo $this->GetStyleOpen('blue');
+		echo $this->GetStyleOpen('red');
 	}
 
 	// ----------------------------------------------------------------------------
 	public function EchoStyleHost(){
-		echo $this->GetStyleOpen('purple');
+		echo $this->GetStyleOpen('blue');
+	}
+
+	// ----------------------------------------------------------------------------
+	public function EchoStyleWait(){
+		echo $this->GetStyleOpen('cyan');
+	}
+	// ----------------------------------------------------------------------------
+	public function EchoStyleVerbose(){
+		echo $this->GetStyleOpen('grey2');
 	}
 
 

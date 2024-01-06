@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 class EspBuddy {
 
-	public $espb_version			= '2.41';						// EspBuddy Version
+	public $espb_version			= '2.50';						// EspBuddy Version
 	public $espb_gh_owner			= 'soif';						// Github Owner
 	public $espb_gh_repo			= 'EspBuddy';					// Github Repository
 	public $espb_gh_branch_main		= 'master';						// Github Master Branch
@@ -45,12 +45,13 @@ class EspBuddy {
 	private $flag_debug			= false;
 	
 	private $flag_build			= false;
-	private $flag_serial		= false;
 	private $flag_eraseflash	= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
 	private $flag_copy			= false;
+	private $flag_proxy			= false;
+	private $flag_background	= false;
 	
 	private $flag_json			= false;
 
@@ -117,8 +118,10 @@ class EspBuddy {
 	// Action Help Texts ------------------------------------------------------------------------
 	private	$actions_desc=array(
 		'root'=>array(
-			'upload'		=> "Build and/or Upload current repo version to Device(s)",
-			'build'			=> "Build firmware for the selected device",
+			'flash'			=> "Flash device(s) firmware, using the serial port",
+			'ota'			=> "Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)",
+			'upgrade'		=> "Upgrade device(s) firmware using our WebServer (only available for Tasmota)",
+			'build'			=> "Build device(s) firmware",
 			'backup'		=> "Download and archive settings from the remote device",
 			'monitor'		=> "Monitor device connected to the serial port",
 			'server'		=> "Launch Firmwares WebServer",
@@ -169,12 +172,14 @@ class EspBuddy {
 	// Command Usages Texts ------------------------------------------------------------------------
 	private	$actions_usage=array(
 		'root'=>array(
-			'upload'		=> "TARGET [options, auth_options, upload_options]",
+			'flash'			=> "TARGET [options, upload_options, flash_options]",
+			'ota'			=> "TARGET [options, upload_options, ota_options, auth_options]",
+			'upgrade'		=> "TARGET [options, upload_options, auth_options]",
 			'build'			=> "TARGET [options]",
 			'backup'		=> "TARGET [options, auth_options]",
 			'monitor'		=> "[TARGET] [options]",
 			'server'		=> "[ROOT_DIR]",
-			'send'			=> "TARGET CMD_SET|COMMAND [options, auth_options]",
+			'send'			=> "TARGET COMMAND|CMD_SET [options, auth_options]",
 			'status'		=> "TARGET [options, auth_options]",
 			'version'		=> "TARGET [options, auth_options]",
 			'reboot'		=> "TARGET [options, auth_options]",
@@ -274,7 +279,16 @@ class EspBuddy {
 		$this->_ParseCommandLine();
 		
 		switch ($this->action) {
-			case 'upload':
+			case 'flash':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
+			case 'ota':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
+			case 'upgrade':
+				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
+			case 'upload':	//deprecated
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
 				break;
 			case 'build':
@@ -359,7 +373,7 @@ class EspBuddy {
 				//echo "\n";
 				break;
 		}
-		echo "\n";
+		//echo "\n";
 		exit(0);
 	}
 
@@ -370,35 +384,41 @@ class EspBuddy {
 		}
 		$hosts=$this->_ListHosts($id);
 		$c=count($hosts);
+
 		if(!$this->flag_json){
-			echo "\n";
+			//echo "\n";
 			if($c > 1){
-				echo "Processing $c host(s)$in_drymode : \n";
+				echo "* Processing $c host(s)$in_drymode : \n\n";
 			}
 			else{
-				//echo "Processing host$in_drymode : ".key($hosts)."\n\n";
-				if($in_drymode){
-					echo "Processing$in_drymode\n";
-				}
-				else{
+				$name=str_pad($this->_FillHostnameOrIp($id), 30);
+				echo "* Processing host '$id'$in_drymode : $name\n";
+
+				// host info
+				$this->_AssignCurrentHostConfig($id);
+				if($this->flag_verbose){
+					$this->sh->EchoStyleVerbose();
+					$this->_EchoCurrentHost();
+					$this->_EchoCurrentConfig();	
+					$this->sh->EchoStyleClose();
 					echo "\n";
 				}
+
 			}
 		}
-
 		foreach($hosts as $this_id => $host){
 			if(!$this->flag_json){
 				if($c > 1){
-					$name=str_pad($this->_FillHostnameOrIp($this_id), 30);
+					$name=str_pad("'$this_id' ",20,'#').$this->_FillHostnameOrIp($this_id);
 					$this->_EchoHost($name);			
 				}
 			}
 			//if($c==1){echo "\n";}
 			$fn="Command_$command";
 			$this->$fn($this_id);
-		}
-		if(!$this->flag_json){
-			echo "\n";
+			if(!$this->flag_json){
+				echo "\n";
+			}
 		}
 	}
 
@@ -426,6 +446,7 @@ class EspBuddy {
 				touch($firmware_created,$start_compil);
 			}
 		}
+		echo "\n";
 		if(!$r){
 			if($this->_rotateFirmware($firmware_created, true)){
 				if($commands_post=$this->orepo->GetPostBuildCommands($this->c_host, $this->cfg)){
@@ -436,6 +457,7 @@ class EspBuddy {
 						passthru($command, $r);
 						return !$r;
 					}
+					echo "\n";
 				}
 				return true;
 			}
@@ -443,122 +465,345 @@ class EspBuddy {
 		return !$r;
 	}
 
+
 	// ---------------------------------------------------------------------------------------
-	public function Command_upload($id){
-		$this->_AssignCurrentHostConfig($id,true);
+	private function _GetFirmwareVersion($path_firmware){
+		if(realpath($path_firmware)){
+			$dir_firmware=dirname(realpath($path_firmware));
+		}
+		else{
+			$dir_firmware=realpath(dirname($path_firmware));
+		}
+
+		if(strpos($path_firmware,$this->path_factory)===0){
+			return basename($dir_firmware);
+		}
+		elseif(strpos(realpath($path_firmware),$this->c_host['path_dir_backup'])===0){
+			if(preg_match('#\([^,]+,([^,)]+)#',realpath($path_firmware),$m)){
+				return $m[1];
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _Gzip($path_in, $path_out){
+		$command="gzip -c \"$path_in\" > \"$path_out\"";
+		$this->_EchoVerbose("$command");
+		passthru($command,$r);
+		return ! $r;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _ChooseFirmwareToUse($id,$mode=''){
+		$this->_AssignCurrentHostConfig($id);
+		$arg_version=$this->args['commands'][3]; // intermediate firmware version for upgrade
 
 		// choose firmware ---------------
 		if($this->arg_firmware){
+			if($mode=='upgrade'){
+				$this->_dieError (" the '--firm' option is not supported with the upgrade command");
+			}
 			if(file_exists($this->arg_firmware)){
 				$this->_rotateFirmware($this->arg_firmware);
-				$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+				$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
 			}
-			$echo_name="EXTERNAL";
+			$firm_type="EXTERNAL";
 		}
 		elseif($this->flag_build){
 			if(! $this->Command_build($id)){
 				$this->_dieError ("Compilation Failed");
 			}
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="NEWEST";
+			echo "\n";
+			$path_firm_link	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$firm_type="BUILT";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		elseif($this->flag_prevfirm){
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
-			$echo_name="PREVIOUS";
+			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_previous.bin";
+			$firm_type="PREVIOUS";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 		else{
-			$firmware="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
-			$echo_name="LATEST";
+			$path_firm_link="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}.bin";
+			$firm_type="CURRENT";
+			$arg_version or $arg_version=$this->_GetFirmwareVersion($path_firm_link);
 		}
 
-		if(!file_exists($firmware)){
-			$this->_dieError ("No ($echo_name) Firmware found at: $firmware");
+
+		if(!file_exists($path_firm_link)){
+			$this->_EchoError ("No ($firm_type) Firmware found at: $path_firm_link");
+			return false;
 		}
 
-		echo "\n";
-		$firm_source=realpath($firmware) or $firm_source=$firmware;
-		$date		=date("d M Y - H:i:s", filemtime($firm_source));
-		$firm_size	=filesize($firm_source);
-		$firm_source=basename($firm_source);
+		if($path_firm_link){
+			$out=array();
+			$firm_source=realpath($path_firm_link) or $firm_source=$path_firm_link;
+			$out['path_firm_link']	=$path_firm_link;
+			$out['type']			=$firm_type;
+			$out['name']			=basename($firm_source);
+			$out['date']			=date("d M Y - H:i:s", filemtime($firm_source));
+			$out['size']			=filesize($firm_source);
+			return $out;
+		}
+	}
 
-		$this->_EchoStepStart("Use $echo_name Firmware: $firm_source   (Compiled on $date )","");
+	// ---------------------------------------------------------------------------------------
+	public function Command_flash($id){
+		$this->_AssignCurrentHostConfig($id);
+		if(!$firm=$this->_ChooseFirmwareToUse($id,'flash')){
+			$this->_EchoError ("Cant figure what firwmare to use");
+			return false;
+		}
+		$path_firm_link	=$firm['path_firm_link'];
 
-		// .wire mode ------------------
-		if($this->flag_serial){
-			if($this->flag_eraseflash){
-				$this->_DoSerial($id,'erase_flash');
-				$this->_WaitReboot(5);
-			}
-			$this->_DoSerial($id,'write_flash', $firmware);
-			
-			if($this->flag_monitor){
-				$this->Command_monitor($id);
-			}
+		if($this->flag_eraseflash){
+			$this->_DoSerial($id,'erase_flash');
+			$this->_WaitReboot(5);
+		}
+		$this->_DoSerial($id,'write_flash', $path_firm_link);
+		
+		if($this->flag_monitor){
+			$this->Command_monitor($id);
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_ota($id){
+		$this->_AssignCurrentHostConfig($id);
+		if(!$firm=$this->_ChooseFirmwareToUse($id,'ota')){
+			$this->_EchoError ("Cant figure what firwmare to use");
+			return false;
+		}
+		$path_firm_link	=$firm['path_firm_link'];
+
+		if($this->c_host['pass']){
+			$arg_pass=" -a {$this->c_host['pass']}";
 		}
 
-		// .OTA mode ------------------
-		else{
-			if($this->c_host['pass']){
-				$arg_pass=" -a {$this->c_host['pass']}";
+		// two steps  upload ?
+		if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
+			if($repo_from=$this->arg_from){
+				$orepo1=$this->_RequireRepo($repo_from);
+				$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
 			}
 
-			// two steps  upload ?
-			if($this->c_conf['2steps'] and ! $this->flag_skipinter ){
-				if($repo_from=$this->arg_from){
-					$orepo1=$this->_RequireRepo($repo_from);
-					$this->c_conf['firststep_firmware']	=$this->espb_path . $orepo1->GetFirstStepFirmware();
-				}
-
-				$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"$arg_pass";
-				echo "\n";
-				$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
-
-				if(!$this->flag_drymode){
-					passthru($command, $r);
-					if($r){
-						return $this->_dieError ("First Upload Failed");
-					}
-				}
-				echo "\n";
-				sleep(1); // let him reboot
-				if(!$this->_WaitPingable($this->c_host['ip'], 20)){
-					return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec.");
-				}
-				sleep(2); // give it some more time to be ready
-
-				// assuming this is a 1M borard if not set------
-				$this->c_conf['size'] or $this->c_conf['size']='1M';
-				if($this->flag_verbose and $this->c_conf['size']){
-					$board_size	= $this->orepo->GetFlashSize($this->c_conf['size']);
-					$firm1_size	= filesize($this->c_conf['firststep_firmware']);
-					$max_size	= $board_size - $firm1_size;
-					$f_firm_size=round($firm_size/1024);
-					$f_max_size	=round($max_size/1024);
-					echo "You're going to upload a {$f_firm_size}K firmware into a {$this->c_conf['size']} device\n";
-					echo "The maximum allowed size is {$f_max_size}k : ";
-					if($firm_size > $max_size){
-						echo "This will certainly FAIL, while espota.py will falsely seem to wait for the upload.\n";
-					}
-					else{
-						echo "Excellent, it should fit in the flash memory !\n";
-					}
-				}
-			}
-
-			// Final Upload
-			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$firmware\"$arg_pass";
+			$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"{$this->c_conf['firststep_firmware']}\"$arg_pass";
 			echo "\n";
-
-			$this->_EchoStepStart("Uploading Final Firmware", $command);
+			$this->_EchoStepStart("Uploading Intermediate Uploader Firmware", $command);
 
 			if(!$this->flag_drymode){
 				passthru($command, $r);
 				if($r){
-					return $this->_dieError ("Upload Failed");
+					return $this->_dieError ("First Upload Failed");
 				}
 			}
-			return true;
+			echo "\n";
+			sleep(1); // let him reboot
+			if(!$this->_WaitPingable($this->c_host['ip'], 20)){
+				return $this->_dieError ("Can't reach {$this->c_host['ip']} after 20sec.");
+			}
+			sleep(2); // give it some more time to be ready
+
+			// assuming this is a 1M borard if not set------
+			$this->c_conf['size'] or $this->c_conf['size']='1M';
+			if($this->flag_verbose and $this->c_conf['size']){
+				$board_size	= $this->orepo->GetFlashSize($this->c_conf['size']);
+				$firm1_size	= filesize($this->c_conf['firststep_firmware']);
+				$max_size	= $board_size - $firm1_size;
+				$f_firm_size=round($firm_size/1024);
+				$f_max_size	=round($max_size/1024);
+				echo "You're going to upload a {$f_firm_size}K firmware into a {$this->c_conf['size']} device\n";
+				echo "The maximum allowed size is {$f_max_size}k : ";
+				if($firm_size > $max_size){
+					echo "This will certainly FAIL, while espota.py will falsely seem to wait for the upload.\n";
+				}
+				else{
+					echo "Excellent, it should fit in the flash memory !\n";
+				}
+			}
 		}
+
+		// Final Upload
+		$command	="{$this->cfg['paths']['bin_espota']} -r -d -i {$this->c_host['ip']}  -f \"$path_firm_link\"$arg_pass";
+		echo "\n";
+
+		$this->_EchoStepStart("Uploading Final Firmware", $command);
+
+		if(!$this->flag_drymode){
+			passthru($command, $r);
+			if($r){
+				return $this->_dieError ("Upload Failed");
+			}
+		}
+		return true;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_upgrade($id){
+		$this->_AssignCurrentHostConfig($id);
+
+		if(!$firm=$this->_ChooseFirmwareToUse($id,'upgrade')){
+			$this->_EchoError ("Cant figure what firwmare to use");
+			return false;
+		}
+		$path_firm_link	=$firm['path_firm_link'];
+		$firm_type		=$firm['type'];
+		$firm_date		=$firm['date'];
+		$firm_size		=$firm['size'];
+		$firm_name		=$firm['name'];
+		//echo "\n";		
+
+		$this->_EchoStepStart("Using $firm_type Firmware: $firm_name   (Compiled on $firm_date )","");
+
+		$upg=$this->orepo->GetUpgradeConf();
+		$path_serv_root	=$this->cfg['paths']['dir_backup'];
+		$path_host_dir	=$path_serv_root.$this->_getHostBackupDir($this->c_host).'/';
+
+		$path_firm_file	=realpath($path_firm_link);
+		$path_firm_gz_file	=$path_firm_file.'.gz';
+		$path_firm_gz_link	=$path_firm_link.'.gz';
+		
+		if($upg['method']=='server_mini'){
+			// ----------------------
+			if(!file_exists($path_firm_gz_file)){
+				if(!$this->_Gzip($path_firm_file,$path_firm_gz_file)){
+					$this->_EchoError("Cannot gzip the firmware");
+					return false;
+				}
+			}
+			$this->_SymlinkRelative($path_firm_gz_link, $path_firm_gz_file);
+			$url_host_firm_gz	=$this->_GetServerBaseUrl().'/'.$this->_getHostBackupDir($this->c_host).'/'.basename($path_firm_gz_link);
+
+			// is upgrade implemented ----------------------
+			if(!$upg['upgrade_command']){
+				$this->_EchoError($this->c_conf['repo']." doesnt support upgrade. Aborted");
+				return false;
+			}
+
+			$pad=37;
+			// makes mini firmware ----------------------
+			if($upg['firmware']){
+				$path_fact_minifirm =$this->path_factory_repo.$arg_version.'/'.$upg['firmware'];	
+				$path_fact_minifirm_gz=$path_fact_minifirm.'.gz';
+				if(!$arg_version){
+					$arg_version=$this->_GetFirmwareVersion($this->path_factory_repo.$this->latest_link.'/'.$upg['firmware']);
+					$path_fact_minifirm=$this->path_factory_repo.$arg_version.'/'.$upg['firmware'];			
+					if(!file_exists($path_fact_minifirm)){
+						echo "* I can't guess the intermediate firmware version to use. Can I revert to the latest (factory) version '$arg_version'? \n";
+						if(!$this->_AskConfirm()){
+								$this->_EchoError("I need an intermediate firmware version. (You can set it as last argument). Aborted");
+								return false;
+						}
+					}
+				}
+				// Download mini firmware if not found  ----------------------
+				if(!file_exists($path_fact_minifirm)){
+					echo "* The $arg_version/{$upg['firmware']} intermediate firmware is not found in the Factory's {$this->c_conf['repo']} folder. Let's download it...\n";
+					if(!$this->Factory_download($this->c_conf['repo'],$arg_version,$upg['firmware'])){
+						$this->_EchoError("This intermediate firmware is required to perform the upgrade. Aborted");
+						return false;
+					}
+					$arg_version=$this->_GetFirmwareVersion($path_fact_minifirm);
+				}
+				// Link to the mini firmware ----------------------
+				if(!$minfirm_link= $this->orepo->GetMinimalFirmwareName($path_firm_link)){
+					$this->_EchoError("Cant make Minimal Firmware name. Aborted");
+					return false;					
+				}
+				$this->_SymlinkRelative($path_host_dir.$minfirm_link, $path_fact_minifirm);
+
+				// Gzip mini firmware if not found  ----------------------
+				if(!file_exists($path_fact_minifirm_gz)){
+					if(!$this->_Gzip($path_fact_minifirm,$path_fact_minifirm_gz)){
+						$this->_EchoError("Cannot gzip the firmware");
+						return false;
+					}
+				}
+				// Link to the mini gz firmware ----------------------
+				if(!$minfirm_gz_link= $this->orepo->GetMinimalFirmwareName($path_firm_gz_link)){
+					$this->_EchoError("Cant make Minimal Gz Firmware name. Aborted");
+					return false;
+				}
+				$this->_SymlinkRelative($path_host_dir.$minfirm_gz_link, $path_fact_minifirm_gz);
+
+				echo "* ". str_pad("Intermediate firmware is set to: ",$pad)."$arg_version / {$upg['firmware']}\n";
+			}
+
+			// get current url ----------------------
+			if($upg['get_command']){
+				$this->_EchoVerbose( str_pad("Current device's upgrade URL was: ",$pad),false);
+				if(!$r=$this->orepo->RemoteSendCommands($this->c_host,$upg['get_command'])){
+					$this->_EchoError("No answer");
+					return false;
+				}
+				$url_dev_upg=$r[$upg['get_field']];
+				$this->_EchoVerbosePart( "$url_dev_upg");
+			}
+			// set upgrade url ----------------------
+			if($upg['set_command']){
+				$this->_EchoVerbose(  str_pad("Set device's upgrade URL to: ",$pad).$url_host_firm_gz );
+				$set_com=str_replace('{{server_url}}',$url_host_firm_gz, $upg['set_command']);
+				if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
+					$this->_EchoError("No answer");
+					return false;
+				}
+			}
+			// Performs upgrade ----------------------
+			$return =true;
+			if($upg['upgrade_command']){
+				if(!$this->_bgServerStartSafe()){
+					$this->_EchoError("Can't start built-in WebServer");
+					return false;
+				}
+				if($r=$this->orepo->RemoteSendCommands($this->c_host, $upg['upgrade_command'])){
+					echo "* ". str_pad("Uploading minimal firmware...",$pad);
+					$this->_WaitNotPingable($this->c_host['ip'],30);
+					echo "* ". str_pad("Rebooting...",$pad);
+					$this->_WaitPingable($this->c_host['ip'],15);
+					echo "* ". str_pad("Uploading new firmware...",$pad);
+					$this->_WaitNotPingable($this->c_host['ip'],30);
+					echo "* ". str_pad("Rebooting...",$pad);
+					$this->_WaitPingable($this->c_host['ip'],15);
+					echo "* ". str_pad("Waiting a little bit more...",$pad);
+					sleep(3);
+					$this->_WaitPingable($this->c_host['ip'],10);
+					if($vers=$this->orepo->RemoteGetVersion($this->c_host)){
+						echo "\n";
+						$this->sh->PrintAnswer( str_pad("SUCCESSFULLY updated to version: ",$pad). $vers);
+					}
+					else{
+						$this->_EchoError("Cant get remote version! This maybe means that something has failed");
+						$return = false;
+					}
+				}
+				else{
+					$this->_EchoError("Upgrade command was not accepted");
+					$return = false;
+				}
+				$this->_bgServerStop(true);
+			}
+
+			// reverts upgrade url ----------------------
+			if($upg['set_command'] and $url_dev_upg){
+				$this->_EchoVerbose( str_pad("Revert device upgrade URL to: ",$pad).$url_dev_upg );
+				$set_com=str_replace('{{server_url}}',$url_dev_upg, $upg['set_command']);
+				if(!$r=$this->orepo->RemoteSendCommands($this->c_host, $set_com)){
+					$this->_EchoError("No answer");
+					return false;
+				}
+			}
+			return $return;
+		}
+		else{
+			return $this->_dieError ("Unknown Upgrade Method '{$upg['method']}'");
+		}
+
+	}
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_upload($id){
+		return $this->_dieError ("The 'upload' command is deprecated! Please either use the 'flash', 'ota' or 'upgrade' command ");
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -571,7 +816,7 @@ class EspBuddy {
 		if(is_dir($tmp_dir)){
 			$count= $this->orepo->RemoteBackupSettings($this->c_host, $tmp_dir);
 			if($count){
-				echo "Downloaded $count files \n";
+				$this->sh->PrintAnswer("Downloaded $count files");
 				//remove prev
 				@array_map( "unlink", glob( $prev_dir."*" ) );
 				@rmdir($prev_dir);
@@ -704,25 +949,19 @@ class EspBuddy {
 
 		$commands=$this->_ParseCommands($commands,$id);
 		if(!$this->flag_json){
-			echo "\n";
+			//echo "\n";
 			$this->_EchoStepStart("Sending commands ","");
 
-			if($this->flag_verbose){
-				if($is_single){
-					echo "COMMAND: $commands\n\n";
-				}
-				else{
-					echo "COMMANDS LIST:\n$commands\n\n";
-				}
+			if($is_single){
+				$this->_EchoVerbose("COMMAND: $commands");
 			}
-		}
-		if(! $is_single){
-			if(! $this->_AskYesNo()){
-				return false;
-			}	
-			if(!$this->flag_json){
+			else{
+				$this->sh->PrintCommand("COMMANDS LIST:\n$commands\n");
+				if(! $this->_AskYesNo()){
+					return false;
+				}	
 				echo "\n";
-			}	
+			}
 		}
 
 		if(!$this->flag_drymode){
@@ -735,14 +974,14 @@ class EspBuddy {
 					echo json_encode($r,JSON_PRETTY_PRINT);
 				}
 				else{
-					$this->_PrettyfyNoTabs($r);
+					echo $this->_PrettyfyNoTabs($r);
 				}
 			
 				//$txt=json_encode($r,JSON_PRETTY_PRINT);
 				//echo $txt;
 			}
 			elseif($r){
-				echo "$r";
+				$this->sh->PrintAnswer("$r");
 			}
 			elseif(!$r){
 				$last_err=$this->_EchoError($this->orepo->GetLastError()) or $last_err='No Result';
@@ -755,8 +994,12 @@ class EspBuddy {
 
 	// ---------------------------------------------------------------------------------------
 	private function _ParseCommands($str, $id=''){
-		//remove blank lines
-		$str=preg_replace('#^\s*[\n\r]+#m','',$str);
+		
+		$str=preg_replace('|^\s*[\n\r]+|m','',$str);// no blank lines
+		$str=preg_replace('|#.*$|m','',$str);		// comments
+		$str=preg_replace('|[ \t]+|m',' ',$str);	// singles space
+		$str=preg_replace('|^[ \t]+|m','',$str);	// left trim
+		$str=preg_replace('|[ \t]+$|m','',$str);	// right trim
 		if($id){
 			$str=$this->_ReplaceTags($str,$id);
 		}
@@ -781,7 +1024,7 @@ class EspBuddy {
 			}
 			else{
 				echo "\n";
-				$this->_PrettyfyNoTabs($r);
+				echo $this->_PrettyfyNoTabs($r);
 			}
 			return true;
 		}
@@ -1000,41 +1243,55 @@ class EspBuddy {
 		if($action=='root'){
 			echo <<<EOF
 ---------------------------------------------------------------------------------
-+ TARGET            : Either an Host ID (loaded from config.php), or an IP address or a Hostname. (--repo or --conf would then be needed)
++ TARGET            : Target of the command. Either:
+                       - the Host's ID (defined in \$cfg['hosts'] from config.php). This is the easiest way!
+                       - an IP address or a Hostname. (Most of the time a --repo or --conf would also be needed!)
+                       - 'all' (for commands supporting batch mode) loops thru all defined Hosts (defined from config.php)
 
-+ CMD_SET|COMMAND   : Either a commands List (loaded from config.php), or a single command.
++ COMMAND|CMD_SET   : Command(s) to send. Either:
+                       - a single command as "command [value]" (following the the device's command own syntax)
+                       - a commands List's ID (defined in \$cfg['commands'] from config.php), 
 
 + ROOT_DIR          : Root directory (for the built-in Web Server). Either:
-                       - a REPO to only serves from the {$this->factory_dir}/REPO/ folder
-                       - an Host ID (or a Host folder) to only serves from its backup/folder
-                       - an (absolute) path to a folder to serve
-                       - when left blank, it defaults to the backup folder
+                       - a REPO to only serves from the /espb_backup/{$this->factory_dir}/REPO/ folder
+                       - an Host ID (or a Host folder) to only serves from its /espb_backup/folder
+                       - an (absolute) path of a directory
+                       - when left blank, it defaults to the /espb_backup/ folder (prefered way)
 
 + OPTIONS :
-    -y              : Automatically confirm Yes/No
+    -y              : Automatically set YES to confirm "Yes/No" dialogs
     -d              : Dry Run. Show commands but don't apply them
     -v              : Verbose mode
-    -j              : Displays result as JSON (only for send, status, sonodiy api commands)
+    -j              : Displays result as JSON (only for 'send', 'status', 'sonodiy api' commands)
     -D              : Debug mode (shows PHP errors)
-    --conf=xxx      : Config name to use (overrides per host config)
-    --repo=xxx      : Repo to use (overrides per host config)
+    --conf=xxx      : Config name to use (overrides per host settings)
+    --repo=xxx      : Repository to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
-    -b              : Build before Uploading
-    -w              : Wire Mode : Upload using the serial port instead of the default OTA
-    -e              : In Wire Mode, erase flash first, then upload
-    -m              : Switch to serial monitor after upload
-    -p              : Upload previous firmware backuped, instead of the latest built
-    -s              : Skip Intermediate Upload (if set)
+    -b              : Build before Flashing / OTA Uploading / Upgrading firmware
+    -p              : Upload previous firmware backuped (instead of the latest one)
     -c              : When using --firm, make a copy instead of a symbolic link
-    --port=xxx      : Serial port to use (override main or per host serial port)
-    --rate=xxx      : Serial port speed to use (override main or per host serial port)
-    --firm=xxx      : Full path to the firmware file to upload (override latest build one)
-    --from=REPO     : Migrate from REPO to the selected config
+    --firm=xxx      : Full path to the firmware file to upload (overrides latest build one)
+
++ FLASH_OPTIONS :
+    -e              : Erase memory first, then upload
+    -m              : Imediatly switches to serial port monitor after upload
+    --port=xxx      : Serial port to use (overrides main or per host serial port)
+    --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
+                       - a number
+                       - 'slow'  is a shorcut for   57600
+                       - 'boot'  is a shorcut for   74880 (default)
+                       - 'fast'  is a shorcut for  115200
+                       - 'turbo' is a shorcut for  460800
+
++ OTA_OPTIONS :
+    -s              : Skip Intermediate OTA Upload (when 2steps mode is set in config)
+    --from=REPO     : Migrate from REPO to the selected config's REPO
 
 + AUTH_OPTIONS :
     --login=xxx     : Login name (overrides host or per config login)
     --pass=xxx      : Password (overrides host or per config password)
+
 
 EOF;
 			//$this->_show_action_desc('sonodiy','sonodiy ACTIONS');
@@ -1047,16 +1304,16 @@ EOF;
 + TAG               : Tag name (aka version)
 
 + ASSET             : Assets to download. Either: 
-                      - a single asset name, 
-                      - a list of assets (separated by '#'), 
-                      - an asset list ID, previously set in your configuration
+                      - a single asset name.
+                      - a list of assets, separated by '#'; 
+                      - an assets list's ID (defined in \$cfg[repos]['REPO']['assets_groups'] from config.php)
                       - 'all' selects all available assets
 
 + KEEP              : Clean mode defaults to keep the last 2 versions (latest and previous) and ask to delete oldest files.
-                       You might enter the number of versions to keep, or use 'none' to select all files
+                      You might enter the number of versions to keep, or use 'none' to select all files
 
 + OPTIONS :
-    -y              : Automatically confirm Yes/No
+    -y              : Automatically set YES to confirm "Yes/No" dialogs
     -v              : Verbose mode
 
 EOF;
@@ -1176,22 +1433,16 @@ EOF;
 		}
 		if(! file_exists($path)){
 			$dir=basename($path);
-			if($this->flag_verbose){
-				echo "* Creating the '{$dir}' directory at: $path	";
-			}
+			$this->_EchoVerbose("Creating the '{$dir}' directory at: $path	",false);
 			if(! @mkdir($path)){
-				if($this->flag_verbose){
-					echo "FAILED!\n";
-				}
+				$this->_EchoVerbosePart("FAILED!");
 				return false;
 			}
 			else{
 				if($time){
 					touch($path,$time,$time);
 				}
-				if($this->flag_verbose){
-					echo "OK\n";
-				}
+				$this->_EchoVerbosePart("OK");
 				return true;
 			}
 		}
@@ -1873,7 +2124,7 @@ EOFB;
 			)
 		);
 		if($r=$this->_sondiy_curl($ip,'ota_flash',$data)){
-			$this->_WaitPingable($ip, 60, true);
+			$this->_WaitNotPingable($ip, 60);
 			$this->_WaitPingable($ip, 5);
 			if($this->flag_proxy){
 				if(!$this->flag_force){
@@ -2176,11 +2427,12 @@ https://github.com/soif/EspBuddy/issues/20
 				return $this->_dieError ("Invalid Action");
 				break;
 		}
-		echo "\n";
 		$this->_EchoStepStart("Serial Action: $action (Port: {$this->c_host['serial_port']}$echo_rate)",$command);
 
 		if(!$this->flag_drymode){
+			$this->sh->EchoStyleCommand();
 			passthru($command, $r);
+			$this->sh->EchoStyleClose();
 			if($r){
 				return $this->_dieError ("Serial Upload Failed");
 			}
@@ -2253,26 +2505,17 @@ https://github.com/soif/EspBuddy/issues/20
 		}
 
 		if(!$force_selected){
-			echo "Choose Target Host : \n ";
+			echo "* Choose Target Host : \n";
 			$choosen	=$this->_Ask($str_choices);
 			$id			=$choices[$choosen];
 			echo "\n-----------------------------------\n";
 		}
 
 		if($choosen == 'a'){
-			echo "Selected Host : ALL HOSTS \n";
+			echo "* Selected Host : ALL HOSTS \n";
 			$id=0;
 		}
 		else{
-			$this->_AssignCurrentHostConfig($id);
-
-			if(!$this->flag_json){
-				if($this->flag_verbose){
-					$this->_EchoCurrentHost();
-					$this->_EchoCurrentConfig();	
-					echo "\n";
-				}
-			}
 		}
 
 		// confirm -------
@@ -2295,11 +2538,11 @@ https://github.com/soif/EspBuddy/issues/20
 		$host	=$this->c_host;
 		
 		//echo "\n";
-		echo "Selected Host      : {$host['id']}\n";
-		echo "       + Host Name : {$host['hostname']}\n";
-		echo "       + Host IP   : {$host['ip']}\n";
+		echo "* Selected Host      : {$host['id']}\n";
+		echo "         + Host Name : {$host['hostname']}\n";
+		echo "         + Host IP   : {$host['ip']}\n";
 		if($host['serial_port']){
-			echo "       + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
+			echo "         + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 		}
 	}
 
@@ -2307,15 +2550,19 @@ https://github.com/soif/EspBuddy/issues/20
 	private function _EchoCurrentConfig(){
 		if ($this->c_host['config']){
 			$host	=$this->c_host;
-			echo "\nSelected Config    : {$this->c_host['config']}\n";
+			echo "\n* Selected Config    : {$this->c_host['config']}\n";
+			$this->_EchoVerbose("Config Parameters  :");
 			if($this->flag_verbose){
-				$this->sh->PrintColorGrey(" Config Parameters :" );
-				$this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
+				$this->sh->EchoStyleVerbose();
+			}
+			echo $this->_PrettyfyWithTabs($this->cfg['configs'][$host['config']]);
+			if($this->flag_verbose){
 				$repo_shown=true;
+				$this->sh->EchoStyleClose();
 			}	
 		}
 		if(!$repo_shown and $this->c_conf['repo'] ){
-			echo "\nSelected Repo      : {$this->c_conf['repo']}\n";
+			echo "\n* Selected Repo      : {$this->c_conf['repo']}\n";
 		}
 	}
 
@@ -2471,6 +2718,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$name	= $this->_getHostBackupDir($host);
 		$path="$dir$name/";
 		if(!file_exists($path)){
+			$this->_EchoVerbose("Created the '$name' folder in the Backup directory");
 			mkdir($path);
 		}
 		return $path;
@@ -2541,7 +2789,8 @@ https://github.com/soif/EspBuddy/issues/20
 
 		if($ok and $ok = $this->_SymlinkRelative($path_link_cur_firm, $path_cur_firmware)){
 			$this->c_host['path_firmware']=$path_cur_firmware;
-			echo "* Current firmware was set to: ".basename($path_cur_firmware)."\n";
+			echo "* Current firmware is now set to: ".basename($path_cur_firmware)."\n";
+			echo "\n";
 			return true;
 		}
 		$this->_EchoError('Renaming or rotating current firmware failed');
@@ -2725,7 +2974,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
 
-		$name = str_pad($this->cfg['hosts'][$id]['hostname'], 30) . '(' . str_pad($this->cfg['hosts'][$id]['ip'],14) .')' ;
+		$name = str_pad(" ".$this->cfg['hosts'][$id]['hostname']. " ", 25,'#') . ' (' . $this->cfg['hosts'][$id]['ip'] .')' ;
 		return $name;
 	}
 
@@ -2749,7 +2998,6 @@ https://github.com/soif/EspBuddy/issues/20
 
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
 		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
-		$this->flag_serial		= (boolean) $this->args['flags']['w'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
@@ -2822,8 +3070,8 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// https://stackoverflow.com/questions/1168175/is-there-a-pretty-print-for-php
 	private function _Prettyfy($arr, $level=0,$left_prefix=""){
+		$out='';
 		//$tabs = "     "; //initial margin
 		$tabs=$left_prefix; //initial margin
 
@@ -2843,14 +3091,16 @@ https://github.com/soif/EspBuddy/issues/20
 					$pad='.';
 					$len_pad2=$len_pad +6;
 				}
-				print ($tabs . str_pad($key." ",$len_pad2, $pad) . "\n");
-				$this->_Prettyfy($val, $level + 1, $left_prefix);
-			} else {
+				$out.= $tabs . str_pad($key." ",$len_pad2, $pad) . "\n";
+				$out.= $this->_Prettyfy($val, $level + 1, $left_prefix);
+			} 
+			else {
 				if($val && $val !== 0){
-					print ($tabs . str_pad($key,$len_pad) . " : " . $val . "\n");
+					$out.= $tabs . str_pad($key,$len_pad) . " : " . $val . "\n";
 				}
 			}
 		}
+		return $out;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -2867,44 +3117,66 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->_EchoStepEnd();
 	}
 
+
+	// ---------------------------------------------------------------------------------------
+	private function _WaitNotPingable($host,$timeout=60){
+		return $this->_WaitPingable($host,$timeout, true);
+	}
+
 	// ---------------------------------------------------------------------------------------
 	private function _WaitPingable($host,$timeout=60,$invert=false){
+		$max_fail=2;
+		$out=false;
 		$message="Waiting for ESP to be back online";
 		if($invert){
 			$message="Waiting for ESP to be offline (reboot)";
 		}
-		$this->_EchoStepStart($message,'',0);
+		$this->sh->EchoStyleWait();
+		if($this->flag_verbose){
+			echo str_pad("$message... ",42);
+		}
+		else{
+			echo 'Waiting ';
+		}
 		if($this->flag_drymode){
 			$out=true;
 		}
 		else{
 			$i=1;
+			$sep='';
+			$seen=0;
 			while($i <= $timeout){
 				$state=$this->_ping($host);
 				$bool=$state;
 				$invert and $bool = ! $bool;
-				if($bool){
-					$out=true;
-					break;
+				if($this->flag_verbose){
+					echo "$sep$i";
+					$sep=',';
 				}
-				echo "$i ";
-				if($state and $i < $timeout){
-					sleep(1);
+				else{
+					echo ".";
 				}
 				$i++;
+
+				if($bool){
+					$seen++;
+					if($seen >= $max_fail){
+						$out=true;
+						break;
+					}
+					usleep(500 * 1000);
+					continue;
+				}
+				sleep(1);
 			}
 		}
-		echo " **********";
-		$this->_EchoStepEnd();
+		echo " \n";
+		$this->sh->EchoStyleClose();
 		return $out;
 	}
 
 	// ---------------------------------------------------------------------------------------
 	function _ping ($host) {
-		//$command ="ping -q -c1 -t1 $host "; // > /dev/null 2>&1
-		//exec($command, $output, $r);
-		//return ! $r;
-		//https://stackoverflow.com/questions/8030789/pinging-an-ip-address-using-php-and-echoing-the-result
 		if($this->os=='win'){
 			if (!exec("ping -n 1 -w 1 $host 2>NUL > NUL && (echo 0) || (echo 1)")){
 				return true;
@@ -2923,8 +3195,8 @@ https://github.com/soif/EspBuddy/issues/20
 		if($this->flag_verbose){
 			$verbose=true;
 		}
-		if($verbose) echo "\n";
-		$mess	="$char$char $mess ";
+		//if($verbose) echo "\n";
+		$mess	="$char $mess ";
 		if($do_end){
 			$mess=str_pad($mess, 130, $char);
 		}
@@ -2956,11 +3228,31 @@ https://github.com/soif/EspBuddy/issues/20
 	}
 
 	// ---------------------------------------------------------------------------------------
+	private function _EchoVerbosePart($mess,$with_cr=true){
+		return $this->_EchoVerbose($mess,$with_cr,false);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _EchoVerbose($mess,$with_cr=true,$with_prefix=true){
+		if(!$this->flag_verbose){
+			return;
+		}
+		if($mess){
+			$this->sh->EchoStyleVerbose();
+			if($with_prefix) echo "* ";
+			echo $mess;
+			if($with_cr) echo "\n";
+			$this->sh->EchoStyleClose();
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------
 	private function _EchoError($mess){
 		if($mess){
-			echo "\n";
-			$this->sh->PrintError(' ERROR: '.$mess);
-			echo "\n";	
+			//echo "\n";
+			echo " ";
+			$this->sh->PrintError('ERROR: '.$mess);
+			//echo "\n";	
 		}
 	}
 
@@ -3318,6 +3610,7 @@ EOF;
 
 		$cur_dir=getcwd();
 		if($target=$this->_getRelativePath($path_link, $path_to) and $link=basename($path_link) and $link_dir=dirname($path_link) ){
+			$this->_EchoVerbose(str_pad("Symlink $link",37)."-> $target");
 			chdir($link_dir);
 			//echo " PATH: $path_link\n TO  : $to\n CD  : $link_dir\n LINK: $link\n TARG: $target\n";
 			if(is_link($link)){ // else the target is created inside the link destination
@@ -3418,6 +3711,8 @@ EOF;
 		//exec('nohup php {$this->path_bin} server > nohup.out & > /dev/null');
 		$command="nohup {$this->path_bin} server > /dev/null 2> /dev/null & echo $!";
 		//echo "$command\n";
+		$this->_EchoVerbose("Launching builtin WebServer in background...");
+
 		$this->server_pid=trim(shell_exec($command));
 		if($kill_on_shutdown){
 			register_shutdown_function(array($this,'_bgServerStop'));
@@ -3426,13 +3721,14 @@ EOF;
 	}
 
 	// ---------------------------------------------------------------------------------------
-	public function _bgServerStop() { //need to be public (for register_shutdown_function)
+	public function _bgServerStop($echo=false) { //need to be public (for register_shutdown_function)
 		if(!$this->server_pid){
 			exec("ps a | grep {$this->bin} | grep server | grep -v grep", $r);
 			$r = array_filter(explode(' ', $r[0]));
 			$this->server_pid = $r[0];
 		}
 		if($this->server_pid){
+			if($echo) $this->_EchoVerbose("Stopping builtin WebServer...");
 			return ! shell_exec("pkill -TERM -P {$this->server_pid}");
 		}
 	}

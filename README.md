@@ -24,7 +24,8 @@ It also gathers various tool commands to be used in batch mode.
 - Optionally pass various -D flags to the compiler, including extracted parameters like IP or hostname
 - Send commands (single or list) to remote devices
 - Fetch versions of remote devices
-- Archive current firmware & previous firmware per target
+- Archive current firmware & previous firmware built per target
+- Download latest released firmwares
 - Backup current settings & previous settings per target
 - Parse Repositories installed versions
 - Git Pull Repositories
@@ -67,8 +68,9 @@ Valid Actions are:
 - **build**           : Build current repo version
 - **backup**          : Backup remote devices' settings
 - **monitor**         : Monitor the serial port
-- **server**          : Launch Firmwares WebServer
 - **send**            : Send Command(s)
+- **server**          : Launch Firmwares WebServer
+- **factory**         : Downloads and sort latest released firmwares
 - **status**          : Show Device(s) Information
 - **version**         : Show Device(s) Version
 - **reboot**          : Reboot remote devive
@@ -92,9 +94,10 @@ Examples:
 - `espbuddy flash relay1` uploads using serial port to target 'relay1'
 - `espbuddy flash relay1 -eb` builds 'relay1', then using the serial port, erase first and flash
 - `espbuddy backup all` backups settings of all defined targets
-- `espbuddy send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
 - `espbuddy monitor relay1 --rate=9600` serial monitors  'relay1' target at 9600 bauds
+- `espbuddy send relay1 SetOption13 1` Sends the "SetOption13 1" command to 'relay1'
 - `espbuddy server` launches the builtin webserver on port 81, serving files from the backup directory
+- `espbuddy factory download tasmota latest all` Downloads and links all latest released Tasmota firmwares
 - `espbuddy version all` shows versions of all defined targets
 - `espbuddy ping all` pings all defined targets
 - `espbuddy sonodiy flash 192.168.1.10 1000abc1ef` flashes a (default) Tasmota firmware into a Sonoff Mini in DIY mode

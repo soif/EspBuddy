@@ -939,7 +939,7 @@ class EspBuddy {
 			$commands="{$this->opt1} {$this->opt2}";
 			$is_single=true;
 		}
-
+		$commands=trim($commands);
 
 		if(!$repo){
 			return $this->_dieError (" 'repo' is not set (neither in commands set, nor in target's config, nor as argument)");
@@ -997,10 +997,12 @@ class EspBuddy {
 	private function _ParseCommands($str, $id=''){
 		
 		$str=preg_replace('|^\s*[\n\r]+|m','',$str);// no blank lines
-		$str=preg_replace('|#.*$|m','',$str);		// comments
-		$str=preg_replace('|[ \t]+|m',' ',$str);	// singles space
-		$str=preg_replace('|^[ \t]+|m','',$str);	// left trim
-		$str=preg_replace('|[ \t]+$|m','',$str);	// right trim
+		$str=preg_replace('|\s+#.*$|m','',$str);	// no comments after command
+		$str=preg_replace('|[ \t]+|m',' ',$str);	// single spaces
+		//$str=preg_replace('|^[ \t]+|m','',$str);	// left trim
+		$str=preg_replace('|^\s+|m','',$str);	// left trim
+		//$str=preg_replace('|[ \t]+$|m','',$str);	// right trim
+		$str=preg_replace('|\s+$|m','',$str);	// right trim
 		if($id){
 			$str=$this->_ReplaceTags($str,$id);
 		}

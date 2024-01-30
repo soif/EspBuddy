@@ -440,7 +440,8 @@ class EspBuddy {
 		if(! $this->flag_drymode){
 			passthru($command, $r);
 			//keep STARTING compil time
-			$firmware_created	=reset(glob($this->orepo->GetPathFirmware()."{$this->c_conf['environment']}/*.bin"));
+			//$firmware_created	=reset(glob($this->orepo->GetPathFirmware()."{$this->c_conf['environment']}/*.bin"));
+			$firmware_created	=$this->orepo->GetPathFirmware()."{$this->c_conf['environment']}/firmware.bin";
 	
 			if(!$r and file_exists($firmware_created)){
 				touch($firmware_created,$start_compil);

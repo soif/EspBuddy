@@ -413,7 +413,7 @@ class EspBuddy_Repo {
 			if(is_array($commands)){
 				$count=count($commands);
 				if($count==1){
-					$txt_command=key($commands)." ".reset($commands);
+					$txt_command=reset($commands);
 					
 					//echo "Sending ONE command: $txt_command\n";
 					return $this->RemoteSendCommand($host_arr, $txt_command);
@@ -422,9 +422,7 @@ class EspBuddy_Repo {
 					$is_ok=true;
 					echo "Processing $count commands...\n";
 					
-					foreach ($commands as $key => $value) {
-						$com=$key;
-						!empty($value) and $com .=" $value";
+					foreach ($commands as $k => $com) {
 						echo " $com	";
 						if($r=$this->RemoteSendCommand($host_arr, $com)){
 							echo "	OK	: ";
@@ -745,14 +743,17 @@ $commands_list	=$this->_CleanCustom($commands_list);
 	// ---------------------------------------------------------------------------------------
 	protected function _TxtListToarray($str){
 		$lines=preg_split('#[\n\r]+#',$str);
+		$arr=array();
 		if(is_array($lines)){
 			foreach($lines as $line){
 				$line=trim($line);
-				list($k,$v)=preg_split('#\s+#',$line,2);
-				$arr[$k]=$v;
+				//list($k,$v)=preg_split('#\s+#',$line,2);
+				$arr[]=$line;
 			}
 			return $arr;
 		}
+		$arr[]=trim($str);
+		return $arr;
 	}
 
 /*

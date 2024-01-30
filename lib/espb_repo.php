@@ -722,6 +722,7 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	protected function _CleanTxtListToArray($commands_list){
 		$commands_list	=$this->_CleanTxtList($commands_list);
+$commands_list	=$this->_CleanCustom($commands_list);
 		$commands		=$this->_TxtListToarray($commands_list);
 		return $commands;
 	}
@@ -733,6 +734,11 @@ class EspBuddy_Repo {
 		
 		//remove blank lines
 		$str=preg_replace('#^\s*[\n\r]+#m','',$str);
+		return $str;
+	}
+
+	// ---------------------------------------------------------------------------------------
+	protected function _CleanCustom($str){
 		return $str;
 	}
 

@@ -720,7 +720,7 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	protected function _CleanTxtListToArray($commands_list){
 		$commands_list	=$this->_CleanTxtList($commands_list);
-$commands_list	=$this->_CleanCustom($commands_list);
+		$commands_list	=$this->_CleanCustom($commands_list);
 		$commands		=$this->_TxtListToarray($commands_list);
 		return $commands;
 	}
@@ -755,23 +755,6 @@ $commands_list	=$this->_CleanCustom($commands_list);
 		$arr[]=trim($str);
 		return $arr;
 	}
-
-/*
-	// ---------------------------------------------------------------------------------------
-	protected function _TriggerUrl($url,$auth_login="",$auth_pass=""){
-		$http			=array();
-		$http['method']	='GET';
-		$http['timeout']=0.5;
-
-		$auth_login or $auth_login=$this->default_login;
-		if($auth_login and $auth_pass){
-			$auth = base64_encode("$auth_login:$auth_pass");
-			$http['header'] = array("Authorization: Basic $auth");
-		}
-		$opts = array('http' => $http);
-		return @file_get_contents($url, false, stream_context_create($opts));
-	}
-*/
 
 	// ---------------------------------------------------------------------------------------
 	// TODO makes it Windows compatible

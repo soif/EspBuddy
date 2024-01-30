@@ -46,6 +46,7 @@ class EspBuddy {
 	
 	private $flag_build			= false;
 	private $flag_eraseflash	= false;
+	private $flag_wire			= false;
 	private $flag_skipinter		= false;
 	private $flag_prevfirm		= false;
 	private $flag_monitor		= false;
@@ -1262,6 +1263,7 @@ class EspBuddy {
                        - when left blank, it defaults to the /espb_backup/ folder (prefered way)
 
 + OPTIONS :
+    -w              : wire mode: Use the serial port instead of http (for the 'send' command)
     -y              : Automatically set YES to confirm "Yes/No" dialogs
     -d              : Dry Run. Show commands but don't apply them
     -v              : Verbose mode
@@ -3002,6 +3004,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->flag_build		= (boolean) $this->args['flags']['b'];
 		$this->flag_prevfirm	= (boolean) $this->args['flags']['p'];
 		$this->flag_eraseflash	= (boolean) $this->args['flags']['e'];
+		$this->flag_wire		= (boolean) $this->args['flags']['w'];
 		$this->flag_skipinter	= (boolean) $this->args['flags']['s'];
 		$this->flag_monitor		= (boolean) $this->args['flags']['m'];
 		$this->flag_copy		= (boolean) $this->args['flags']['c'];

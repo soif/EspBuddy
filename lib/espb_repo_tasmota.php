@@ -52,6 +52,34 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	protected $default_login 	= 'admin';					// Login name to use when not set
 
 	// ---------------------------------------------------------------------------------------
+	private $_rebooting_commands=array(				//command that trigger a restart
+		'restart',
+		'DevGroupName\d+',
+		'Reset',
+		'Upgrade',
+		'upload',
+		'Hostname',
+		'Password\d',
+		'SSId\d',
+		'FullTopic',
+		'GroupTopic\d+',
+		'MqttClient',
+		'MqttHost',
+		'MqttPassword',
+		'MqttPort',
+		'MqttUser',
+		'Prefix\d',
+		'Topic',
+		'Rule\d+\s+(8|9|10)',
+		'Sensor54\s+2',
+		'Sensor54\s+(0|1)',
+		'DevGroupName\d+',
+		'ZbConfig',
+	);
+
+
+
+	// ---------------------------------------------------------------------------------------
 	function __construct($path_to_repo=''){
 		parent::__construct($path_to_repo);
 	}
@@ -97,13 +125,13 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 		$commands	=$this->_CleanTxtListToArray($commands_list);
 
 		// convert into backlog
-		$max_backlog			=30;
+		$max_backlog			=3;
 		$delay_between_reboot	=3;
 
 		if(is_array($commands)){
 			$count=count($commands);
 			if($count==1){
-				$txt_command=key($commands)." ".reset($commands);
+				$txt_command=reset($commands);
 	
 				//echo "Sending: $txt_command\n\n";
 				$result= $this->RemoteSendCommand($host_arr, $txt_command);
@@ -115,26 +143,46 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 				$part=array_slice($commands,$start,$max_backlog);
 				$step=1;
 				while($part){
-					if($start){
-						echo "\n...* Waiting reboot for $delay_between_reboot sec.";
-						sleep($delay_between_reboot);
-						echo "\n\n";
-					}
-					echo "* ";
+					$echo_step='';
 					if($count > $max_backlog){
-						echo "[$step] ";
+						$echo_step="[$step] ";
 					}
 					$echo_start=$start+1;
-					echo "Sending (max $max_backlog) commands from line $echo_start :\n";
+					$echo_count=$max_backlog;
+					// do not backlog lines with backlogs---
+					$exceptions=array();
+					$count_exceptions=0;
 					
+					foreach($part as $k => $this_com){
+						if(preg_match('#backlog\s#i',$this_com)){
+							$exceptions[]=$this_com;
+							unset($part[$k]);
+							$count_exceptions++;
+						}
+					}
+
+					//sending  commands as backlog ------------
+					echo "* {$echo_step}Sending (max $echo_count) commands from line $echo_start :\n";
 					$backlog=$this->_CommandsToBacklog($part);
 					$this->sh->PrintCommand($backlog);
-
 					$this->RemoteSendCommand($host_arr, $backlog);
+					$this->_WaitForReboot($delay_between_reboot,$backlog);
+					
+					//sending  backlog commands separately------------
+					if($count_exceptions){
+						$echo_step and $echo_step="[{$step}-solo] ";
+						echo "* {$echo_step}Sending $count_exceptions commands containing backlog as single line(s) :\n";
+						foreach($exceptions as $com_ex){
+							$this->sh->PrintCommand($com_ex);
+							$this->RemoteSendCommand($host_arr, $com_ex);
+							$this->_WaitForReboot($delay_between_reboot,$com_ex);
+						}
+					}
 					
 					$start=$start + $max_backlog;
 					$part=array_slice($commands,$start,$max_backlog);
 					$step++;
+
 				}
 				return true;
 			}	
@@ -142,15 +190,45 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 	}
 
+	// ---------------------------------------------------------------------------------------
+	private function _WaitForReboot($delay_between_reboot=3,$command=''){
+		if(!$this->_CommandNeedsReboot($command)){
+			return false;
+		}	
+		echo "* Waiting reboot for $delay_between_reboot sec.";
+		sleep($delay_between_reboot);
+		echo "\n";
+	}
+	
+	// ---------------------------------------------------------------------------------------
+	private function _CommandNeedsReboot($txt){
+		foreach($this->_rebooting_commands as $com){
+			if(preg_match("#$com#i",$txt)){
+				return true;
+			}
+		}
+	}
+
+
+
+
+
+
+	// ---------------------------------------------------------------------------------------
+	protected function _CleanCustom($str){
+		return $this->_CleanRulesToOneline($str);
+	}
+
+	// ---------------------------------------------------------------------------------------
+	private function _CleanRulesToOneline($str){
+		$str=preg_replace('#endon[\s\r\n]on+#i','ENDON ON',$str);
+		return $str;
+	}
 
 	// ---------------------------------------------------------------------------------------
 	protected function _CommandsToBacklog($commands){
 		if(is_array($commands)){
-			$str="backlog ";
-			foreach($commands as $k => $v){
-				$str.="$k $v;";
-			}
-			$str=substr($str, 0, -1); // remove last ';'
+			$str="BACKLOG ".implode(';',$commands);
 			return $str;
 		}
 	}

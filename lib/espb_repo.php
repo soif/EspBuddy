@@ -730,7 +730,7 @@ $commands_list	=$this->_CleanCustom($commands_list);
 	// ---------------------------------------------------------------------------------------
 	protected function _CleanTxtList($str){
 		//remove comments
-		$str=preg_replace('|\s*#.*$|m','',$str);
+		$str=preg_replace('|\s+#.*$|m','',$str);
 		
 		//remove blank lines
 		$str=preg_replace('#^\s*[\n\r]+#m','',$str);

@@ -75,6 +75,8 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 		'Sensor54\s+(0|1)',
 		'DevGroupName\d+',
 		'ZbConfig',
+		'DisplayModel',	//undocumented, but restarts
+		'DisplayType'	//undocumented, but restarts
 	);
 
 
@@ -126,7 +128,7 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 
 		// convert into backlog
 		$max_backlog			=3;
-		$delay_between_reboot	=3;
+		$delay_between_reboot	=12;
 
 		if(is_array($commands)){
 			$count=count($commands);
@@ -191,7 +193,7 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	private function _WaitForReboot($delay_between_reboot=3,$command=''){
+	private function _WaitForReboot($delay_between_reboot=5,$command=''){
 		if(!$this->_CommandNeedsReboot($command)){
 			return false;
 		}	

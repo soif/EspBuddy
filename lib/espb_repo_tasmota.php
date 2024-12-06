@@ -127,7 +127,7 @@ class EspBuddy_Repo_Tasmota extends EspBuddy_Repo {
 		$commands	=$this->_CleanTxtListToArray($commands_list);
 
 		// convert into backlog
-		$max_backlog			=3;
+		$max_backlog			=10;
 		$delay_between_reboot	=12;
 
 		if(is_array($commands)){

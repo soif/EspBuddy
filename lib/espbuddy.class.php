@@ -132,6 +132,7 @@ class EspBuddy {
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
+			'info'			=>	'Get Device Info',
 			'factory'		=> "Download, get information on the latest factory releases",
 			'sonodiy'		=> "Discover, Control or Flash Sonoff devices in DIY mode",
 			'self'			=> "Get current, latest or update EspBuddy version",
@@ -152,7 +153,7 @@ class EspBuddy {
 			'test'			=>	'Toggle relay to verify communication',
 			'flash'			=>	'Upload a custom firmware (508KB max, DOUT mode). Use -P to proxy an external firmware URL',
 			'ping'			=>	'Check if device is Online',
-			'info'			=>	'Get Device Info',
+			'info'			=>	'Get Device Info (Serial Only)',
 			'pulse'			=>	'Set Inching (pulse) mode (0=off, 1=on) and width (in ms, 500ms step only)',
 			'signal'		=>	'Get WiFi Signal Strength',
 			'startup'		=>	'Set the Power On State (0=off, 1=on, 2=stay)',
@@ -185,6 +186,7 @@ class EspBuddy {
 			'version'		=> "TARGET [options, auth_options]",
 			'reboot'		=> "TARGET [options, auth_options]",
 			'gpios'			=> "TARGET [options, auth_options]",
+			'info'			=> "TARGET [options]",
 			'ping'			=> "TARGET [options]",
 			'factory'		=> "ACTION [options]",
 			'sonodiy'		=> "ACTION [options]",
@@ -318,6 +320,9 @@ class EspBuddy {
 				break;
 			case 'ping':
 				$this->BatchProcessCommand($this->action, $this->ChooseTarget());
+				break;
+			case 'info':
+				$this->Command_info($this->ChooseTarget());
 				break;
 			case 'server':
 				$this->Command_server();
@@ -546,6 +551,26 @@ class EspBuddy {
 			$out['date']			=date("d M Y - H:i:s", filemtime($firm_source));
 			$out['size']			=filesize($firm_source);
 			return $out;
+		}
+	}
+
+
+	// ---------------------------------------------------------------------------------------
+	public function Command_info($id){
+		$this->_AssignCurrentHostConfig($id);
+		if($info=$this->_DoSerial($id,'flash_id')){
+			if($this->flag_json){
+				echo json_encode($info,JSON_PRETTY_PRINT);
+			}
+			else{
+				echo "\n";
+				echo $this->_PrettyfyNoTabs($info);
+			}
+			return true;
+		}
+		else{
+			$this->_EchoError('No Result');
+			return false;
 		}
 	}
 
@@ -2431,13 +2456,15 @@ https://github.com/soif/EspBuddy/issues/20
 
 		$command=$this->_prefixPythonPath()."{$this->cfg['paths']['bin_esptool']} -p {$this->c_host['serial_port']}{$arg_rate} $action ";
 
+		$get_result=false;
 		switch ($action) {
 			case 'write_flash':
 				$command .="0x0 \"{$firmware_file}\" ";
 				break;
 			case 'erase_flash':
 				break;
-			case 'read_mac':
+			case 'flash_id':
+				$get_result=true;
 				break;
 			default:
 				return $this->_dieError ("Invalid Action");
@@ -2447,10 +2474,38 @@ https://github.com/soif/EspBuddy/issues/20
 
 		if(!$this->flag_drymode){
 			$this->sh->EchoStyleCommand();
-			passthru($command, $r);
+			if($get_result){
+				$arr=[];
+				if($raw	=trim(shell_exec($command))){
+					$patterns=[
+						'chip'			=> 'Chip is ',
+						'crystal'		=> 'Crystal is ',
+						'mac'			=> 'MAC:',
+						'manufacturer'	=> 'Manufacturer:',
+						'device'		=> 'Device:',
+						'flash'			=> 'Detected flash size:',
+					];
+					foreach(explode("\n",$raw) as $line){
+						foreach($patterns as $k => $v){
+							if(preg_match('#^'.$v.'(.*)#',$line,$m)){
+								$arr[$k]=trim($m[1]);
+							}
+						}
+					}
+					if(count($arr)){
+						return $arr;
+					}
+					else{
+						return false;
+					}					
+				}
+			}
+			else{
+				passthru($command, $r);
+			}
 			$this->sh->EchoStyleClose();
 			if($r){
-				return $this->_dieError ("Serial Upload Failed");
+				return $this->_dieError ("Serial Failed");
 			}
 		}
 		return true;

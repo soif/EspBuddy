@@ -50,7 +50,7 @@ $cfg['paths']['bin_pio']			="/Users/soif/.platformio/penv/bin/pio";
 	SYNTAX: $cfg['repos']['NAME']['PARAM']		="VALUE";
 		* NAME  : is one of the supported firmwares :  'espeasy' | 'espura' | 'tasmota' | 'wled'
 		* PARAM : Each repo can use one or some of the following parameters:
-			- 'path_repo'		: path to the main folder where the git repository is cloned (with a trailing slash!)
+			- 'path_repo'		: (optionnal) path to the main folder where the git repository is cloned (with a trailing slash!)
 									- This is required only for 'repo_xxx' or 'build' (or with -b) commands
 			- 'assets_groups'	: (optionnal) some preset lists of assets to grab with the 'factory download' command 
 									- SYNTAX: $cfg['repos']['NAME']['assets_groups']['ID']=array('name1','name2','regex',....)
@@ -63,7 +63,7 @@ $cfg['repos']['espurna']['path_repo']				="/Users/soif/mount/dev_apache/src/espu
 $cfg['repos']['espeasy']['path_repo']				="/Users/soif/mount/dev_apache/src/ESPEasy/";
 
 $cfg['repos']['tasmota']['path_repo']				="/Users/soif/mount/dev_apache/src/Tasmota/";
-$cfg['repos']['tasmota']['assets_groups']['my']		=array(	// ie to use in command like : "espbuddy factory download tasmota latest my"
+$cfg['repos']['tasmota']['assets_groups']['my']		=array(	// ie to use in commands like : "espbuddy factory download tasmota latest my"
 														'tasmota.bin',
 														'tasmota.bin.gz',
 														'tasmota-lite.bin',
@@ -91,21 +91,22 @@ $cfg['repos']['wled']['assets_groups']['esp32']		=array('.*ESP32');				// grab o
 	Define all configurations sets  (needed by your 'hosts')
 
 	Configurations 'configs' are used by 'hosts' (see below) to basically describe, the firmware type used (espeasy,espura,tasmota,wled)
-	and optionally the 'environment' used to build, some 'exports' to pass to the compiler, and/or some 'pass' or 'serial_port' to use.
+	and optionally the 'environment' used to build, some 'exports' to pass to the compiler, and/or some 'pass' or 'serial_port' to use, 
+	or the factory firmware to use
 
 	SYNTAX: $cfg['configs']['ID']['PARAM']		="VALUE";
 	* ID	: Your own config's name. (avoid spaces or funky characters here)
 	* PARAM : Each config can use one or some of the following parameters:
-		- 'repo'		: (REQUIRED)  the repository to use from the list above
-
-		- 'environment'	: (optionnal) the environment to pass to platformio (required when compiling)
-		- '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
-		- 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
-		- 'login'		: (optionnal) a global default login name to use for this config
-		- 'pass'		: (optionnal) a global default password to use for this config
-		- 'serial_port'	: (optionnal) the serial port (or its alias name) to use, when in Wire mode
-		- 'serial_rate'	: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
-		- 'exports'		: (optionnal) various export to perform before compiling
+			- 'repo'		: (REQUIRED)  the repository to use from the list above
+			- 'firmware'	: (optionnal) the factory firmware's name to use (when not building a custom firmware)
+			- 'environment'	: (optionnal) the environment to pass to platformio (required when compiling)
+			- '2steps'		: (optionnal) set this to true, to upload an intermediate OTA firmware (needed for 1M firmwares)
+			- 'login'		: (optionnal) a global default login name to use for this config
+			- 'pass'		: (optionnal) a global default password to use for this config
+			- 'serial_port'	: (optionnal) the serial port (or its alias name) to use, when in Wire mode
+			- 'serial_rate'	: (optionnal) the serial baud rate (or its alias name) to use, when in Wire mode
+			- 'size'		: (optionnal) Flash Size: 512K|1M|2M|4M . Only needed when you want to check if the firmware fit in the flash memory
+			- 'exports'		: (optionnal) various export to perform before compiling
 						Exports can inlude special variables that get replaced by their values extracted from the host definition.
 							- {{host_name}}	is replaced by the host (first) part of the FQDN
 							- {{host_ip}}	is replaced by the host IP address

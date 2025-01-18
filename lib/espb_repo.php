@@ -652,7 +652,7 @@ class EspBuddy_Repo {
 	// ---------------------------------------------------------------------------------------
 	protected function _TelnetSendCommand($host_arr, $txt_command, $sleep=1){
 		if($txt_command){
-			$telnet="{ echo \"$txt_command\"; sleep $sleep; } | telnet {$host_arr['ip']} 2>&1";
+			$telnet="{ echo \"$txt_command\"; sleep $sleep; } | telnet {$host_arr['dest_ip']} 2>&1";
 			exec($telnet, $r_array);
 			return $r_array;
 		}
@@ -710,7 +710,7 @@ class EspBuddy_Repo {
 	protected function _MakeApiUrl($host_arr, $url,$suffix=''){
 		$host_arr['login'] or $host_arr['login']=$this->default_login;
 
-		$url=$this->api_prefix.$host_arr['ip'].$url;
+		$url=$this->api_prefix.$host_arr['dest_ip'].$url;
 		$url=str_replace('{{login}}',	$host_arr['login'], $url);
 		$url=str_replace('{{pass}}',	$host_arr['pass'], $url);
 		$url .=rawurlencode($suffix);

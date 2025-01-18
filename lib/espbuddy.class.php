@@ -65,7 +65,7 @@ class EspBuddy {
 	private $arg_login			= '';
 	private $arg_pass			= '';
 	private $arg_from			= '';		// repo to migrate from
-
+	private $arg_ip				= '';		// ip which orride the host ip
 	//selected configuration for the current host
 	private $c_host				=array();	//	current host
 	private $c_conf				=array();	//	current config
@@ -978,7 +978,7 @@ class EspBuddy {
 				}
 				return $r;
 			}
-
+			
 			// else in remote mode		
 			$r=$this->orepo->RemoteSendCommands($this->c_host,$commands);
 			if(is_array($r)){
@@ -1281,6 +1281,7 @@ class EspBuddy {
     -D              : Debug mode (shows PHP errors)
     --conf=xxx      : Config name to use (overrides per host settings)
     --repo=xxx      : Repository to use (overrides per host settings)
+    --ip=xxx        : IP address to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
     -b              : Build before Flashing / OTA Uploading / Upgrading firmware
@@ -2556,6 +2557,7 @@ https://github.com/soif/EspBuddy/issues/20
 		echo "* Selected Host      : {$host['id']}\n";
 		echo "         + Host Name : {$host['hostname']}\n";
 		echo "         + Host IP   : {$host['ip']}\n";
+		echo "         + Target IP   : {$host['dest_ip']}\n";
 		if($host['serial_port']){
 			echo "         + Serial    : {$host['serial_port']}	at {$host['serial_rate']} bauds\n";
 		}
@@ -2588,6 +2590,7 @@ https://github.com/soif/EspBuddy/issues/20
 
 		$this->c_host					= $this->cfg['hosts'][$id];
 		$this->c_host['id']				= $id;
+		$this->c_host['dest_ip']		= $this->arg_ip ? $this->arg_ip : $this->c_host['ip'];
 		$this->c_host['config']			= $this->_ChooseValueToUse('config');
 		$this->c_host['path_dir_backup']= $this->_CreateBackupDir($this->c_host);
 		$this->c_host['login']			= $this->_ChooseValueToUse('login');
@@ -2988,8 +2991,11 @@ https://github.com/soif/EspBuddy/issues/20
 		global $cfg;
 		$this->cfg['hosts'][$id]['ip'] 			or $this->cfg['hosts'][$id]['ip']		=gethostbyname($this->cfg['hosts'][$id]['hostname']);
 		$this->cfg['hosts'][$id]['hostname']	or $this->cfg['hosts'][$id]['hostname']	=gethostbyaddr($this->cfg['hosts'][$id]['ip']);
-
-		$name = str_pad(" ".$this->cfg['hosts'][$id]['hostname']. " ", 25,'#') . ' (' . $this->cfg['hosts'][$id]['ip'] .')' ;
+		$dest_ip='';
+		if($this->arg_ip){
+			$dest_ip=" --> ".$this->arg_ip;
+		}
+		$name = str_pad(" ".$this->cfg['hosts'][$id]['hostname']. " ", 25,'#') . ' (' . $this->cfg['hosts'][$id]['ip'] .$dest_ip.')' ;
 		return $name;
 	}
 
@@ -3031,6 +3037,7 @@ https://github.com/soif/EspBuddy/issues/20
 		$this->arg_login		= $this->args['vars']['login'];
 		$this->arg_pass			= $this->args['vars']['pass'];
 		$this->arg_from			= $this->args['vars']['from'];
+		$this->arg_ip			= $this->args['vars']['ip'];
 
 		if($this->flag_debug){
 			error_reporting(E_ALL & ~E_NOTICE);

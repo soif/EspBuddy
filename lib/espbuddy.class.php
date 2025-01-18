@@ -970,6 +970,16 @@ class EspBuddy {
 			
 			$this->orepo=$this->_RequireRepo($repo);
 			
+			// in wire mode
+			if($this->flag_wire){
+				$r = $this->SendToSerial($this->target,$commands);
+				if($this->flag_monitor){
+					$this->Command_monitor($id);
+				}
+				return $r;
+			}
+
+			// else in remote mode		
 			$r=$this->orepo->RemoteSendCommands($this->c_host,$commands);
 			if(is_array($r)){
 				if($this->flag_json){
@@ -1280,7 +1290,7 @@ class EspBuddy {
 
 + FLASH_OPTIONS :
     -e              : Erase memory first, then upload
-    -m              : Imediatly switches to serial port monitor after upload
+    -m              : Immediatly switches to serial port monitor after upload
     --port=xxx      : Serial port to use (overrides main or per host serial port)
     --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
                        - a number
@@ -3685,7 +3695,25 @@ EOF;
 	// ##################################################################################################################################
 	// ##### TEST zone ##################################################################################################################
 	// ##################################################################################################################################
+// ---------------------------------------------------------------------------------------
+	public function SendToSerial($id,$command=''){
+		if(!$command){
+			$this->_EchoVerbose('Sorry, No command provided!');
+			return false;
+		}
+		$this->_AssignCurrentHostConfig($id);
+		$command=str_replace('"','\"',$command);
+		$sh_command="{$this->cfg['paths']['dir_python']}python {$this->cfg['paths']['bin']}espb_serial.py \"$command\" --port {$this->c_host['serial_port']} --baud {$this->c_host['serial_rate']}";
+		$this->_EchoStepStart("Sending command to Serial Port: {$this->c_host['serial_port']} at {$this->c_host['serial_rate']} baud",$sh_command);
+		if(!$this->flag_drymode){
+			passthru($sh_command, $r);
+			if($r){
+				return $this->_dieError ("Serial monitor Failed");
+			}
+		}
+		return true;
 
+	}
 
 	// ---------------------------------------------------------------------------------------
 	public function Command_test(){

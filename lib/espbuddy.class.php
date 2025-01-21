@@ -133,7 +133,7 @@ class EspBuddy {
 			'reboot'		=> "Reboot Device(s)",
 			'gpios'			=> "Test all Device's GPIOs",
 			'ping'			=> "Ping Device(s)",
-			'info'			=>	'Get Device Info',
+			'info'			=> "Get Device Information (MAC, flashsize, model...) using the serial port",
 			'factory'		=> "Download, get information on the latest factory releases",
 			'sonodiy'		=> "Discover, Control or Flash Sonoff devices in DIY mode",
 			'self'			=> "Get current, latest or update EspBuddy version",

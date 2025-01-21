@@ -66,6 +66,7 @@ Works with :
 Valid Actions are:
  
 - **flash**           : flash current repo firmware to Device(s) using the serial port
+- **dump**            : Backup device(s) firmware, using the serial port
 - **ota**             : Upgrade device(s) firmware using 'Arduino OTA'
 - **upgrade**         : Upgrade device(s) firmware using our WebServer
 - **build**           : Build current repo version
@@ -79,6 +80,7 @@ Valid Actions are:
 - **reboot**          : Reboot remote devive
 - **gpios**           : Test (On/Off) each GPIOs
 - **ping**            : Ping Device(s)
+- **info**            : Get Device Information (MAC, flashsize, model...) using the serial port
 - **sonodiy**         : Discover, Control or Flash Sonoff devices in DIY mode
 - **repo_version**    : Show Repo's Current version
 - **repo_pull**       : Git Pull Repo's master version

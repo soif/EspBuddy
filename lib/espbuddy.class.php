@@ -120,6 +120,7 @@ class EspBuddy {
 	private	$actions_desc=array(
 		'root'=>array(
 			'flash'			=> "Flash device(s) firmware, using the serial port",
+			'dump'			=> "Backup device(s) firmware, using the serial port",
 			'ota'			=> "Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)",
 			'upgrade'		=> "Upgrade device(s) firmware using our WebServer (only available for Tasmota)",
 			'build'			=> "Build device(s) firmware",
@@ -175,6 +176,7 @@ class EspBuddy {
 	private	$actions_usage=array(
 		'root'=>array(
 			'flash'			=> "TARGET [options, upload_options, flash_options]",
+			'dump'			=> "TARGET [options]",
 			'ota'			=> "TARGET [options, upload_options, ota_options, auth_options]",
 			'upgrade'		=> "TARGET [options, upload_options, auth_options]",
 			'build'			=> "TARGET [options]",
@@ -323,6 +325,9 @@ class EspBuddy {
 				break;
 			case 'info':
 				$this->Command_info($this->ChooseTarget());
+				break;
+			case 'dump':
+				$this->Command_dump($this->ChooseTarget());
 				break;
 			case 'server':
 				$this->Command_server();
@@ -574,6 +579,13 @@ class EspBuddy {
 		}
 	}
 
+	// ---------------------------------------------------------------------------------------
+	public function Command_dump($id){
+		$this->_AssignCurrentHostConfig($id);
+		$path_firm_link	="{$this->c_host['path_dir_backup']}{$this->prefs['firm_name']}_ORIGINAL.bin";
+		$this->_DoSerial($id,'read_flash', $path_firm_link);
+		return true;
+	}
 	// ---------------------------------------------------------------------------------------
 	public function Command_flash($id){
 		$this->_AssignCurrentHostConfig($id);
@@ -2465,6 +2477,20 @@ https://github.com/soif/EspBuddy/issues/20
 				break;
 			case 'flash_id':
 				$get_result=true;
+				break;
+			case 'read_flash':
+				if($info=$this->_DoSerial($id,'flash_id')){
+					if($f=$info['flash']){
+						$f='0x'.str_replace('MB','',$f)*100000;
+						$command .="0x0 $f \"{$firmware_file}\"";
+					}
+					else{
+						return $this->_dieError ("Can't parse memory information");
+					}
+				}
+				else{
+					 return $this->_dieError ("Can't get memory information");
+				}
 				break;
 			default:
 				return $this->_dieError ("Invalid Action");

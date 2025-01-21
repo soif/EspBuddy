@@ -11,12 +11,13 @@ This document shows the terminal output from various EspBuddy commands.
 List of all EspBuddy commands.
 
 ```plaintext
-EspBuddby v2.50 ( EspTool v3.3.3 )
+EspBuddby v2.60 ( EspTool v3.3.3 )
 
 * Usage             : espbuddy COMMAND [TARGET] [options]
 
 * Valid COMMANDS : 
   - flash           : Flash device(s) firmware, using the serial port
+  - dump            : Backup device(s) firmware, using the serial port
   - ota             : Upgrade device(s) firmware, using 'Arduino OTA' (when OTA is compiled in the firmware)
   - upgrade         : Upgrade device(s) firmware using our WebServer (only available for Tasmota)
   - build           : Build device(s) firmware
@@ -29,6 +30,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
   - reboot          : Reboot Device(s)
   - gpios           : Test all Device's GPIOs
   - ping            : Ping Device(s)
+  - info            : Get Device Information (MAC, flashsize, model...) using the serial port
   - factory         : Download, get information on the latest factory releases
   - sonodiy         : Discover, Control or Flash Sonoff devices in DIY mode
   - self            : Get current, latest or update EspBuddy version
@@ -41,6 +43,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
 
 * Commands Usage : 
   - flash           : espbuddy flash        TARGET [options, upload_options, flash_options]
+  - dump            : espbuddy dump         TARGET [options]
   - ota             : espbuddy ota          TARGET [options, upload_options, ota_options, auth_options]
   - upgrade         : espbuddy upgrade      TARGET [options, upload_options, auth_options]
   - build           : espbuddy build        TARGET [options]
@@ -52,6 +55,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
   - version         : espbuddy version      TARGET [options, auth_options]
   - reboot          : espbuddy reboot       TARGET [options, auth_options]
   - gpios           : espbuddy gpios        TARGET [options, auth_options]
+  - info            : espbuddy info         TARGET [options]
   - ping            : espbuddy ping         TARGET [options]
   - factory         : espbuddy factory      ACTION [options]
   - sonodiy         : espbuddy sonodiy      ACTION [options]
@@ -80,6 +84,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
                        - when left blank, it defaults to the /espb_backup/ folder (prefered way)
 
 + OPTIONS :
+    -w              : wire mode: Use the serial port instead of http (for the 'send' command)
     -y              : Automatically set YES to confirm "Yes/No" dialogs
     -d              : Dry Run. Show commands but don't apply them
     -v              : Verbose mode
@@ -87,6 +92,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
     -D              : Debug mode (shows PHP errors)
     --conf=xxx      : Config name to use (overrides per host settings)
     --repo=xxx      : Repository to use (overrides per host settings)
+    --ip=xxx        : IP address to use (overrides per host settings)
 
 + UPLOAD_OPTIONS :
     -b              : Build before Flashing / OTA Uploading / Upgrading firmware
@@ -96,7 +102,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
 
 + FLASH_OPTIONS :
     -e              : Erase memory first, then upload
-    -m              : Imediatly switches to serial port monitor after upload
+    -m              : Immediatly switches to serial port monitor after upload
     --port=xxx      : Serial port to use (overrides main or per host serial port)
     --rate=xxx      : Serial port speed to use (overrides main or per host serial port). Either:
                        - a number
@@ -112,6 +118,7 @@ EspBuddby v2.50 ( EspTool v3.3.3 )
 + AUTH_OPTIONS :
     --login=xxx     : Login name (overrides host or per config login)
     --pass=xxx      : Password (overrides host or per config password)
+
 ```
 
 ----------
@@ -170,12 +177,12 @@ Send the 'Status 1' command to the 'led2' host.
 Show Device information.
 
 ```plaintext
-
-
-Selected Host      : sensor2.lo.lo
-       + Host Name : sensor2.lo.lo
-       + Host IP   : 10.1.209.32
-       + Serial    : /dev/tty.wchusbserialfa140	at 115200 bauds
+* Processing host 'sensor2.lo.lo' :  sensor2.lo.lo ########## (10.1.209.32)
+* Selected Host      : sensor2.lo.lo
+         + Host Name : sensor2.lo.lo
+         + Host IP   : 10.1.209.32
+         + Target IP : 10.1.209.32
+         + Serial    : /dev/tty.wchusbserialfa140	at 115200 bauds
 
 Selected Repo      : espeasy
 

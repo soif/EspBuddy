@@ -3,7 +3,7 @@
 DIR=`dirname $0`
 DOC=command_examples.md
 FILE=$DIR/$DOC
-APP=espbuddy.php
+APP=espbuddy
 NAME=EspBuddy
 IP=10.1.250.154
 ID=1000aba1ee
@@ -74,10 +74,10 @@ append_command "$APP self help"		"$NAME self maintenance tools."
 
 make_title " Sonoff DIY (sonodiy) specific commands"
 append_command "$APP sonodiy help"	"Tasks for the 'sonodiy' command." 1
-append_command "$APP sonodiy scan"	"Show the IP Adresses and IDs of connected devices." 1 1
-append_command "$APP sonodiy test $IP $ID"	"Test if we can successfully connect to the Sonoff Device." 1
-append_command "$APP sonodiy info $IP $ID -v"	"Show device information." 1
-append_command "$APP sonodiy info $IP $ID -j"	"Show device information in JSON format."
+#append_command "$APP sonodiy scan"	"Show the IP Adresses and IDs of connected devices." 1 1
+#append_command "$APP sonodiy test $IP $ID"	"Test if we can successfully connect to the Sonoff Device." 1
+#append_command "$APP sonodiy info $IP $ID -v"	"Show device information." 1
+#append_command "$APP sonodiy info $IP $ID -j"	"Show device information in JSON format."
 
 # clean Uploading progress bars -----------------------------------
 echo "Cleaning..."
